@@ -1,0 +1,20 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+.svelte-kit/
+static/corpus.json   # generated artifact; regenerated from vault/entries by build-corpus.ts
+
+# env / local
+*.local
+.env
+.env.*
+
+# os
+.DS_Store
+Thumbs.db
+
+# obsidian: ignore volatile workspace, keep shareable config if you choose to commit it
+vault/.obsidian/workspace*
+vault/.obsidian/cache
