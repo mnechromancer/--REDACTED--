@@ -22,14 +22,17 @@ redacted/
     │   ├── design_document.md        # authority on mechanics
     │   ├── technical_document.md     # authority on stack, schema, algorithms, build order
     │   ├── entry_template.md         # dual-purpose entry template + worked example (SCP-921)
+    │   ├── agents.md                 # agentic dev methodology (lore QA pipeline, sprint roles)
+    │   ├── site_41b.md               # setting bible — Site-41B original canon
     │   └── discovery/
     │       ├── 01_lore_discovery.md  # Series I themes, K-class taxonomy
     │       ├── 02_design_discovery.md# comparable games and borrowed mechanics
-    │       └── 03_technical_discovery.md # engine landscape, the Svelte decision
+    │       ├── 03_technical_discovery.md # engine landscape, the Svelte decision
+    │       └── 04_site41_antimemetics.md # Antimemetics Division research (internal, never ships)
     └── entries/                      # game entities ONLY (parsed into the corpus)
 ```
 
-If a question is about *what the game does*, read `design_document.md`. About *how it's built*, `technical_document.md`. About *how to author an entity*, `entry_template.md`. Code and the source-code tree get added by the scaffold step below.
+If a question is about *what the game does*, read `design_document.md`. About *how it's built*, `technical_document.md`. About *how to author an entity*, `entry_template.md`. About *the setting, clusters, cast, or arc*, `site_41b.md`. About *how agents divide the work*, `agents.md`. Code and the source-code tree get added by the scaffold step below.
 
 ## 3. Locked decisions — do not relitigate
 
@@ -104,8 +107,8 @@ Direct, analytically rigorous, low tolerance for filler, hedging, or false conso
 Ranked by value, with what each unblocks.
 
 1. **Concept-Key Registry** *(before serious writing)* — the propagation graph's backbone. A living table: every `concept-key` → which entries/anchors carry it → the shared mutation-set ordering. Without it, authors coin orphan concepts and the graph silently fails to cohere. Maintainable as a Dataview query once enough entries exist; seed it manually now. **Highest leverage.**
-2. **Entity Roster / Series Bible** *(before writing)* — the 15–30 entities planned up front, one line each: item #, class, one-line hook, concept memberships, clearance tier, breach effect. Curate the graph for density and tier pacing deliberately rather than emergently.
-3. **SCP-X Bible** *(before the endgame is buildable)* — the entity's arc: which concepts it threads through the corpus, the self-file design, and the two endgame fork conditions with the overlay-state thresholds that select them. The least-specified part of the design doc.
+2. **Entity Roster / Series Bible** *(before writing)* — the 15–30 entities planned up front, one line each: item #, class, one-line hook, concept memberships, clearance tier, breach effect. Curate the graph for density and tier pacing deliberately rather than emergently. *Partially covered:* `site_41b.md` now fixes the setting, five entry clusters with concept-key seams, the recurring cast, and the cluster-level budget split; the roster itself (per-entity lines) remains to be drafted from it.
+3. **SCP-X Bible** *(before the endgame is buildable)* — the entity's arc: which concepts it threads through the corpus, the self-file design, and the two endgame fork conditions with the overlay-state thresholds that select them. The least-specified part of the design doc. *Partially covered:* `site_41b.md` §5–6 fix the entity's local incarnation (the Concordance), its self-file placement, and what the fork means; only the overlay-state thresholds remain.
 4. **Four-State Visual Grammar Spec** *(before UI polish)* — the hardest unscoped surface per design_document.md §5.8. Color tokens, motion, provenance-hover, reduced-glitch mode. Pull in the frontend-design skill when building it.
 5. **Vertical Slice Definition** *(to scope sprint one)* — the exact 3 entities, 2 shared concepts, and milestones 1–5 that constitute the first playable proof, and what "done" means.
 

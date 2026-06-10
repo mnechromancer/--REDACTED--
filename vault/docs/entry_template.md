@@ -7,7 +7,7 @@
 # ─────────────────────────────────────────────────────────────
 item: "SCP-XXX"
 object_class: "Euclid"          # Safe | Euclid | Keter  (Series-I era; do NOT use ACS)
-site: "Site-██"
+site: "Site-41B"
 clearance: 2                    # baseline tier required to OPEN this file (1–5)
 entity_self: false              # true ONLY on the SCP-X self-file (there must be exactly one)
 
@@ -63,7 +63,7 @@ anchors:
 
 ## Special Containment Procedures
 
-SCP-XXX is to be contained within ⟦a1⟧ at Site-██. [Write the procedure in clinical Foundation
+SCP-XXX is to be contained within ⟦a1⟧ at Site-41B. [Write the procedure in clinical Foundation
 voice. Reference related anomalies using Obsidian wikilinks, e.g. [[SCP-YYY]], so the cross-
 reference graph is legible in the vault and validated at build time.] Access to the full
 description is restricted to personnel of clearance 3 or above.
@@ -99,7 +99,7 @@ here. This is the surface that makes propagation feel real.]
 ---
 item: "SCP-921"
 object_class: "Euclid"
-site: "Site-44"
+site: "Site-41B"
 clearance: 2
 entity_self: false
 xrefs: ["SCP-917"]
@@ -134,7 +134,7 @@ anchors:
 
 ## Special Containment Procedures
 
-SCP-921 is to be stored unplugged within ⟦a1⟧ at Site-44, in a room sharing no power feed with
+SCP-921 is to be stored unplugged within ⟦a1⟧ at Site-41B, in a room sharing no power feed with
 documented memetic assets. Cross-reference monitoring with [[SCP-917]] is maintained; the two
 share recovery provenance. Operation of SCP-921 by personnel below clearance 4 is prohibited.
 
@@ -142,7 +142,7 @@ share recovery provenance. Operation of SCP-921 by personnel below clearance 4 i
 
 SCP-921 manifests as ⟦a1⟧ recovered from a decommissioned exchange building. When a connection is
 initiated, SCP-921 completes a call to no traceable line, after which ⟦a2⟧. The effect is
-consistent across subjects and resists standard mnestic countermeasures.
+consistent across subjects and persists despite standard retention procedures.
 
 ## Addendum 921.1 — Recovery
 

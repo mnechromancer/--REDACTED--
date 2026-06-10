@@ -1,9 +1,9 @@
 # CLAUDE.md — ⟦REDACTED⟧
 
-Operating context for Claude Code. Full specs live in `vault/docs/`. Read `vault/docs/handoff.md` for complete onboarding; this file is the compressed always-loaded version.
+Operating context for Claude Code. Full specs live in `vault/docs/`. Read `vault/docs/handoff.md` for complete onboarding; this file is the compressed always-loaded version. Routing: mechanics → `design_document.md`, build → `technical_document.md`, authoring → `entry_template.md`, setting/canon → `site_41b.md`, agentic method → `agents.md`.
 
 ## Project
-Text/document game. The player is a low-clearance archivist on a decaying Foundation site OS; files are redacted by clearance tier. A deprecated OS "help utility" (SCP-X) — actually an informational entity mid-CK-class restructuring — offers to fill the redactions. Filling rewrites the record and propagates the change across cross-referenced files; rising divergence between record and contained reality drives toward a site-wide breach.
+Text/document game. Setting: **Site-41B**, a Foundation deep-records annex in a decommissioned Colorado mine, orphaned from its parent site — original canon in `vault/docs/site_41b.md`. The player is a low-clearance archivist on a decaying Foundation site OS; files are redacted by clearance tier. A deprecated OS "help utility" (SCP-X) — actually an informational entity mid-CK-class restructuring — offers to fill the redactions. Filling rewrites the record and propagates the change across cross-referenced files; rising divergence between record and contained reality drives toward a site-wide breach.
 
 Core loop: **guess to see, but every guess corrupts, and corruption is what lets the thing in the walls out.**
 

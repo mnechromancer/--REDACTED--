@@ -1,6 +1,6 @@
 # Design Document — ⟦REDACTED⟧
 
-*Working title pending. Diegetic frame: a deprecated Foundation site OS, infected by an intelligent informational entity (SCP-X) that has already caused a localized CK-class restructuring by hiding in the records, and is attempting to scale that restructuring into a site-wide containment breach.*
+*Working title pending. Diegetic frame: a deprecated Foundation site OS at **Site-41B** (deep-records annex, Colorado — setting canon in `site_41b.md`), infected by an intelligent informational entity (SCP-X) that has already caused a localized CK-class restructuring by hiding in the records, and is attempting to scale that restructuring into a site-wide containment breach.*
 
 ---
 
