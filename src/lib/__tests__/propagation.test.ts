@@ -99,6 +99,40 @@ describe('exposure accounting', () => {
   });
 });
 
+describe('player-owned inserts survive propagation (no carrier-clobber)', () => {
+  // HelpUtility offers candidate buttons on every slot, including a propagated
+  // carrier, so the player can directly insert at a slot that is also another
+  // slot's propagation sink. Propagation must never demote such a player insert
+  // back to 'propagated' or invert its provenance.
+  it('directly inserting at a carrier keeps the original source insert intact', () => {
+    insert(TQE_003, 'tqe-1'); // 003 inserted → 001 becomes propagated(caused_by=003)
+    expect(overlay[TQE_001].source).toBe('propagated');
+
+    insert(TQE_001, 'tqe-2'); // player now edits the carrier directly
+    // The carrier is now the player's own inserted edit…
+    expect(overlay[TQE_001]).toMatchObject({ value: 'tqe-2', source: 'inserted' });
+    // …and the original source is NOT clobbered back to propagated.
+    expect(overlay[TQE_003]).toMatchObject({ value: 'tqe-1', source: 'inserted' });
+    expect(overlay[TQE_003].caused_by).toBeUndefined();
+  });
+
+  it('re-editing the source still moves a carrier that is only propagated', () => {
+    insert(TQE_003, 'tqe-0');
+    insert(TQE_003, 'tqe-2'); // carrier was never independently inserted → still tracks
+    expect(overlay[TQE_001]).toMatchObject({ value: 'tqe-2', source: 'propagated' });
+  });
+
+  it('editing one concept does not disturb a peer the player set in another', () => {
+    // 001 participates in BOTH the-quiet-exchange (a1) and acquisition-lot (a2).
+    insert(LOT_001, 'lot-1'); // 001#a2 inserted → 002#a1 propagated
+    expect(overlay[LOT_001].source).toBe('inserted');
+
+    insert(TQE_003, 'tqe-1'); // edits 001#a1 via propagation, a different anchor
+    expect(overlay[TQE_001].source).toBe('propagated'); // a1 carrier moves
+    expect(overlay[LOT_001]).toMatchObject({ value: 'lot-1', source: 'inserted' }); // a2 untouched
+  });
+});
+
 describe('no free text enters propagation (invariant 3)', () => {
   it('a rejected source insert produces no propagated carriers', () => {
     expect(() => insert(TQE_003, 'free text')).toThrow(/not an authored candidate/);

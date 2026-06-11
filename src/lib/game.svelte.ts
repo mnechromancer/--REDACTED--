@@ -145,9 +145,17 @@ export function insert(ref: string, value: string): void {
   // 2. Propagate to every other carrier of this concept, index-aligned. We
   //    overwrite any prior propagated entry at the target (re-evaluation from
   //    the immutable corpus), so changing the source value moves all carriers
-  //    rather than layering edits.
+  //    rather than layering edits. But we never overwrite a slot the player
+  //    has independently *inserted*: that slot is its own source of truth, not
+  //    a sink. Since HelpUtility offers candidates on every slot (including
+  //    propagated carriers), a direct edit to a carrier would otherwise
+  //    propagate back and silently demote the original insert to 'propagated',
+  //    inverting provenance. Skipping inserted targets keeps each player edit
+  //    player-owned and makes editing one carrier of a 3+ slot concept leave
+  //    its independently-set peers intact.
   if (anchor.concept) {
     for (const targetRef of crossMentions(ref)) {
+      if (overlay[targetRef]?.source === 'inserted') continue; // player-owned: never clobber
       const target = anchorOf(targetRef);
       const mutation = mapMutation(ref, target);
       if (mutation === undefined) continue; // unmappable index: skip, never guess

@@ -44,8 +44,8 @@ Shared seams active this sprint: `the-quiet-exchange` (003↔001), `acquisition-
 | C7 | As the archivist, I raise clearance and a batch of ground-truth fragments unlocks; inserted guesses that contradict truth surface as 'truth-contradiction' (red diff), so I learn where I'm wrong without being told the answer. | M5 | Implementer | `raiseClearance` reveals the tier's batch; contradictions flip state; untouched slots' truths are NOT volunteered (`technical_document.md` §5). | DONE |
 | C7t | As a test engineer, I property-test `validation.ts`: truth never volunteered for an untouched slot; reveal is batched per tier, never per-guess. | M5 | Test engineer | The anti-leak property holds. | DONE |
 | C8 | As a developer, I implement the four-state CSS tokens + `SlotSpan` state switching (`technical_document.md` §7), so redacted/inserted/propagated/contradiction are legibly distinct. | M2–M5 | Implementer | All four states visually distinct; reduced-motion path keeps color/strike distinctions. | DONE |
-| CR | As a reviewer, I run `/code-review` per story; invariant violations are blocking. | all | Reviewer | No CLAUDE.md invariant violation merges. | To-do |
-| CV | As a verifier, I play the M5 loop end-to-end and report observed behavior. | close | Verifier | The goal sentence is demonstrably true in the running app. | To-do |
+| CR | As a reviewer, I run `/code-review` per story; invariant violations are blocking. | all | Reviewer | No CLAUDE.md invariant violation merges. | DONE |
+| CV | As a verifier, I play the M5 loop end-to-end and report observed behavior. | close | Verifier | The goal sentence is demonstrably true in the running app. | DONE |
 
 ### Lore track
 
@@ -68,8 +68,14 @@ Shared seams active this sprint: `the-quiet-exchange` (003↔001), `acquisition-
 | 4 | Trio selection | 003 / 001 / 002 (settled in roster). | Three shared seams across three files, all Act I, no breach effect harder than corrupt_search/inject_xrefs. |
 | 5 | `displayedSlot` shape: `$derived.by` per §3 snippet, or pure function? | **Pure `resolveSlot`**; components wrap it in `$derived`. | Svelte 5 forbids `$derived.by` returned from a function (declaration-only rune). The §3 snippet is illustrative; the branch *order* (state precedence) is preserved verbatim. Doc-vs-compiler gap, resolved for the compiler. |
 | 6 | Exposure: incremental `+=` per §4 pseudocode, or recompute from overlay? | **Recompute (`recomputeExposure`)**. | The literal `+=` drifts on re-insertion; §4's *stated* invariant is "idempotent re-evaluation, no accumulated drift." Implemented the invariant over the pseudocode; no-drift is now structural. C5t/C6t pin it. |
+| 7 | CR found carrier-clobber: directly inserting at a propagated carrier propagated *back* and demoted the original insert to 'propagated', inverting provenance (reachable because `HelpUtility` offers candidates on every slot). Guard, or restrict the UI? | **Guard in `insert`** — propagation skips any target already `source:'inserted'`. | A player-`inserted` slot is its own source of truth, never a propagation sink. One-line ownership rule; generalizes to 3+ carrier concepts (editing one leaves independently-set peers intact); keeps all four invariants. 3 regression tests added (suite 61→64). |
 
 *New forks that arise mid-sprint get logged here by the Architect before code proceeds.*
+
+**CR findings deferred to Sprint 2** (low-severity, none invariant-blocking; logged so they aren't lost):
+- `OverlayEntry.contradicts_truth` is dead/redundant — written by `raiseClearance` but `resolveSlot` derives the contradiction live and never reads it. Pick one source of truth before IndexedDB persistence lands, or the persisted flag will disagree with the display.
+- `splitRef` silently truncates a `#`-less ref (`slice(0,-1)`) instead of throwing — latent footgun if a malformed `caused_by` ever reaches `HelpUtility`'s provenance line. Add a guard.
+- `build-corpus.ts` direct-invocation guard (`import.meta.url === file://${argv[1]}`) is always false on Windows; the `endsWith('build-corpus.ts')` fallback carries it. Use a `fileURLToPath` comparison.
 
 > **C6 note:** the `randomize_propagation` breach path named in C6's done-check was intentionally **not** stubbed — breaches are out of scope this sprint (Decision #3) and a caller-less stub is dead noise. It lands with Sprint 2's breach machinery.
 
