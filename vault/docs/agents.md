@@ -96,7 +96,9 @@ Epics group `technical_document.md` §10 milestones; every milestone is independ
 
 ### 3.3 Sprint shape
 
-Sprint 1 is the vertical slice (`handoff.md` §6): Epic A + B stories on the code track while the §2 pipeline produces the first 3 entities sharing 2 concept-keys. Sequential where state demands it (M3 before M4 — `displayedSlot` before propagation), parallel where it doesn't (content track, test scaffolding, the four-state CSS tokens). The parallelization rule from Domain 1: parallelize only what shares no mutable state — stories touching `game.svelte.ts` serialize, stories touching distinct components don't.
+*This section defines the* shape *of a sprint; the* instantiated *sprints — current stories, status, decisions, the repeatable runbook — live in `planning/` (`planning/sprint_process.md` is the runbook, `planning/sprint_NN_*.md` the live sprint, `planning/roadmap.md` the horizon). This file is authoritative on method; the planning docs on current state.*
+
+Sprint 1 is the vertical slice (`planning/sprint_01_vertical_slice.md`): Epic A + B stories on the code track while the §2 pipeline produces the first 3 entities sharing 2 concept-keys. Sequential where state demands it (M3 before M4 — `displayedSlot` before propagation), parallel where it doesn't (content track, test scaffolding, the four-state CSS tokens). The parallelization rule from Domain 1: parallelize only what shares no mutable state — stories touching `game.svelte.ts` serialize, stories touching distinct components don't.
 
 ### 3.4 Automation hooks
 

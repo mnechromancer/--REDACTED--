@@ -27,6 +27,11 @@ redacted/
     │   ├── concept_key_registry.md   # propagation-graph backbone — every concept-key + carriers
     │   ├── entity_roster.md          # the 25 entities; SCP-41B-### scheme; coverage/tier audits
     │   ├── scp_x_bible.md            # the Concordance: entity thread, self-file, endgame fork
+    │   ├── planning/                 # EXECUTION LAYER — sprint runbook, current sprint, roadmap
+    │   │   ├── README.md             # methodology (agents.md) vs. application (here) split
+    │   │   ├── sprint_process.md     # the repeatable sprint runbook
+    │   │   ├── sprint_01_vertical_slice.md  # current sprint
+    │   │   └── roadmap.md            # epics→sprints horizon
     │   └── discovery/
     │       ├── 01_lore_discovery.md  # Series I themes, K-class taxonomy
     │       ├── 02_design_discovery.md# comparable games and borrowed mechanics
@@ -35,7 +40,7 @@ redacted/
     └── entries/                      # game entities ONLY (parsed into the corpus)
 ```
 
-If a question is about *what the game does*, read `design_document.md`. About *how it's built*, `technical_document.md`. About *how to author an entity*, `entry_template.md`. About *the setting, clusters, cast, or arc*, `site_41b.md`. About *how agents divide the work*, `agents.md`. About *concept-keys and the propagation graph*, `concept_key_registry.md`. About *the entity list, numbering, or coverage*, `entity_roster.md`. About *the Concordance, the self-file, or the endgame fork*, `scp_x_bible.md`. Code and the source-code tree get added by the scaffold step below.
+If a question is about *what the game does*, read `design_document.md`. About *how it's built*, `technical_document.md`. About *how to author an entity*, `entry_template.md`. About *the setting, clusters, cast, or arc*, `site_41b.md`. About *how agents divide the work*, `agents.md`. About *concept-keys and the propagation graph*, `concept_key_registry.md`. About *the entity list, numbering, or coverage*, `entity_roster.md`. About *the Concordance, the self-file, or the endgame fork*, `scp_x_bible.md`. About *current work, sprints, or the roadmap*, `planning/`. Code and the source-code tree get added by the scaffold step below.
 
 ## 3. Locked decisions — do not relitigate
 
@@ -92,27 +97,28 @@ A VS Code workflow still works identically; install the **Svelte for VS Code** (
    - **Dataview** — query frontmatter to audit the graph: list every anchor carrying a given `concept`, find orphan concepts (carried by only one file → propagation dead end), check clearance-tier distribution, verify the ≥2-shared-concept density target. This is how the propagation graph stays coherent as the corpus grows.
 4. The build parser ignores files in `vault/entries/` whose names begin with `_` (e.g. the `_README.md` placeholder), so they won't fail validation. Author entities by copying `vault/docs/entry_template.md` to `vault/entries/SCP-41B-###.md` (designations per `entity_roster.md`).
 
-## 6. Immediate next steps (first sprint)
+## 6. Where we are now
 
-Parallel tracks, both small:
+**Planning lives in `vault/docs/planning/`** — sprint runbook, current sprint, roadmap. That folder is the source of truth for active work; this section is just the pointer.
 
-- **Code:** technical_document.md milestones 1–3 — schema types, `build-corpus.ts` round-tripping 3 stub entries with validation, static file viewer with redaction bars and clearance gating, then single-file insertion + overlay + `displayedSlot`.
-- **Content:** write the first 3 entities, deliberately sharing 2 concept-keys so propagation has something to act on at milestone 4. SCP-41B-003 in the template is a copy-ready model for one of them. (The roster's vertical-slice trio — SCP-41B-003 / 001 / 002 — is the recommended sprint-one set; see `entity_roster.md`.)
+- **Current: Sprint 1 — Vertical Slice** (`planning/sprint_01_vertical_slice.md`). Full playable loop on three entities (SCP-41B-003/001/002): Vite scaffold + M1–M5 on the code track, the trio on the lore track, converging at propagation (M4). No breaches yet. Goal: *read → hover → insert → propagate → batched-validate, felt on three files.*
+- **Process:** `planning/sprint_process.md` — the repeatable cycle (two tracks, phases, done-gates), applied to every sprint hereafter.
+- **Horizon:** `planning/roadmap.md` — epics→sprints, content-scaling order, the endgame sequencing constraint.
 
-Get the loop felt on 3 entities before scaling content.
+Not scaffolded yet: repo root is `CLAUDE.md` + `vault/` only; Sprint 1 story C0 is the scaffold. Author entries via the §2 lore pipeline (`agents.md`), not by hand into the parser.
 
 ## 7. Working with this collaborator
 
 Direct, analytically rigorous, low tolerance for filler, hedging, or false consolation. Wants dense substantive engagement. Catches redundancy and over-completeness fast — do not pad. State decisions rather than asking permission for obvious ones; flag genuine forks. Lead with the load-bearing point.
 
-## 8. Recommended additional documents
+## 8. Planning artifacts — status
 
-Ranked by value, with what each unblocks.
+The five "recommended additional documents" this section used to track are now built or scoped:
 
-1. [COMPLETE] **Concept-Key Registry** *(before serious writing)* — the propagation graph's backbone. A living table: every `concept-key` → which entries/anchors carry it → the shared mutation-set ordering. Without it, authors coin orphan concepts and the graph silently fails to cohere. Maintainable as a Dataview query once enough entries exist; seed it manually now. **Highest leverage.**
-2. [COMPLETE] **Entity Roster / Series Bible** — `entity_roster.md`. 25 entities (4/5/5/6/5), each with item #, class, hook, concept memberships, tier, breach effect; site-local `SCP-41B-###` designation; key-coverage, tier-pacing, and vertical-slice audits. Every registry key carries ≥2 entries (no orphans). The seven seed keys are promoted in the registry with carriers assigned.
-3. [COMPLETE] **SCP-X Bible** — `scp_x_bible.md`. The entity's thread (five concept-keys: `concordance-program`, `the-transfer`, `acquisition-lot`, `record-reality-coupling`, `halloran-marginalia`), the SCP-41B-000 self-file anchor design (five anchors, one per key, truths = the index-0 mundane readings), the degrading help-utility voice spec, and the endgame fork. **Fork condition:** `thread_coherence` (0–5) = how many of the five keys the player reconstructed truthfully across the corpus; 5 → Recontainment, 0–2 → Restructuring, 3–4 → contested, tiebroken by the self-file's `concordance-program` + `halloran-marginalia` anchors. Pure overlay/truth delta (no new resource — honors invariant 1).
-4. **Four-State Visual Grammar Spec** *(before UI polish)* — the hardest unscoped surface per design_document.md §5.8. Color tokens, motion, provenance-hover, reduced-glitch mode. Pull in the frontend-design skill when building it.
-5. **Vertical Slice Definition** *(to scope sprint one)* — the exact 3 entities, 2 shared concepts, and milestones 1–5 that constitute the first playable proof, and what "done" means. *Partially covered:* `entity_roster.md` recommends the trio (SCP-41B-003 / 001 / 002) and its three shared seams; the milestone-1–5 "done" definition remains to be fenced if needed.
+- **Concept-Key Registry** → `concept_key_registry.md` (done — propagation backbone, all keys ≥2 carriers).
+- **Entity Roster / Series Bible** → `entity_roster.md` (done — 25 entities, `SCP-41B-###`, coverage/tier audits).
+- **SCP-X Bible** → `scp_x_bible.md` (done — entity thread, self-file, `thread_coherence` endgame fork).
+- **Vertical Slice Definition** → `planning/sprint_01_vertical_slice.md` (done — the trio + M1–M5 with a played definition of done).
+- **Four-State Visual Grammar Spec** → still open; scheduled before the endgame's two-ending presentation (see `planning/roadmap.md`). Pull in the frontend-design skill when building it; the four states are specified functionally in `design_document.md` §5.8 and `technical_document.md` §7.
 
-1 and 2 are complete. 3 before the endgame. 4 before UI polish. 5 if sprint scope needs a fence — the roster supplies the entity half of it.
+New planning work is tracked in `planning/` (roadmap + sprints), not here. This section stays a one-glance status; detail lives in those docs.
