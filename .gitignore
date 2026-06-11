@@ -3,13 +3,27 @@ node_modules/
 
 # build output
 dist/
+dist-ssr/
 .svelte-kit/
-static/corpus.json   # generated artifact; regenerated from vault/entries by build-corpus.ts
+# generated artifact; regenerated from vault/entries by build-corpus.ts
+static/corpus.json
+
+# test / coverage output
+coverage/
+.vitest/
+
+# logs
+*.log
+npm-debug.log*
 
 # env / local
 *.local
 .env
 .env.*
+
+# editor
+*.swp
+*~
 
 # os
 .DS_Store

@@ -1,0 +1,31 @@
+{
+  "name": "site-41b",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "build:corpus": "tsx scripts/build-corpus.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json && tsc -p tsconfig.scripts.json"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^7.1.2",
+    "@tsconfig/svelte": "^5.0.8",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^24.12.3",
+    "js-yaml": "^4.2.0",
+    "svelte": "^5.55.5",
+    "svelte-check": "^4.4.8",
+    "tsx": "^4.22.4",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.12",
+    "vitest": "^4.1.8"
+  },
+  "dependencies": {
+    "idb": "^8.0.3"
+  }
+}
