@@ -33,7 +33,7 @@ interface Anchor {
 }
 
 interface ScpFile {
-  item: string;          // "SCP-XXX"
+  item: string;          // "SCP-41B-XXX" (site-local; see entity_roster.md)
   object_class: string;  // Safe | Euclid | Keter | ...
   site: string;
   clearance: 1|2|3|4|5;  // baseline tier to open the file at all
@@ -55,7 +55,7 @@ Runtime overlay state, separate from the immutable corpus:
 
 ```ts
 interface OverlayEntry {
-  anchor_ref: string;        // "SCP-XXX#a1"
+  anchor_ref: string;        // "SCP-41B-XXX#a1"
   value: string;             // player-inserted or propagated value
   source: 'inserted' | 'propagated';
   caused_by?: string;        // anchor_ref of the edit that propagated here (provenance)
@@ -181,7 +181,7 @@ The vault is authored using `entry_template.md`. A build-time parser (`scripts/b
 for each *.md in vault/entries:
   1. parse YAML frontmatter -> ScpFile minus body
   2. take markdown body:
-       - extract [[SCP-XXX]] wikilinks -> validate against xrefs
+       - extract [[SCP-41B-XXX]] wikilinks -> validate against xrefs
        - leave ⟦anchor_id⟧ tokens in place for runtime SlotSpan parsing
   3. validate:
        - every ⟦id⟧ in body has a matching anchor in frontmatter
@@ -208,7 +208,7 @@ Validation failures are build errors. This makes the wiki authoritative: write e
     HelpUtility.svelte  SearchPane.svelte  ClearancePanel.svelte
   /styles  tokens.css
 /vault
-  /entries  SCP-XXX.md ...   // Obsidian vault, the source of truth
+  /entries  SCP-41B-###.md ...   // Obsidian vault, the source of truth
 /scripts  build-corpus.ts
 /static   corpus.json        // generated artifact
 ```

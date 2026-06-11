@@ -5,14 +5,14 @@
 #  The body below is the human-readable Foundation page.
 #  build-corpus.ts parses both. Keep them consistent.
 # ─────────────────────────────────────────────────────────────
-item: "SCP-XXX"
+item: "SCP-41B-XXX"             # site-local accession; see entity_roster.md "Designation scheme"
 object_class: "Euclid"          # Safe | Euclid | Keter  (Series-I era; do NOT use ACS)
 site: "Site-41B"
 clearance: 2                    # baseline tier required to OPEN this file (1–5)
-entity_self: false              # true ONLY on the SCP-X self-file (there must be exactly one)
+entity_self: false              # true ONLY on the SCP-X self-file (SCP-41B-000; exactly one)
 
-# Explicit narrative cross-references. Mirror these as [[SCP-YYY]] in the body.
-xrefs: ["SCP-YYY", "SCP-ZZZ"]
+# Explicit narrative cross-references. Mirror these as [[SCP-41B-YYY]] in the body.
+xrefs: ["SCP-41B-YYY", "SCP-41B-ZZZ"]
 
 # What happens to the terminal if this entity breaches (exposure crosses its threshold).
 breach_effect:
@@ -57,28 +57,28 @@ anchors:
 
 ---
 
-# Item #: SCP-XXX
+# Item #: SCP-41B-XXX
 
 **Object Class:** Euclid
 
 ## Special Containment Procedures
 
-SCP-XXX is to be contained within ⟦a1⟧ at Site-41B. [Write the procedure in clinical Foundation
-voice. Reference related anomalies using Obsidian wikilinks, e.g. [[SCP-YYY]], so the cross-
+SCP-41B-XXX is to be contained within ⟦a1⟧ at Site-41B. [Write the procedure in clinical Foundation
+voice. Reference related anomalies using Obsidian wikilinks, e.g. [[SCP-41B-YYY]], so the cross-
 reference graph is legible in the vault and validated at build time.] Access to the full
 description is restricted to personnel of clearance 3 or above.
 
 ## Description
 
-SCP-XXX is [a paraphrased, original description in Series-I register]. When activated, SCP-XXX
+SCP-41B-XXX is [a paraphrased, original description in Series-I register]. When activated, SCP-41B-XXX
 produces ⟦a2⟧. [Continue. Each `⟦id⟧` token is a redaction the player will fill via SCP-X. The
 surrounding prose is the context they triangulate from — write enough that a careful reader could
 infer the slot, but not so much that it is trivial.]
 
 ## Addendum XXX.1 — [Incident / Interview / Recovery]
 
-[Optional. Addenda are where cross-mentions of shared concepts live. If SCP-XXX shares a
-`concept` with [[SCP-ZZZ]], mention that concept here so an edit in one file visibly propagates
+[Optional. Addenda are where cross-mentions of shared concepts live. If SCP-41B-XXX shares a
+`concept` with [[SCP-41B-ZZZ]], mention that concept here so an edit in one file visibly propagates
 here. This is the surface that makes propagation feel real.]
 
 <!--
@@ -97,12 +97,12 @@ here. This is the surface that makes propagation feel real.]
 
 ```markdown
 ---
-item: "SCP-921"
+item: "SCP-41B-003"
 object_class: "Euclid"
 site: "Site-41B"
 clearance: 2
 entity_self: false
-xrefs: ["SCP-917"]
+xrefs: ["SCP-41B-001"]
 breach_effect:
   kind: "corrupt_search"
 anchors:
@@ -128,30 +128,30 @@ anchors:
     exposure_weight: 3
 ---
 
-# Item #: SCP-921
+# Item #: SCP-41B-003
 
 **Object Class:** Euclid
 
 ## Special Containment Procedures
 
-SCP-921 is to be stored unplugged within ⟦a1⟧ at Site-41B, in a room sharing no power feed with
-documented memetic assets. Cross-reference monitoring with [[SCP-917]] is maintained; the two
-share recovery provenance. Operation of SCP-921 by personnel below clearance 4 is prohibited.
+SCP-41B-003 is to be stored unplugged within ⟦a1⟧ at Site-41B, in a room sharing no power feed with
+documented memetic assets. Cross-reference monitoring with [[SCP-41B-001]] is maintained; the two
+share recovery provenance. Operation of SCP-41B-003 by personnel below clearance 4 is prohibited.
 
 ## Description
 
-SCP-921 manifests as ⟦a1⟧ recovered from a decommissioned exchange building. When a connection is
-initiated, SCP-921 completes a call to no traceable line, after which ⟦a2⟧. The effect is
+SCP-41B-003 manifests as ⟦a1⟧ recovered from a decommissioned exchange building. When a connection is
+initiated, SCP-41B-003 completes a call to no traceable line, after which ⟦a2⟧. The effect is
 consistent across subjects and persists despite standard retention procedures.
 
-## Addendum 921.1 — Recovery
+## Addendum 003.1 — Recovery
 
-SCP-921 was recovered alongside materials later catalogued under [[SCP-917]]; both exhibit the
+SCP-41B-003 was recovered alongside materials later catalogued under [[SCP-41B-001]]; both exhibit the
 "quiet exchange" provenance, and alterations to one record have historically correlated with
 discrepancies in the other.
 ```
 
-*Why this example is correct:* `a1`'s concept `the-quiet-exchange` is shared with SCP-917, so
+*Why this example is correct:* `a1`'s concept `the-quiet-exchange` is shared with SCP-41B-001, so
 editing it propagates across both files. `a2`'s outcome is original — no canonical entity resolves
 this way, so foreknowledge gives no advantage. The voice is Series-I clinical; the solution is not
 canon. Mutation sets are bounded (3 and 3) and index-aligned for any shared-concept partner.

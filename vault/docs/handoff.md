@@ -21,9 +21,12 @@ redacted/
     │   ├── handoff.md                # this file
     │   ├── design_document.md        # authority on mechanics
     │   ├── technical_document.md     # authority on stack, schema, algorithms, build order
-    │   ├── entry_template.md         # dual-purpose entry template + worked example (SCP-921)
+    │   ├── entry_template.md         # dual-purpose entry template + worked example (SCP-41B-003)
     │   ├── agents.md                 # agentic dev methodology (lore QA pipeline, sprint roles)
     │   ├── site_41b.md               # setting bible — Site-41B original canon
+    │   ├── concept_key_registry.md   # propagation-graph backbone — every concept-key + carriers
+    │   ├── entity_roster.md          # the 25 entities; SCP-41B-### scheme; coverage/tier audits
+    │   ├── scp_x_bible.md            # the Concordance: entity thread, self-file, endgame fork
     │   └── discovery/
     │       ├── 01_lore_discovery.md  # Series I themes, K-class taxonomy
     │       ├── 02_design_discovery.md# comparable games and borrowed mechanics
@@ -32,7 +35,7 @@ redacted/
     └── entries/                      # game entities ONLY (parsed into the corpus)
 ```
 
-If a question is about *what the game does*, read `design_document.md`. About *how it's built*, `technical_document.md`. About *how to author an entity*, `entry_template.md`. About *the setting, clusters, cast, or arc*, `site_41b.md`. About *how agents divide the work*, `agents.md`. Code and the source-code tree get added by the scaffold step below.
+If a question is about *what the game does*, read `design_document.md`. About *how it's built*, `technical_document.md`. About *how to author an entity*, `entry_template.md`. About *the setting, clusters, cast, or arc*, `site_41b.md`. About *how agents divide the work*, `agents.md`. About *concept-keys and the propagation graph*, `concept_key_registry.md`. About *the entity list, numbering, or coverage*, `entity_roster.md`. About *the Concordance, the self-file, or the endgame fork*, `scp_x_bible.md`. Code and the source-code tree get added by the scaffold step below.
 
 ## 3. Locked decisions — do not relitigate
 
@@ -54,7 +57,7 @@ Per anchor: `id`, `slot_type` (object|agent|location|outcome), `truth` (immutabl
 
 Per file (frontmatter): `item`, `object_class`, `site`, `clearance` (baseline to open), `anchors[]`, `xrefs[]`, `breach_effect`, `entity_self`.
 
-Body markup: `⟦anchor_id⟧` token at each slot; `[[SCP-YYY]]` Obsidian wikilink per cross-reference.
+Body markup: `⟦anchor_id⟧` token at each slot; `[[SCP-41B-YYY]]` Obsidian wikilink per cross-reference.
 
 **Cross-file invariants (build-time validation errors):**
 - Exactly one file sets `entity_self: true` (the SCP-X self-file).
@@ -87,14 +90,14 @@ A VS Code workflow still works identically; install the **Svelte for VS Code** (
 3. Recommended community plugins:
    - **Templater** — apply `entry_template.md` automatically on new-entry creation.
    - **Dataview** — query frontmatter to audit the graph: list every anchor carrying a given `concept`, find orphan concepts (carried by only one file → propagation dead end), check clearance-tier distribution, verify the ≥2-shared-concept density target. This is how the propagation graph stays coherent as the corpus grows.
-4. The build parser ignores files in `vault/entries/` whose names begin with `_` (e.g. the `_README.md` placeholder), so they won't fail validation. Author entities by copying `vault/docs/entry_template.md` to `vault/entries/SCP-XXX.md`.
+4. The build parser ignores files in `vault/entries/` whose names begin with `_` (e.g. the `_README.md` placeholder), so they won't fail validation. Author entities by copying `vault/docs/entry_template.md` to `vault/entries/SCP-41B-###.md` (designations per `entity_roster.md`).
 
 ## 6. Immediate next steps (first sprint)
 
 Parallel tracks, both small:
 
 - **Code:** technical_document.md milestones 1–3 — schema types, `build-corpus.ts` round-tripping 3 stub entries with validation, static file viewer with redaction bars and clearance gating, then single-file insertion + overlay + `displayedSlot`.
-- **Content:** write the first 3 entities, deliberately sharing 2 concept-keys so propagation has something to act on at milestone 4. SCP-921 in the template is a copy-ready model for one of them.
+- **Content:** write the first 3 entities, deliberately sharing 2 concept-keys so propagation has something to act on at milestone 4. SCP-41B-003 in the template is a copy-ready model for one of them. (The roster's vertical-slice trio — SCP-41B-003 / 001 / 002 — is the recommended sprint-one set; see `entity_roster.md`.)
 
 Get the loop felt on 3 entities before scaling content.
 
@@ -106,10 +109,10 @@ Direct, analytically rigorous, low tolerance for filler, hedging, or false conso
 
 Ranked by value, with what each unblocks.
 
-1. **Concept-Key Registry** *(before serious writing)* — the propagation graph's backbone. A living table: every `concept-key` → which entries/anchors carry it → the shared mutation-set ordering. Without it, authors coin orphan concepts and the graph silently fails to cohere. Maintainable as a Dataview query once enough entries exist; seed it manually now. **Highest leverage.**
-2. **Entity Roster / Series Bible** *(before writing)* — the 15–30 entities planned up front, one line each: item #, class, one-line hook, concept memberships, clearance tier, breach effect. Curate the graph for density and tier pacing deliberately rather than emergently. *Partially covered:* `site_41b.md` now fixes the setting, five entry clusters with concept-key seams, the recurring cast, and the cluster-level budget split; the roster itself (per-entity lines) remains to be drafted from it.
-3. **SCP-X Bible** *(before the endgame is buildable)* — the entity's arc: which concepts it threads through the corpus, the self-file design, and the two endgame fork conditions with the overlay-state thresholds that select them. The least-specified part of the design doc. *Partially covered:* `site_41b.md` §5–6 fix the entity's local incarnation (the Concordance), its self-file placement, and what the fork means; only the overlay-state thresholds remain.
+1. [COMPLETE] **Concept-Key Registry** *(before serious writing)* — the propagation graph's backbone. A living table: every `concept-key` → which entries/anchors carry it → the shared mutation-set ordering. Without it, authors coin orphan concepts and the graph silently fails to cohere. Maintainable as a Dataview query once enough entries exist; seed it manually now. **Highest leverage.**
+2. [COMPLETE] **Entity Roster / Series Bible** — `entity_roster.md`. 25 entities (4/5/5/6/5), each with item #, class, hook, concept memberships, tier, breach effect; site-local `SCP-41B-###` designation; key-coverage, tier-pacing, and vertical-slice audits. Every registry key carries ≥2 entries (no orphans). The seven seed keys are promoted in the registry with carriers assigned.
+3. [COMPLETE] **SCP-X Bible** — `scp_x_bible.md`. The entity's thread (five concept-keys: `concordance-program`, `the-transfer`, `acquisition-lot`, `record-reality-coupling`, `halloran-marginalia`), the SCP-41B-000 self-file anchor design (five anchors, one per key, truths = the index-0 mundane readings), the degrading help-utility voice spec, and the endgame fork. **Fork condition:** `thread_coherence` (0–5) = how many of the five keys the player reconstructed truthfully across the corpus; 5 → Recontainment, 0–2 → Restructuring, 3–4 → contested, tiebroken by the self-file's `concordance-program` + `halloran-marginalia` anchors. Pure overlay/truth delta (no new resource — honors invariant 1).
 4. **Four-State Visual Grammar Spec** *(before UI polish)* — the hardest unscoped surface per design_document.md §5.8. Color tokens, motion, provenance-hover, reduced-glitch mode. Pull in the frontend-design skill when building it.
-5. **Vertical Slice Definition** *(to scope sprint one)* — the exact 3 entities, 2 shared concepts, and milestones 1–5 that constitute the first playable proof, and what "done" means.
+5. **Vertical Slice Definition** *(to scope sprint one)* — the exact 3 entities, 2 shared concepts, and milestones 1–5 that constitute the first playable proof, and what "done" means. *Partially covered:* `entity_roster.md` recommends the trio (SCP-41B-003 / 001 / 002) and its three shared seams; the milestone-1–5 "done" definition remains to be fenced if needed.
 
-Start 1 and 2 alongside the first three entries; they are the same curation work done deliberately. 3 before the endgame. 4 before UI polish. 5 if sprint scope needs a fence.
+1 and 2 are complete. 3 before the endgame. 4 before UI polish. 5 if sprint scope needs a fence — the roster supplies the entity half of it.

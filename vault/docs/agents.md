@@ -12,7 +12,7 @@ The organizing conceit: **the development process is diegetic.** The agents that
 |---|---|---|
 | 1 | Agentic Architecture & Orchestration (27%) | Two standing workflows: the **Documentation QA pipeline** (§2, evaluator-optimizer) and the **sprint dev cycle** (§3, orchestrator-worker). Task decomposition = work orders and user stories. Model selection by role (§5.4). |
 | 2 | Claude Code Configuration & Workflows (20%) | `CLAUDE.md` as the compressed always-loaded contract; plan mode for architecture decisions; worktree isolation for parallel stories; a `PostToolUse`-style hook running `build-corpus.ts` on any `vault/entries/` write (§3.4); headless/CI validation once the parser exists. |
-| 3 | Prompt Engineering & Structured Output (20%) | Persona prompts with explicit role/task framing and few-shot exemplars (`entry_template.md`'s worked SCP-921 *is* the few-shot example); structured output = the frontmatter schema, validated by the parser, retried on failure (§2.4's return loop is the validation-retry loop). |
+| 3 | Prompt Engineering & Structured Output (20%) | Persona prompts with explicit role/task framing and few-shot exemplars (`entry_template.md`'s worked SCP-41B-003 *is* the few-shot example); structured output = the frontmatter schema, validated by the parser, retried on failure (§2.4's return loop is the validation-retry loop). |
 | 4 | Tool Design & MCP Integration (18%) | `build-corpus.ts` is the project's canonical tool: deterministic, validating, structured errors. Least-privilege scoping = lore agents get vault access only, dev agents get src access only (§4.2). |
 | 5 | Context Management & Reliability (15%) | File-based memory (§4.3); just-in-time doc retrieval via the routing table in `handoff.md` §2; the integrity gate as the error-propagation firewall (§4.4); stable-prefix caching for the lore pipeline (§5.4). |
 
@@ -34,7 +34,7 @@ An entry's object class and baseline clearance determine which persona authors i
 
 ### 2.2 Stages
 
-Every stage reads one artifact and writes one artifact. Drafts live at `vault/entries/_WIP-SCP-XXX.md` — the `_` prefix keeps them out of the parser. Promotion is the rename that strips the prefix.
+Every stage reads one artifact and writes one artifact. Drafts live at `vault/entries/_WIP-SCP-41B-###.md` — the `_` prefix keeps them out of the parser. Promotion is the rename that strips the prefix.
 
 **Stage 0 — Commission (Orchestrator / "Site Records Directive").**
 Consults the entity roster and concept-key registry; emits a *work order*: item #, object class, clearance, cluster membership (`site_41b.md` §2), ≥2 concept-keys with their existing mutation-set orderings, xref targets, breach effect. The work order is the structured task decomposition; nothing downstream invents these fields.
@@ -144,7 +144,7 @@ Per the collaborator contract (`handoff.md` §7): agents state decisions for any
 
 ### 5.3 Few-shot is the style guide
 
-SCP-921 in `entry_template.md` is the canonical exemplar every authoring persona receives. Style drift is corrected by improving the exemplar, not by lengthening persona prompts.
+SCP-41B-003 in `entry_template.md` is the canonical exemplar every authoring persona receives. Style drift is corrected by improving the exemplar, not by lengthening persona prompts.
 
 ### 5.4 Model selection by role
 

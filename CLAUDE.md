@@ -1,6 +1,6 @@
 # CLAUDE.md — ⟦REDACTED⟧
 
-Operating context for Claude Code. Full specs live in `vault/docs/`. Read `vault/docs/handoff.md` for complete onboarding; this file is the compressed always-loaded version. Routing: mechanics → `design_document.md`, build → `technical_document.md`, authoring → `entry_template.md`, setting/canon → `site_41b.md`, agentic method → `agents.md`.
+Operating context for Claude Code. Full specs live in `vault/docs/`. Read `vault/docs/handoff.md` for complete onboarding; this file is the compressed always-loaded version. Routing: mechanics → `design_document.md`, build → `technical_document.md`, authoring → `entry_template.md`, setting/canon → `site_41b.md`, agentic method → `agents.md`, concept-keys/propagation graph → `concept_key_registry.md`, entity list/numbering → `entity_roster.md`, entity/self-file/endgame fork → `scp_x_bible.md`.
 
 ## Project
 Text/document game. Setting: **Site-41B**, a Foundation deep-records annex in a decommissioned Colorado mine, orphaned from its parent site — original canon in `vault/docs/site_41b.md`. The player is a low-clearance archivist on a decaying Foundation site OS; files are redacted by clearance tier. A deprecated OS "help utility" (SCP-X) — actually an informational entity mid-CK-class restructuring — offers to fill the redactions. Filling rewrites the record and propagates the change across cross-referenced files; rising divergence between record and contained reality drives toward a site-wide breach.
@@ -29,7 +29,7 @@ Then build out the layout in `vault/docs/technical_document.md` §9. Git is alre
 ## Corpus schema (full in technical_document.md §2)
 Anchor: `id`, `slot_type` (object|agent|location|outcome), `truth` (immutable), `redaction_level` 1–5, `concept` (shared key, optional), `mutations[]` (bounded), `exposure_weight`.
 File frontmatter: `item`, `object_class`, `site`, `clearance`, `anchors[]`, `xrefs[]`, `breach_effect`, `entity_self`.
-Body markup: `⟦anchor_id⟧` at each slot; `[[SCP-YYY]]` wikilink per xref.
+Body markup: `⟦anchor_id⟧` at each slot; `[[SCP-41B-YYY]]` wikilink per xref. Entities use site-local designations `SCP-41B-###` (roster + scheme in `entity_roster.md`); the SCP-X self-file is `SCP-41B-000`.
 
 Cross-file invariants (enforce as build-time errors in build-corpus.ts):
 - Exactly one file has `entity_self: true`.
