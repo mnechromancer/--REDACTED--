@@ -1,0 +1,44 @@
+/* Four-state slot grammar (design_document.md §5.8, technical_document.md §7).
+ * SlotSpan switches its appearance by `state` using these tokens. Only the
+ * redacted and inserted states are reachable before propagation (C6) and
+ * batched validation (C7) land; propagated/contradiction tokens are defined now
+ * so the grammar is complete and SlotSpan needs no later restyle. */
+
+:root {
+  /* 1. Redacted — untouched, unrevealed. Solid bar. */
+  --slot-redacted-bg: #1a1a1a;
+  --slot-redacted-fg: #1a1a1a;
+
+  /* 2. Player-inserted — a guess the player wrote here. Amber. */
+  --slot-inserted-fg: #e8a33d;
+  --slot-inserted-underline: #8a5a12;
+
+  /* 3. Propagated — changed because a linked anchor was edited elsewhere. Teal. */
+  --slot-propagated-fg: #3dd6c4;
+  --slot-propagated-underline: #186b62;
+
+  /* 4. Truth-contradiction — revealed truth conflicting with the overlay. Red diff. */
+  --slot-contradiction-fg: #e85d5d;
+  --slot-contradiction-guess-fg: #e8a33d;
+
+  /* Revealed truth that the player never guessed (coherent reveal). */
+  --slot-revealed-fg: #8ad0a0;
+}
+
+/* Propagated slots carry a subtle glitch flicker so a cross-file mutation reads
+ * as corruption, not a normal edit. The colour + dotted underline carry the
+ * distinction on their own; the animation is purely additive. */
+@keyframes slot-glitch {
+  0%, 92%, 100% { opacity: 1; transform: translateX(0); }
+  94% { opacity: 0.78; transform: translateX(0.4px); }
+  96% { opacity: 1; transform: translateX(-0.4px); }
+}
+
+/* Reduced-glitch / reduced-motion mode drops the animation but KEEPS every
+ * colour and strike-through distinction, so the four-state grammar stays legible
+ * without motion (design_document.md §5.8, §8). */
+@media (prefers-reduced-motion: reduce) {
+  .slot.propagated {
+    animation: none !important;
+  }
+}

@@ -105,7 +105,11 @@ A VS Code workflow still works identically; install the **Svelte for VS Code** (
 - **Process:** `planning/sprint_process.md` — the repeatable cycle (two tracks, phases, done-gates), applied to every sprint hereafter.
 - **Horizon:** `planning/roadmap.md` — epics→sprints, content-scaling order, the endgame sequencing constraint.
 
-Not scaffolded yet: repo root is `CLAUDE.md` + `vault/` only; Sprint 1 story C0 is the scaffold. Author entries via the §2 lore pipeline (`agents.md`), not by hand into the parser.
+**Code-track status (as of 2026-06-10):** scaffolded; the entire Sprint 1 **code track C0–C8 + C5t/C6t/C7t is implemented and verified** — 61 tests pass (`npm run test`), `npm run check` is clean, `vite build` is green. The engine is in: `scripts/build-corpus.ts` (parser + cross-file validators), `src/lib/corpus.ts` (schema), `src/lib/parseBody.ts` (runtime tokenizer reusing the build-time regexes), `src/lib/game.svelte.ts` (rune store: overlay, concept-keyed propagation, batched `raiseClearance`, the four-state `resolveSlot` ladder, exposure), and the components (`FileWindow`, `SlotSpan`, `HelpUtility`) + four-state CSS tokens. `src/App.svelte` is a slice harness wiring the loop on an inline fixture.
+
+Two deliberate deviations from the spec snippets, both settled with the collaborator — **do not revert:** (1) `resolveSlot` is a pure function, not `$derived.by` returned from a function (Svelte 5 forbids the latter; the branch *order* is verbatim and callers wrap it in `$derived`); (2) exposure is recomputed from the overlay (`recomputeExposure`), not `+=` accumulated, because §4's *stated* invariant is "no accumulated drift" and the literal `+=` pseudocode drifts on re-insertion. C6's `randomize_propagation` breach path was intentionally not stubbed (breaches are Sprint 2). `tsconfig.app.json` gained `allowImportingTsExtensions` to match `tsconfig.scripts.json`.
+
+**Still parked / what's next:** `vault/entries/` is intentionally empty — the trio (lore stories L1–L3) is a deliberate **model-switch** track (swap to the strongest model for prose + mutation sets; `agents.md` §5.4). So `npm run build:corpus` failing the entity-self rule is *correct*, not a bug. Remaining Sprint 1 work: **CR** (`/code-review`; invariant violations are merge-blockers), **CV** (play the M5 loop end-to-end), and **LV** (verify the authored trio forms the three propagation edges, after L1–L3 land). Author entries via the §2 lore pipeline, not by hand into the parser.
 
 ## 7. Working with this collaborator
 
@@ -119,6 +123,6 @@ The five "recommended additional documents" this section used to track are now b
 - **Entity Roster / Series Bible** → `entity_roster.md` (done — 25 entities, `SCP-41B-###`, coverage/tier audits).
 - **SCP-X Bible** → `scp_x_bible.md` (done — entity thread, self-file, `thread_coherence` endgame fork).
 - **Vertical Slice Definition** → `planning/sprint_01_vertical_slice.md` (done — the trio + M1–M5 with a played definition of done).
-- **Four-State Visual Grammar Spec** → still open; scheduled before the endgame's two-ending presentation (see `planning/roadmap.md`). Pull in the frontend-design skill when building it; the four states are specified functionally in `design_document.md` §5.8 and `technical_document.md` §7.
+- **Four-State Visual Grammar Spec** → **implemented** in Sprint 1 (C8): `src/styles/tokens.css` (the four custom-property states + a reduced-motion path that keeps colour/strike distinctions) and `SlotSpan.svelte` (state switching), per `design_document.md` §5.8 and `technical_document.md` §7. A richer presentation pass before the endgame's two-ending screen remains on the roadmap; the functional grammar is done.
 
 New planning work is tracked in `planning/` (roadmap + sprints), not here. This section stays a one-glance status; detail lives in those docs.
