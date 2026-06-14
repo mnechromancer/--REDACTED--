@@ -117,7 +117,7 @@ The old design gave five concept-keys (`concordance-program`, `the-transfer`, `a
 
 ## 7. Open items / handoff
 
-- [ ] **PENDING [R§6.2] — AMBER's manual unredaction tooling.** Quippy's whole meaning is "the easy version of *what AMBER does honestly*," so Quippy cannot be finished as a design until AMBER's manual tooling is specced (design doc §5.3). They are two faces of one verb. Human decision; gates the build.
+- [x] ~~**PENDING [R§6.2] — AMBER's manual unredaction tooling.**~~ **RESOLVED (2026-06-13): the citation-cost gate** (design doc §5.3, technical_document.md §7.5). To commit a value in AMBER the player cites the corroborating co-carrier(s); AMBER adjudicates. Quippy is now fully legible as its inverse: Quippy *removes* the citation cost — one click, no reading, no argument — and charges exposure instead. The two faces of the one verb are both specced; build steps in `planning/handoff_amber_build.md`.
 - [ ] **PENDING [R§6.3 enforcement] — the no-Quippy ending's exact gate** (hard / tolerance / spectrum; §5.3). Tracking via provenance is settled; the threshold is not.
 - [ ] **Author `SCP-41B-000` (Quippy's self-file) last.** Its role changed (§5.4) but it is still the redacted center and still threads the five keys narratively. Its frontmatter and anchors are a content task; coordinate mutation-set ordering with `concept_key_registry.md`.
 - [ ] **Quippy voice pass** (§2.2, §3, §4): the four exposure-band tones + the tells are the entity's entire characterization. Write them against the casting rule (Marsh-calm, never monologue) when building the Quippy GUI component (`technical_document.md` §7, `QuippyPanel`).

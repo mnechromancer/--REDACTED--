@@ -85,22 +85,24 @@ The loop must become **more visually interactive and more immersive**:
 
 ---
 
-## 6. Open questions (human to resolve; handoffs should flag, not assume)
+## 6. Resolutions (all resolved by the human — 2026-06-13)
 
-1. **Naming:** Is "the Concordance" now AMBER's *honest* manual-unredaction toolset, or is it Quippy's mask (the old meaning)? The split forces a choice. Recommend: "Concordance" = AMBER's legitimate cross-reference tool; Quippy is separate and *imitates* it. Confirm.
-2. **What exactly are AMBER's manual unredaction tools?** §1 lists the intent (cross-ref lookup, concordance-by-hand, citation tooling) but the concrete mechanics are unspecced. This is the single biggest design gap and gates the code work.
-3. **How is "without Quippy" tracked and enforced?** Per-unredaction provenance flag (`source: 'amber' | 'quippy'`)? A global "Quippy reliance" counter feeding the ending? (Recommend a per-overlay-entry provenance field; see janitor handoff.)
-4. **Exposure model under the split:** does AMBER manual unredaction cost *zero* exposure (so a perfect no-Quippy run never breaches) and Quippy cost the exposure? That cleanly realizes the curve. Confirm.
-5. **Rocky Mountains location** — keep the existing Colorado molybdenum-mine canon or relocate?
-6. **CLI scope for the prototype** — full keyboard-driven CLI now, or CLI file-rendering with the existing interaction model first and CLI traversal next? (Affects how much of the current Svelte UI is rebuilt vs. restyled.)
+All six questions are answered. **The gate is lifted; the mechanic build can proceed** (see §7 and `planning/handoff_amber_build.md`).
+
+1. **Naming — RESOLVED.** "The **Concordance**" = AMBER's *honest* cross-reference toolset. Quippy is separate and *imitates* it. (Recommendation adopted.)
+2. **AMBER's manual unredaction tools — RESOLVED: the citation-cost gate.** Unredaction in AMBER is an evidentiary commit: to commit candidate *k* at a slot, the player must **cite the corroborating cross-reference(s)** — the co-carrier(s) of the slot's concept that already show the index-*k* reading (revealed by clearance, or solved earlier). The engine checks the citation: a co-carrier confirming index *k* accepts the commit; a wrong or unsupported citation is rejected. Built directly on the existing `conceptClues(ref)` surface (each clue is a candidate citation). The player actively *builds the argument* (picks the sources), AMBER adjudicates. This is the "Quality-Approval, not a dropdown" verb. *(Detail: design_document.md §5.3, technical_document.md §7.5; build steps in `handoff_amber_build.md`.)*
+3. **Tracking/enforcement — RESOLVED.** Per-overlay-entry provenance field `via?: 'amber' | 'quippy'` (recommendation adopted; already the shared schema term). Enforcement gate (hard / tolerance / spectrum) for the *ending* remains a tuning call — start hard-gate (scp_x_bible.md §5.3).
+4. **Exposure model — RESOLVED.** AMBER manual unredaction costs **zero** exposure; **Quippy** carries the full exposure cost. A perfect no-Quippy run never breaches. (Recommendation adopted.)
+5. **Location — RESOLVED.** Keep the existing **Colorado Front Range molybdenum-mine** canon (recommendation adopted).
+6. **CLI scope — RESOLVED: full CLI now.** Build the real keyboard-driven AMBER terminal this pass — command input, hotkey file/redacted-span traversal, AMBER's tooling (incl. the §6.2 citation gate) as commands — with the Quippy overlay as a distinct GUI mode. The current GUI interaction layer is rebuilt, not merely restyled. *(Architecture: technical_document.md §7; build steps in `handoff_amber_build.md`.)*
 
 ---
 
-## 7. Suggested sequencing (not binding)
+## 7. Sequencing — gate lifted (2026-06-13)
 
-1. Human resolves §6 open questions (esp. #2 AMBER tooling and #4 exposure model — they gate everything).
-2. Docs reviser rewrites `design_document.md`, `scp_x_bible.md`, `site_41b.md §5`, `technical_document.md §7` to the new frame (see docs handoff).
-3. Janitor does the **non-destructive prep**: schema additions (provenance), de-risking the obsolete fork code, CLI-ready component boundaries (see janitor handoff). No mechanic rewrite until the design questions are answered.
-4. Then: AMBER manual-unredaction tooling, Quippy GUI layer, the no-Quippy ending — net-new, specced after §6.
+1. ~~Human resolves §6~~ — **done** (all six, above).
+2. ~~Docs reviser rewrites the specs to the new frame~~ — **done** (committed `docs/amber-quippy-reframe`; report in `handoff_docs_reviser.md`).
+3. Janitor non-destructive prep (provenance field/param, parser comment-bug fix, `Counter` deletion, quarantine the obsolete win model, CLI-ready component seams) — **still valid and now also the on-ramp to the build.** Do this first if not already landed.
+4. **Mechanic build — now unblocked.** AMBER full CLI + the citation-cost unredaction verb, the Quippy GUI overlay (exposure-bearing), and the no-Quippy ending. Specced in `design_document.md` §5/§6, `technical_document.md` §7/§10, `scp_x_bible.md` §5, and broken into steps in **`planning/handoff_amber_build.md`**.
 
-**Nothing in the two handoffs should be executed before §6.2 and §6.4 are answered** — they determine the shape of the central mechanic. The handoffs are written so the *prep and flagging* can happen now and the *mechanic build* is clearly gated.
+**The §6.2/§6.4 gate that blocked the two prior handoffs is lifted.** The prep items in the janitor handoff and the PENDINGs in the reviser handoff that depended on §6.2/§6.4/§6.6 are now answered; `handoff_amber_build.md` is the post-§6 build handoff those docs pointed forward to.
