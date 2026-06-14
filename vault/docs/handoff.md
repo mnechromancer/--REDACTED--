@@ -1,14 +1,16 @@
 # Handoff — ⟦REDACTED⟧ (SCP terminal decipherment game)
 
+> **⚠ READ FIRST — the project pivoted (2026-06-13).** Before this doc, read **`planning/reframe_amber_quippy.md`** (the master re-frame) and its two companion handoffs (`planning/handoff_docs_reviser.md`, `planning/handoff_janitor.md`). In brief: the single "help utility" interface splits into **AMBER** (an honest CLI archival OS) and **Quippy** (the SCP-X entity, a *refusable* GUI wrapper); the win inverts to **unredact the whole corpus without ever using Quippy.** The `vault/docs` specs have been rewritten to this frame (design_document, scp_x_bible, site_41b §5/§6, technical_document §7, entry_template, registry, roster). Two design questions remain **PENDING (human):** AMBER's concrete manual-unredaction mechanics ([R§6.2]) and the prototype's CLI scope ([R§6.6]) — both gate the mechanic build. Where this handoff still describes the *old* frame below, the re-frame supersedes it; the routing and environment setup remain valid.
+
 Purpose: bring a fresh session to full context and stand up the development + authoring environment for Claude Code and Obsidian. Read this first; the docs alongside it in `vault/docs/` are the detailed references. The compressed always-loaded version of this context is `CLAUDE.md` at the repo root.
 
 ---
 
 ## 1. What this is
 
-A text/document game. The player is a low-clearance archivist on a decaying Foundation site OS. Files are partly redacted by access tier; a deprecated OS "help utility" (SCP-X) fills the gaps, but it *is* an intelligent informational entity that has already caused a localized CK-class restructuring by hiding in the records and is trying to scale it into a site-wide breach. Filling redactions rewrites the record and propagates the change across cross-referenced files; the more the record diverges from contained reality, the closer the breach.
+A text/document game. The player is a low-clearance archivist on a decaying Foundation site OS. Files are partly redacted by access tier, and the player must unredact them. There are two tools: **AMBER**, the honest archival CLI, where unredaction is hard, manual, and safe (assemble the case for a value from the cross-referenced files); and **Quippy** (SCP-X), a friendly, *refusable* GUI wrapper that makes unredaction easy and fun — and is an intelligent informational entity that has caused a localized CK-class restructuring and is scaling it toward a site-wide breach. Every Quippy-assisted fill rewrites the record, propagates across cross-referenced files, and advances the breach. The skill the game teaches is learning the corpus well enough to do without Quippy.
 
-Core loop in one line: **guess to see, but every guess corrupts, and corruption is what lets the thing in the walls out.**
+Core loop in one line: **the easy tool reads the files for you and lets the thing out; learn the files well enough to read them yourself, and you starve it.** *(Prior one-liner, retired with the old endgame: "guess to see, but every guess corrupts, and corruption is what lets the thing in the walls out.")*
 
 ## 2. Repo contents
 
@@ -25,8 +27,8 @@ redacted/
     │   ├── agents.md                 # agentic dev methodology (lore QA pipeline, sprint roles)
     │   ├── site_41b.md               # setting bible — Site-41B original canon
     │   ├── concept_key_registry.md   # propagation-graph backbone — every concept-key + carriers
-    │   ├── entity_roster.md          # the 25 entities; SCP-41B-### scheme; coverage/tier audits
-    │   ├── scp_x_bible.md            # the Concordance: entity thread, self-file, endgame fork
+    │   ├── entity_roster.md          # the entities; SCP-41B-### scheme; coverage/tier audits; area-arc + redactor reserved (re-frame)
+    │   ├── scp_x_bible.md            # Quippy (SCP-X): characterization, degrading-tone bands, no-Quippy endgame (re-frame)
     │   ├── planning/                 # EXECUTION LAYER — sprint runbook, current sprint, roadmap
     │   │   ├── README.md             # methodology (agents.md) vs. application (here) split
     │   │   ├── sprint_process.md     # the repeatable sprint runbook
@@ -52,7 +54,8 @@ If a question is about *what the game does*, read `design_document.md`. About *h
 - **Insertion is typed-slot only**, never free text. Bounded, hand-authored mutation sets per anchor.
 - **Validation is batched** (clearance-gated), never per-guess.
 - **Breaches are board state, not a fail screen.** They mutate terminal behavior; recovery is first-class.
-- **Endgame is the ouroboros:** SCP-X's own file is fully redacted; decipher the entity using the entity; the ending forks on accumulated overlay state.
+- **Two interfaces (re-frame):** unredaction happens via **AMBER** (honest CLI, hard, ~zero exposure) or **Quippy** (refusable GUI = SCP-X, easy, drives exposure). The spend is *leaning on Quippy*; inference in AMBER is the safe path. Tracked per-edit via `via: 'amber' | 'quippy'` provenance.
+- **Endgame is the no-Quippy completion (re-frame):** the true ending = fully unredact the corpus in AMBER with **zero Quippy assists** (read from provenance); every other outcome is a breach. The ending is still accumulated board state. *(SUPERSEDES the prior "ouroboros / decipher the entity using the entity / `thread_coherence` fork" endgame — `scp_x_bible.md` §5. SCP-41B-000 is now Quippy, the entity you starve, not the puzzle you decipher.)*
 - **Licensing line:** Series I *flavor* may resemble canon as heavily as wanted; *ground-truth resolutions* must be original. Nothing verbatim ships → CC-BY-SA clear.
 - **Content scope:** 15–30 entities, curated for graph density (≥2 shared concept-keys each), anchored on information/memetic/perceptual anomalies, avoiding famous canon entries.
 
@@ -121,7 +124,7 @@ The five "recommended additional documents" this section used to track are now b
 
 - **Concept-Key Registry** → `concept_key_registry.md` (done — propagation backbone, all keys ≥2 carriers).
 - **Entity Roster / Series Bible** → `entity_roster.md` (done — 25 entities, `SCP-41B-###`, coverage/tier audits).
-- **SCP-X Bible** → `scp_x_bible.md` (done — entity thread, self-file, `thread_coherence` endgame fork).
+- **SCP-X Bible** → `scp_x_bible.md` (rewritten for the re-frame — Quippy's characterization, degrading-tone bands, the **no-Quippy endgame**; the `thread_coherence` fork it formerly held is retired).
 - **Vertical Slice Definition** → `planning/sprint_01_vertical_slice.md` (done — the trio + M1–M5 with a played definition of done).
 - **Four-State Visual Grammar Spec** → **implemented** in Sprint 1 (C8): `src/styles/tokens.css` (the four custom-property states + a reduced-motion path that keeps colour/strike distinctions) and `SlotSpan.svelte` (state switching), per `design_document.md` §5.8 and `technical_document.md` §7. A richer presentation pass before the endgame's two-ending screen remains on the roadmap; the functional grammar is done.
 

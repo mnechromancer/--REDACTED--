@@ -1,5 +1,7 @@
 # Planning
 
+> **⚠ Pivot (2026-06-13): the project re-framed.** Read **`reframe_amber_quippy.md`** (the master doc) and its two companion handoffs (`handoff_docs_reviser.md`, `handoff_janitor.md`) first. The reference specs in `vault/docs/` have been rewritten to the AMBER/Quippy split + no-Quippy endgame. **Sprint 1 (`sprint_01_vertical_slice.md`) and `handoff_lore_trio.md` completed under the prior design and stand as history — do not rewrite them**; their code/lore core survives the re-frame (the trio may want expansion to the longer-file scale, [R§3]). Future sprints plan to the re-frame.
+
 The **execution layer** of the project. Living, forward-looking artifacts: the sprint runbook, the current sprint's stories and status, and the roadmap. Distinct from the reference docs in `vault/docs/`, which are stable specs.
 
 ## The split — methodology vs. application

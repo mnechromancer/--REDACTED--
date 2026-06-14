@@ -1,5 +1,7 @@
 # Concept-Key Registry
 
+> **Re-frame note (2026-06-13):** Light update per `planning/reframe_amber_quippy.md` — the propagation graph **survives** ([R§5]); this is "extend, don't overturn." Two changes: (1) the **five entity-thread keys** (`concordance-program`, `the-transfer`, `acquisition-lot`, `record-reality-coupling`, `halloran-marginalia`) keep their *narrative* role but **lose their mechanical endgame role** — the old `thread_coherence` fork they fed is retired; the win now reads per-edit provenance, not key coherence (`scp_x_bible.md` §5). **Do not rebuild the fork around these keys.** Their escalating mutation indices (mundane index-0 → entity's re-shelving index-2) still drive characterization and propagation, and Quippy still lobbies for the higher readings. (2) New **placeholder keys** for the area arc and the redactor thread are seeded in §3b — index meanings TBD, coined here first per the registry's own rule.
+
 Living index of every `concept:` key in the corpus. **This is the propagation graph's backbone.** When two anchors share a concept-key they must have equal-length, index-aligned mutation sets — this document is where you enforce that before writing begins. Authoring rule: coin a key here first; never coin it inside an entry and register it later.
 
 Maintainability: once ≥8 entries exist, replace the manual tables with a Dataview query that groups `anchors` by `concept` and lists carriers. Until then, edit this file alongside each new entry.
@@ -17,6 +19,8 @@ Maintainability: once ≥8 entries exist, replace the manual tables with a Datav
 | **Tier band** | Approximate clearance range of carrying anchors |
 | **Orphan risk** | Flagged if only one file currently carries this key (propagation dead end) |
 
+A `✎` after a carrier ref marks it **authored** (an entry exists in `vault/entries/`); unmarked carriers are still *planned* per `entity_roster.md`. The Sprint 1 trio (`SCP-41B-001/002/003`) is authored.
+
 Keys are grouped by origin: §1 named in `site_41b.md` §2 seams (the graph's seed strands); §2 from the worked example; §3 promoted from seed once the roster assigned carriers. All carriers are *planned* in `entity_roster.md` — they become *authored* as entries land in `vault/entries/`. The §5 checklist keeps this file in sync as that happens.
 
 ---
@@ -27,7 +31,7 @@ Keys are grouped by origin: §1 named in `site_41b.md` §2 seams (the graph's se
 | | |
 |---|---|
 | Clusters | 2.1 (Misfiled), 2.2 (Quiet Departments), 2.5 (Drift) — the connective strand that pins Act I to Act IV |
-| Carriers | `SCP-41B-001`, `SCP-41B-002`, `SCP-41B-009`, `SCP-41B-022`, `SCP-41B-000` (×5) |
+| Carriers | `SCP-41B-001#a2` ✎, `SCP-41B-002#a1` ✎, `SCP-41B-009`, `SCP-41B-022`, `SCP-41B-000` (×5) |
 | Mutation index | 0 = the 1962 lot as administrative intake event; 1 = as anomalous import from an external record set; 2 = as the first successful re-indexing by the Concordance-entity |
 | Tier band | 1–2 (surface reading), 5 (true reading) — same key, two clearance-dependent meanings |
 | Orphan risk | No (5 carriers) |
@@ -40,7 +44,7 @@ Keys are grouped by origin: §1 named in `site_41b.md` §2 seams (the graph's se
 | | |
 |---|---|
 | Clusters | 2.1 (Misfiled), 2.4 (Retention Methods), 2.5 (Drift) |
-| Carriers | `SCP-41B-001`, `SCP-41B-002`, `SCP-41B-004`, `SCP-41B-016`, `SCP-41B-023` (×5) |
+| Carriers | `SCP-41B-001#a3` ✎, `SCP-41B-002#a2` ✎, `SCP-41B-004`, `SCP-41B-016`, `SCP-41B-023` (×5) |
 | Mutation index | 0 = regular annual audit finds no discrepancy; 1 = audit finds consistent directional drift in description; 2 = audit log itself exhibits drift between filing copies |
 | Tier band | 1–2 |
 | Orphan risk | No (5 carriers) |
@@ -172,7 +176,7 @@ Keys are grouped by origin: §1 named in `site_41b.md` §2 seams (the graph's se
 | | |
 |---|---|
 | Clusters | 2.1 (Misfiled) — communication/connection anomalies |
-| Carriers | `SCP-41B-003#a1`, `SCP-41B-001` (×2) |
+| Carriers | `SCP-41B-003#a1` ✎, `SCP-41B-001#a1` ✎ (×2) |
 | Mutation index | 0 = communication device with no external wiring; 1 = device completing connections with no traceable line; 2 = device completing connections to the party who cannot be reached |
 | Tier band | 2–3 |
 | Orphan risk | No (2 carriers) |
@@ -185,7 +189,7 @@ Keys are grouped by origin: §1 named in `site_41b.md` §2 seams (the graph's se
 | | |
 |---|---|
 | Clusters | 2.1 (Misfiled), 2.3 (Negative Stacks) |
-| Carriers | `SCP-41B-003#a2`, `SCP-41B-004`, `SCP-41B-014` (×3) |
+| Carriers | `SCP-41B-003#a2` ✎, `SCP-41B-004`, `SCP-41B-014` (×3) |
 | Mutation index | 0 = subject forgets the name of the person they intended to reach; 1 = subject connected to a conversation from the prior day; 2 = subject hears their own voice answering |
 | Tier band | 3–4 |
 | Orphan risk | No (3 carriers — resolved; SCP-41B-014 is the Wet Stacks carrier) |
@@ -285,7 +289,53 @@ These seven were anticipated by the setting and have now had carriers assigned b
 | Tier band | 5 (cosmic — Tier-5 only) |
 | Orphan risk | No (4 carriers) |
 | Sibling keys | `misprint-survey`, `sze-experiment`, `concordance-program` |
-| Notes | The §6 cosmology made explicit. **Tier-5 only** — never expose an index-2 reading below clearance 5; the cosmology must stay scarce and earned. This key, with `concordance-program` and `the-transfer`, is the intersection the SCP-41B-000 endgame fork reads (see roster open items). |
+| Notes | The §6 cosmology made explicit. **Tier-5 only** — never expose an index-2 reading below clearance 5; the cosmology must stay scarce and earned. This key, with `concordance-program` and `the-transfer`, is one of the five entity-thread keys. **Re-frame:** its *narrative* role (the cosmology seam, Quippy's lobbying surface) survives; its old *mechanical* endgame role (the retired `thread_coherence` fork) does not — the win reads provenance now (`scp_x_bible.md` §5). |
+
+---
+
+## 3b. Placeholder keys — area arc & redactor thread (re-frame [R§4]; index meanings TBD)
+
+Seeded so authors coin them here first (the registry's own rule) before the area-arc and redactor entities are authored. **No carriers yet, no locked mutation indices** — these are reservations, not finished keys. When the area-arc / redactor entities are authored (`entity_roster.md` reserves the slots), fill in carriers and index meanings and promote them into §1/§3 above. Do not author entries against these until the indices are set.
+
+**Area arc** (`site_41b.md` §6a — the Rocky Mountain surroundings of the mine):
+
+### `the-access-road`  *(placeholder)*
+| | |
+|---|---|
+| Clusters | Area arc (the adit & the road) ↔ likely 2.5 Drift (record/territory) |
+| Carriers | *TBD — reserve ≥2* |
+| Mutation index | *TBD.* Direction: 0 = a mundane access road with disputed mileage; 1 = a road present on some map editions and not others; 2 = a road that exists only while being driven. (Escalation parallels `misprint-survey`; set on authoring.) |
+| Tier band | *TBD (likely 2–4, surface→cosmic)* |
+| Notes | The site's umbilical to the outside; an early, legible record/territory drift before the cosmic Drift. A natural redactor-seeding surface (redacted surface records suggest something obscuring the site's link to the world). |
+
+### `the-claim`  *(placeholder)*
+| | |
+|---|---|
+| Clusters | Area arc (claim/deed/acquisition) ↔ 2.1/2.5 (`acquisition-lot`, `the-transfer` siblings) |
+| Carriers | *TBD — reserve ≥2* |
+| Mutation index | *TBD.* Direction: 0 = mineral claim & deed history as ordinary acquisition; 1 = an acquisition whose paperwork predates the office that filed it; 2 = a deed that defines what the land is *allowed to be* (record/reality at ground level). |
+| Tier band | *TBD* |
+| Notes | The legal-records layer of the area arc; ground-level carrier of the same energy as `acquisition-lot`/`the-transfer`. Keep distinct from those (don't merge) so the *area* reads as its own thread. |
+
+### `the-watershed`  *(placeholder)*
+| | |
+|---|---|
+| Clusters | Area arc (weather/water) ↔ 2.3 Negative Stacks (`the-flood-of-71` sibling) |
+| Carriers | *TBD — reserve ≥2* |
+| Mutation index | *TBD.* Direction: 0 = ordinary snowpack/runoff feeding the lowest gallery; 1 = water that arrives ahead of the weather that should cause it; 2 = the mountain's water finding the record before the record finds the ground. |
+| Tier band | *TBD* |
+| Notes | Grounds the Wet Stacks (`SCP-41B-012`) in real geography and gives the site a climate. Source of the flood of '71. |
+
+**Redactor thread** (`site_41b.md` §3.1 — the second entity that *made* the redactions; distinct from Quippy):
+
+### `the-redactor`  *(placeholder — reserved, do NOT author yet)*
+| | |
+|---|---|
+| Clusters | *TBD — likely seeded across the area arc & 2.4 Retention (procedure-as-immune-response reading)* |
+| Carriers | *TBD — none yet; prototype seeds only* |
+| Mutation index | *TBD and deliberately open* — the redactor's nature/motive is unwritten (`site_41b.md` §3.1 lists three candidate readings: protector-of-the-record, indifferent third party, or the site's own escalated immune response). Index meanings must wait on that decision. |
+| Tier band | *TBD (high — a late reveal)* |
+| Notes | **Reserved, not active.** The perpetrator behind the redactions, revealed late, NOT Quippy. Quippy *fills* redactions; the redactor *made* them. Keep this key dormant until the human/lore-author resolves the redactor's nature; it exists here only so no one coins a conflicting key for the thread later. |
 
 ---
 

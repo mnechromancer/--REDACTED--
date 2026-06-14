@@ -1,5 +1,7 @@
 # Sprint 1 — Vertical Slice
 
+> **⚠ Historical (completed under the prior design).** Sprint 1 ran before the 2026-06-13 re-frame (`reframe_amber_quippy.md`); **kept as history, not rewritten.** Its code core (pipeline, viewer, insertion+overlay, propagation, batched validation, four-state grammar) is mechanic-stable and survives. The "hover a redaction to see candidates" interaction in the goal below is the *old* single-panel model — under the re-frame that splits into AMBER's manual lookup and the refusable Quippy panel (`technical_document.md` §7). Read this for what was built; read the re-frame for where it's going.
+
 **Goal (one sentence):** a running terminal where you open the three trio entries, hover a redaction to see candidates, insert a guess, and watch it propagate across the other two files with a visible corruption indicator — the core loop felt on three entities.
 
 **Milestones:** `technical_document.md` §10 M1–M5 (schema+parser, viewer, insertion+overlay, propagation, exposure+batched validation).

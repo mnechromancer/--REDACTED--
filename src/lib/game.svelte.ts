@@ -1,3 +1,10 @@
+// ⚠ RE-FRAME (vault/docs/planning/reframe_amber_quippy.md): the win/loss model
+//   here (sessionResult / BREACH_THRESHOLD / CONTAINMENT_TARGET / STRUCK_PENALTY)
+//   is OBSOLETE — the new win is "unredact all WITHOUT Quippy" (R§2). insert()
+//   gains a `via: amber|quippy` provenance (R§6.3); exposure drivers change
+//   (R§6.4). Quarantine, don't delete, until R§6 is answered. See
+//   planning/handoff_janitor.md → "game.svelte.ts".
+//
 // The single rune-based game store: immutable corpus + mutable, propagating
 // overlay, with the one display function derived over both. Mirrors
 // technical_document.md §3. The keystone invariant (design_document.md §3):
@@ -9,12 +16,18 @@ import type { Corpus, OverlayEntry, Anchor } from './corpus.ts';
 // ── State ──────────────────────────────────────────────────────────────
 // `corpus` is immutable after load; everything else is the mutable board state.
 
+import { SvelteSet } from 'svelte/reactivity';
+
 export const corpus = $state<Corpus>({});            // immutable after load
 export const overlay = $state<Record<string, OverlayEntry>>({}); // mutable, propagating
 export const clearance = $state({ tier: 1 as 1 | 2 | 3 | 4 | 5 });
 export const exposure = $state({ value: 0 });
-export const revealedTruth = $state<Set<string>>(new Set()); // anchor_refs whose truth has leaked
-export const breaches = $state<Set<string>>(new Set());      // breached item ids
+// SvelteSet (not a plain Set in $state): mutation via .add()/.has() must be
+// reactive, so derivations and effects that read these recompute when an audit
+// reveals a truth or a breach fires. A plain Set in $state only reacts to whole
+// reassignment, which silently broke the audit→progression advance.
+export const revealedTruth = new SvelteSet<string>(); // anchor_refs whose truth has leaked
+export const breaches = new SvelteSet<string>();      // breached item ids
 
 /** Replace the corpus in place (the store is a module singleton). Call once at load. */
 export function loadCorpus(data: Corpus): void {
@@ -58,6 +71,75 @@ export function crossMentions(ref: string): string[] {
       const other = makeRef(file.item, a.id);
       if (other !== ref && a.concept === anchor.concept) out.push(other);
     }
+  }
+  return out;
+}
+
+// ── Concept clues (the deduction surface, §4.2 / §5.3) ─────────────────
+// The actual inference material: for a slot, the sentence in each OTHER file
+// where the same concept appears, with that mention's slot shown as a blank or
+// (if the player has filled/revealed it) its current value. Reading these is how
+// the player triangulates what THIS slot should hold — a known value at one
+// carrier constrains the index of every aligned carrier. Without this the guess
+// is blind; with it, the cross-references become clues to solve from.
+
+export interface ConceptClue {
+  ref: string;      // the other anchor's ref
+  item: string;     // its file id
+  sentence: string; // the sentence around its token, with the slot marked
+  state: DisplayedSlot['state']; // how that slot currently reads (redacted/inserted/…)
+  value?: string;   // the current displayed value at that slot, if any
+}
+
+/** Extract the sentence containing `⟦id⟧` in `body`, with the token replaced by a marker. */
+function sentenceAround(body: string, anchorId: string, marker: string): string | undefined {
+  const token = `⟦${anchorId}⟧`;
+  const idx = body.indexOf(token);
+  if (idx < 0) return undefined;
+  // Sentence bounds: nearest .?! or paragraph break on each side.
+  let start = 0;
+  for (let i = idx; i >= 0; i--) {
+    if (body[i] === '\n' && body[i - 1] === '\n') { start = i + 1; break; }
+    if ('.?!'.includes(body[i]) && i < idx) { start = i + 1; break; }
+  }
+  let end = body.length;
+  for (let i = idx + token.length; i < body.length; i++) {
+    if ('.?!'.includes(body[i])) { end = i + 1; break; }
+    if (body[i] === '\n' && body[i + 1] === '\n') { end = i; break; }
+  }
+  return body
+    .slice(start, end)
+    .replace(token, marker)
+    .replace(/⟦[^⟧]+⟧/g, '▭') // other tokens in the same sentence → generic blanks
+    .replace(/\[\[([^\]]+)\]\]/g, '$1') // unwrap wikilinks
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * Clues for a slot: each other carrier of its concept, with the sentence around
+ * its mention and how that slot currently reads. The marker shows the other
+ * slot's value when known (filled or revealed) — that's the constraint the player
+ * reasons from — or a blank when it too is unrestored.
+ */
+export function conceptClues(ref: string): ConceptClue[] {
+  const out: ConceptClue[] = [];
+  for (const other of crossMentions(ref)) {
+    const { item, anchorId } = splitRef(other);
+    const file = corpus[item];
+    if (!file) continue;
+    const slot = resolveSlot(other);
+    const marker =
+      slot.state === 'redacted' ? '▭ (also unrestored)' : `「${slot.text}」`;
+    const sentence = sentenceAround(file.body, anchorId, marker);
+    if (!sentence) continue;
+    out.push({
+      ref: other,
+      item,
+      sentence,
+      state: slot.state,
+      value: slot.state === 'redacted' ? undefined : slot.text,
+    });
   }
   return out;
 }
@@ -128,7 +210,19 @@ function alreadyInserted(ref: string, value: string): boolean {
   return o?.source === 'inserted' && o.value === value;
 }
 
-export function insert(ref: string, value: string): void {
+/**
+ * Insert a candidate at `ref` and propagate it to the index-aligned slot of
+ * every co-carrier of its concept. `canPropagateTo`, when given, gates which
+ * target items may receive the ripple — the onboarding uses it to keep
+ * propagation inside the files the player has actually unlocked, so an edit never
+ * ripples to a record that isn't on screen yet. Omitted ⇒ propagate to all
+ * carriers (normal play). Returns the refs propagated to.
+ */
+export function insert(
+  ref: string,
+  value: string,
+  canPropagateTo?: (item: string) => boolean,
+): string[] {
   // Reject free text: only authored candidates may enter the overlay (§5.4,
   // CLAUDE.md invariant 3). The parser/UI maps near-misses to a candidate before
   // calling insert; by the time we are here, `value` must be in the set.
@@ -137,7 +231,7 @@ export function insert(ref: string, value: string): void {
     throw new Error(`insert: "${value}" is not an authored candidate for ${ref}`);
   }
 
-  if (alreadyInserted(ref, value)) return; // idempotent re-insert: no recompute needed
+  if (alreadyInserted(ref, value)) return []; // idempotent re-insert: no recompute, no new ripples
 
   // 1. Write the inserted value.
   overlay[ref] = { anchor_ref: ref, value, source: 'inserted' };
@@ -153,9 +247,13 @@ export function insert(ref: string, value: string): void {
   //    inverting provenance. Skipping inserted targets keeps each player edit
   //    player-owned and makes editing one carrier of a 3+ slot concept leave
   //    its independently-set peers intact.
+  //    Returns the refs actually propagated to, so the UI can log the ripple
+  //    without this module depending on the presentation store.
+  const propagatedTo: string[] = [];
   if (anchor.concept) {
     for (const targetRef of crossMentions(ref)) {
       if (overlay[targetRef]?.source === 'inserted') continue; // player-owned: never clobber
+      if (canPropagateTo && !canPropagateTo(splitRef(targetRef).item)) continue; // not yet unlocked
       const target = anchorOf(targetRef);
       const mutation = mapMutation(ref, target);
       if (mutation === undefined) continue; // unmappable index: skip, never guess
@@ -165,6 +263,7 @@ export function insert(ref: string, value: string): void {
         source: 'propagated',
         caused_by: ref,
       };
+      propagatedTo.push(targetRef);
     }
   }
 
@@ -173,6 +272,8 @@ export function insert(ref: string, value: string): void {
   //    guarantee made structural: re-inserting or changing a value can only
   //    move exposure to whatever the current overlay implies, never ratchet it.
   recomputeExposure();
+
+  return propagatedTo;
 }
 
 // ── Batched validation (C7, §5) ────────────────────────────────────────
@@ -184,11 +285,17 @@ export function insert(ref: string, value: string): void {
 // clearance reaches 4 — reaching that tier is the legitimate reveal, not a leak.
 
 /**
- * Raise clearance to `toTier` and reveal the batch of truths it unlocks: every
- * anchor whose redaction_level is now within reach and whose truth has not yet
- * leaked. For each newly-revealed slot that the player has already guessed, flag
- * whether that guess contradicts the truth (surfaces as 'truth-contradiction').
- * Lowering or holding the tier reveals nothing new. Returns the refs revealed.
+ * Raise clearance to `toTier` and reconcile the batch it unlocks. Per the chosen
+ * reading of CLAUDE.md invariant #4 — an audit "confirms inserted guesses; it
+ * never volunteers an untouched slot's value" — the batch is every anchor that
+ * is (a) now within clearance reach, (b) not yet reconciled, AND (c) something
+ * the player has actually filled (an overlay entry exists). Untouched slots are
+ * never revealed by clearance alone: they stay redacted and fillable at any tier,
+ * so the player must guess a slot to ever see its truth ("guess to see"). This is
+ * what lets the staged onboarding unlock a later file without its slots being
+ * pre-revealed by a clearance the player happened to raise elsewhere. A
+ * reconciled guess that disagrees with truth surfaces as 'truth-contradiction'.
+ * Lowering or holding the tier reconciles nothing new. Returns the refs reconciled.
  */
 export function raiseClearance(toTier: 1 | 2 | 3 | 4 | 5): string[] {
   if (toTier > clearance.tier) clearance.tier = toTier;
@@ -197,7 +304,8 @@ export function raiseClearance(toTier: 1 | 2 | 3 | 4 | 5): string[] {
   for (const file of Object.values(corpus)) {
     for (const a of file.anchors) {
       const ref = makeRef(file.item, a.id);
-      if (a.redaction_level <= clearance.tier && !revealedTruth.has(ref)) {
+      const filled = overlay[ref] !== undefined; // player inserted or propagated here
+      if (a.redaction_level <= clearance.tier && filled && !revealedTruth.has(ref)) {
         batch.push(ref);
       }
     }
@@ -210,6 +318,9 @@ export function raiseClearance(toTier: 1 | 2 | 3 | 4 | 5): string[] {
       o.contradicts_truth = true; // resolveSlot already derives the diff state
     }
   }
+  // An audit can newly mark guesses wrong, which carry the struck-exposure
+  // penalty — recompute so the corruption registers the moment it's revealed.
+  recomputeExposure();
   return batch;
 }
 
@@ -219,11 +330,190 @@ export function raiseClearance(toTier: 1 | 2 | 3 | 4 | 5): string[] {
  * PROPAGATION_FACTOR). Keeps the keystone invariant — inference is the only
  * spend — and structurally prevents accumulated drift across re-insertions.
  */
+/**
+ * Audit summary for a just-revealed batch: how many slots came back as
+ * discrepancies (a prior guess contradicts the now-revealed truth) versus
+ * confirmed (guess matches) versus newly-shown blanks the player never guessed.
+ * Pure over the refs + current overlay/corpus; the UI uses it to dramatize the
+ * reveal ("AUDIT — 2 discrepancies") without re-deriving state itself. The
+ * batched/clearance-gated reveal rule (invariant #4) is untouched: this only
+ * describes what raiseClearance already revealed.
+ */
+export interface AuditSummary {
+  discrepancies: string[]; // refs where the player's guess contradicts truth
+  confirmed: string[];     // refs where the player's guess matches truth
+  blanks: string[];        // refs revealed with no prior guess
+}
+
+export function auditSummary(batch: string[]): AuditSummary {
+  const out: AuditSummary = { discrepancies: [], confirmed: [], blanks: [] };
+  for (const ref of batch) {
+    const o = overlay[ref];
+    if (!o) {
+      out.blanks.push(ref);
+    } else if (o.value === anchorOf(ref).truth) {
+      out.confirmed.push(ref);
+    } else {
+      out.discrepancies.push(ref);
+    }
+  }
+  return out;
+}
+
+// ── Board-state readouts (UI guidance + progress) ──────────────────────
+// Pure summaries of the current board the UI reads to guide the player and show
+// progress. None of these reveal truth or change state — they describe what the
+// player has done, so the Concordance can prompt the right next move.
+
+/** Every anchor ref in the corpus, in stable file/anchor order. */
+export function allRefs(): string[] {
+  const refs: string[] = [];
+  for (const file of Object.values(corpus)) {
+    for (const a of file.anchors) refs.push(makeRef(file.item, a.id));
+  }
+  return refs;
+}
+
+export interface BoardState {
+  totalSlots: number;
+  filled: number;          // slots the player inserted into (not propagated)
+  propagated: number;      // slots changed by propagation from an insert
+  reconciled: number;      // slots whose truth has been revealed by audit
+  confirmed: number;       // reconciled slots whose guess MATCHED truth (a coherent read)
+  struck: number;          // reconciled slots whose guess CONTRADICTED truth
+  pendingAudit: number;    // inserted slots whose truth tier isn't yet reached
+  hasInserted: boolean;
+}
+
+export function boardState(): BoardState {
+  let totalSlots = 0;
+  let filled = 0;
+  let propagated = 0;
+  let reconciled = 0;
+  let confirmed = 0;
+  let struck = 0;
+  let pendingAudit = 0;
+  for (const file of Object.values(corpus)) {
+    for (const a of file.anchors) {
+      totalSlots++;
+      const ref = makeRef(file.item, a.id);
+      const o = overlay[ref];
+      const revealed = revealedTruth.has(ref);
+      if (revealed) {
+        reconciled++;
+        // A reconciled, player-inserted slot is a "coherent read" only if it
+        // matched truth; this is what clearance/progression is earned by (§5.1).
+        if (o?.source === 'inserted') {
+          if (o.value === a.truth) confirmed++;
+          else struck++;
+        }
+      }
+      if (o?.source === 'inserted') {
+        filled++;
+        if (!revealed) pendingAudit++;
+      } else if (o?.source === 'propagated') {
+        propagated++;
+      }
+    }
+  }
+  return {
+    totalSlots,
+    filled,
+    propagated,
+    reconciled,
+    confirmed,
+    struck,
+    pendingAudit,
+    hasInserted: filled > 0,
+  };
+}
+
+// ── Session outcome (the ending) ────────────────────────────────────────
+// Exposure now has a consequence. Every restored field softens the record; cross
+// the breach threshold and the entity re-indexes out of containment — the
+// session ends as a breach (loss). Restore the record correctly while keeping
+// exposure under the line and the site holds — containment (win). This is the
+// stakes the slice deferred: "guess to see, but every guess corrupts."
+
+// Tuned against the trio's weights (7 slots, total possible exposure 14 if all
+// filled — so the whole record can't be restored without breaching). Containment
+// requires correctly restoring a MAJORITY of the record (5 of 7), which forces
+// the player across all three files and past the early game, so a win never
+// pre-empts exploring the board. The breach line sits above a careful 5-correct
+// run (lightest five total ~9) but below a greedy fill, keeping the choice
+// "restore the right fields, then stop" rather than "fill everything."
+/** Exposure at or above this and the record has gone too soft — breach. */
+export const BREACH_THRESHOLD = 13;
+/** Confirmed-correct restorations needed for a containment win. */
+export const CONTAINMENT_TARGET = 5;
+
+export type Outcome = 'playing' | 'breach' | 'contained';
+
+export interface SessionResult {
+  outcome: Outcome;
+  exposure: number;
+  threshold: number;
+  /** Player guesses revealed by audit that matched truth. */
+  correct: number;
+  /** Player guesses revealed by audit that contradicted truth. */
+  struck: number;
+  /** Fraction of the breach line currently used [0..1+]. */
+  pressure: number;
+}
+
+/**
+ * Resolve the session. Breach takes precedence — once exposure crosses the line
+ * the record is lost no matter how accurate the player was. Otherwise, if the
+ * player has confirmed enough correct restorations (audited, matched truth), the
+ * site is contained. Auditing blanks alone never wins: containment requires
+ * *correctly restored* fields, so "just audit to L5 without guessing" cannot
+ * trivially win — it leaves the record un-restored.
+ */
+export function sessionResult(): SessionResult {
+  let correct = 0;
+  let struck = 0;
+  for (const file of Object.values(corpus)) {
+    for (const a of file.anchors) {
+      const ref = makeRef(file.item, a.id);
+      const o = overlay[ref];
+      if (!revealedTruth.has(ref) || !o || o.source !== 'inserted') continue;
+      if (o.value === a.truth) correct++;
+      else struck++;
+    }
+  }
+  const exp = exposure.value;
+  let outcome: Outcome = 'playing';
+  if (exp >= BREACH_THRESHOLD) outcome = 'breach';
+  else if (correct >= CONTAINMENT_TARGET) outcome = 'contained';
+  return {
+    outcome,
+    exposure: exp,
+    threshold: BREACH_THRESHOLD,
+    correct,
+    struck,
+    pressure: exp / BREACH_THRESHOLD,
+  };
+}
+
+/**
+ * Multiplier on a slot's exposure once an audit has shown the player's guess to
+ * be WRONG. A struck guess is a value diverging from contained reality — exactly
+ * the corruption that drives the breach in the fiction — so being wrong costs
+ * more than being right. This is what makes accuracy matter: a coherent read
+ * keeps exposure low; a struck read spikes it toward the breach line.
+ */
+export const STRUCK_PENALTY = 2.5;
+
 export function recomputeExposure(): void {
   let total = 0;
   for (const [ref, entry] of Object.entries(overlay)) {
-    const weight = anchorOf(ref).exposure_weight;
-    total += entry.source === 'propagated' ? weight * PROPAGATION_FACTOR : weight;
+    const anchor = anchorOf(ref);
+    let weight = entry.source === 'propagated' ? anchor.exposure_weight * PROPAGATION_FACTOR : anchor.exposure_weight;
+    // Once reconciled, a wrong guess weighs more — the divergence is now known.
+    if (revealedTruth.has(ref) && entry.value !== anchor.truth) {
+      weight *= STRUCK_PENALTY;
+    }
+    total += weight;
   }
   exposure.value = total;
 }

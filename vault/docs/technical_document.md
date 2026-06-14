@@ -1,3 +1,5 @@
+> **Re-frame note (2026-06-13):** Updated to the AMBER/Quippy split per `planning/reframe_amber_quippy.md`. **§7 (UI)** was rewritten: the "Desktop window manager" becomes an **AMBER CLI** (`AmberTerminal`) with a distinct, refusable **Quippy GUI overlay** (`QuippyPanel`); component names are coordinated with the code track (`planning/handoff_janitor.md`). **§2** gains the `via?: 'amber' | 'quippy'` provenance field on `OverlayEntry` (the shared schema term; [R§6.3], adopted). **§10** build order is reordered (endgame = no-Quippy completion; the "help utility" milestone splits into AMBER tooling + Quippy). The **pipeline (§4, §8) survives unchanged.** Two items are flagged **PENDING** inline: the concrete AMBER manual-unredaction interaction ([R§6.2]) and the prototype's CLI scope ([R§6.6]) — both human decisions that gate the build.
+
 # Technical Development Document — ⟦REDACTED⟧
 
 Architecture spec for the Svelte build. Aligns with `design_document.md` and `entry_template.md`. The Obsidian vault is the single source of truth; a parser converts entries into the runtime corpus.
@@ -58,10 +60,16 @@ interface OverlayEntry {
   anchor_ref: string;        // "SCP-41B-XXX#a1"
   value: string;             // player-inserted or propagated value
   source: 'inserted' | 'propagated';
+  via?: 'amber' | 'quippy';  // HOW this unredaction was made (re-frame [R§6.3]).
+                             //   The no-Quippy ending reads this across all solved slots.
+                             //   Propagated entries inherit the originating edit's `via`.
+                             //   Optional for back-compat; the engine threads it through insert().
   caused_by?: string;        // anchor_ref of the edit that propagated here (provenance)
   contradicts_truth?: boolean; // set true once truth for this slot is revealed and differs
 }
 ```
+
+**On `via` (provenance):** this is the one net-new field the re-frame introduces (`corpus.ts` `OverlayEntry`; shared vocabulary with the code track — keep the name `via` and the literals `'amber' | 'quippy'` identical across spec and code). It records the *route* of each unredaction, not a resource the player spends — so it honors invariant 1 (inference is the spend; provenance is passive). The endgame (§6 design doc; `scp_x_bible.md` §5) reads `via` across every solved slot: the true ending requires `via === 'amber'` throughout. `source` ('inserted' | 'propagated') and `via` ('amber' | 'quippy') are **orthogonal**: a slot can be player-inserted-via-AMBER, player-inserted-via-Quippy, or propagated (inheriting its cause's `via`). Do not conflate the two axes.
 
 ## 3. Reactive state architecture
 
@@ -101,23 +109,28 @@ Components read `displayedSlot(ref)` and re-render only when that slot's inputs 
 Pure function over the corpus + overlay. Triggered on insertion.
 
 ```
-insert(anchor_ref, chosen_value):
-  1. overlay[anchor_ref] = { value: chosen_value, source: 'inserted' }
-  2. exposure.value += anchorOf(anchor_ref).exposure_weight
+insert(anchor_ref, chosen_value, via):          // via: 'amber' | 'quippy'  (re-frame [R§6.3])
+  1. overlay[anchor_ref] = { value: chosen_value, source: 'inserted', via }
+  2. if via == 'quippy':                         // exposure driver re-aimed [R§6.4]
+       exposure.value += anchorOf(anchor_ref).exposure_weight
+     // AMBER manual unredaction costs little/none — confirm exact model at [R§6.4]
   3. concept = anchorOf(anchor_ref).concept
   4. if concept:
        for every anchor A across corpus where A.concept == concept and A.ref != anchor_ref:
+         if overlay[A.ref]?.source == 'inserted': continue   // never clobber a player-owned insert
          mutation = mapMutation(anchor_ref.value -> A.mutations)   // index-aligned or keyed
-         overlay[A.ref] = { value: mutation, source: 'propagated', caused_by: anchor_ref }
-         exposure.value += A.exposure_weight * PROPAGATION_FACTOR
+         overlay[A.ref] = { value: mutation, source: 'propagated', caused_by: anchor_ref, via }
+         if via == 'quippy': exposure.value += A.exposure_weight * PROPAGATION_FACTOR
   5. evaluateBreaches()
 ```
 
 Design constraints:
 - **Mutation mapping is index-aligned across an anchor group.** Anchors sharing a concept share a parallel mutation set ordering, so choosing candidate *k* in one yields candidate *k* in all linked anchors. This keeps propagation deterministic and authorable.
 - **No free text** ever enters propagation. Typed difficulty maps free input to the nearest authored candidate before this function runs.
+- **Propagation is tool-agnostic.** The *mechanism* is identical for AMBER and Quippy edits; they differ only in exposure cost and the `via` tag. Propagated entries **inherit the originating edit's `via`**, so a single Quippy edit that ripples widely is accounted as Quippy reliance for the endgame (§6 design doc).
+- **Carrier-clobber guard.** A propagation never overwrites a slot the player has independently *inserted* (step 4's `continue`) — that slot is its own source of truth. (This is the fix already landed in the engine; preserved here so the spec matches the code.)
 - **Idempotent re-evaluation.** Re-inserting recomputes from the immutable corpus + current overlay; no accumulated drift.
-- **Provenance is mandatory** (`caused_by`) so the UI can answer "why did this change?" — the fix for propagation reading as noise.
+- **Provenance is mandatory** — both `caused_by` (which edit caused this) and `via` (which tool made it). `caused_by` answers "why did this change?"; `via` feeds the no-Quippy ending. The two are independent (§2).
 
 ## 5. Validation system (batched, anti-leak)
 
@@ -152,26 +165,97 @@ evaluateBreaches():
 
 Stabilization play (reducing exposure via reconstructing coherent reads) can clear a breach if exposure drops back below `T_E`, restoring normal terminal behavior. Recovery is a first-class state.
 
-## 7. UI architecture
+## 7. UI architecture — AMBER CLI + Quippy overlay  *(rewritten for the re-frame)*
 
-Component tree:
-- `Desktop` — window manager, taskbar, clearance indicator, stability readout.
-- `FileWindow` — renders one `ScpFile`; parses `body` tokens.
-- `SlotSpan` — renders one anchor via `displayedSlot(ref)`; owns the four-state CSS; hosts the mouse-over.
-- `HelpUtility` (SCP-X) — the mouse-over panel: slot type, cross-mentions, MadLib candidate buttons. Tone degrades as exposure rises.
-- `SearchPane` — index over the corpus; subject to `corrupt_search` breach effects.
-- `ClearancePanel` — progression UI; triggers `raiseClearance`.
+The single windowed desktop is **replaced** by two interface modes the player switches between ([R§1]): **AMBER**, a clinical command-line terminal (the honest, hard tool), and **Quippy**, a refusable GUI overlay (the SCP-X entity, the easy/costly tool). The switch between them is a felt, meaningful act ([R§3]; design doc §5a, the aesthetic clash) — it is content, not chrome.
 
-Four-state CSS tokens (custom properties, themeable + reduced-glitch mode):
+### 7.1 Mode model
+A top-level mode the composition reads:
+```ts
+type InterfaceMode = 'amber' | 'quippy';
+export const ui = $state<{ mode: InterfaceMode }>({ mode: 'amber' });
+// AMBER is the default and the resting state. Quippy is summoned and dismissed;
+// the player can complete the entire game without ever entering 'quippy' (the win).
+```
+AMBER is always available and is where the player resides by default. Quippy is *opt-in* — summoned over AMBER and dismissable back to it. This is the structural expression of "Quippy is refusable": the mode the player never has to enter is the entity.
+
+### 7.2 Component tree
+Names coordinated with the code track (`planning/handoff_janitor.md`) — the prior single `HelpUtility.svelte` splits along the seam the janitor flagged: the **evidence/clue surface** (`conceptClues`) belongs to **AMBER**; the **easy one-click fill + the entity's voice** belongs to **Quippy**.
+
+- **`App.svelte`** — top-level composition; hosts both modes and the `mode` switch; the status/exposure readout; the end-state surface (reads the no-Quippy condition, §6).
+- **`AmberTerminal.svelte`** — the CLI shell. Monochrome, keyboard-driven. Owns file traversal, redacted-span jumping, command/keybinding input, and the terminal log. **RESOLVED [R§6.6]: full CLI now** — build the real command-line terminal (command input, hotkey file/span traversal, AMBER tooling as commands) this pass, not a restyle of the current click model. The Quippy overlay is the distinct GUI mode on top.
+- **`FileWindow.svelte`** → **`FilePane.svelte`** (rename optional; survives) — renders one `ScpFile`, parses `body` tokens. Restyle from GUI-windowed (rounded panels, gradients, classification banners) to **monochrome-terminal idiom.** Must scale to **long, multi-section dossiers** ([R§3]) — verify `bodyBlocks`/`parseBody` handle many sections without layout break.
+- **`SlotSpan.svelte`** — renders one anchor via `displayedSlot(ref)`; owns the four-state CSS, re-rendered in CLI idiom. The `via` provenance may add a **fifth visual distinction** (AMBER-solved vs Quippy-solved; §7.4). CLI traversal needs explicit keybound span-jumping (the current hover/focus model is GUI-shaped; flagged net-new).
+- **`AmberLookup.svelte`** *(net-new; the honest half of the old `HelpUtility`)* — AMBER's manual-unredaction tooling: the Concordance cross-reference lookup (`conceptClues`, promoted out of the hover panel) **and** the citation-cost commit (§7.5). **RESOLVED [R§6.2]: the citation-cost gate** — the player looks up cross-references, picks a candidate, cites the corroborating co-carrier(s), and AMBER adjudicates the citation before committing `via: 'amber'`. See §7.5 for the engine seam.
+- **`QuippyPanel.svelte`** *(net-new; the costly half of the old `HelpUtility`)* — the Quippy GUI overlay: candidate suggestions, one-click fill, the entity's degrading voice (`scp_x_bible.md` §4 bands). Summoning it sets `ui.mode = 'quippy'`; every fill it commits is tagged `via: 'quippy'` and raises exposure. Renders the paperclip-diamondback presence when Quippy speaks directly.
+- **`SearchPane.svelte`** — corpus index; subject to `corrupt_search` breach effects. Restyle to terminal idiom (a CLI query, not a search box).
+- **`RippleLog.svelte`** — propagation log; under CLI aesthetic, a terminal log pane. Should log **provenance** (was this ripple AMBER- or Quippy-caused) once `via` lands.
+- **`ClearancePanel.svelte`** — progression UI; triggers `raiseClearance`. Terminal idiom.
+
+### 7.3 The mode switch as content
+Moving from Quippy's bright overlay back into AMBER's cold terminal should *feel* like turning off a charming voice to do hard work yourself (design doc §5a). Implementation notes:
+- The switch is instantaneous and always available — the player is never *trapped* in Quippy; refusal must always be one keystroke away, or the "refusable" thesis breaks.
+- AMBER never adopts Quippy's register and vice versa; the two CSS/voice systems are deliberately disjoint. Do not share styling tokens between them except the four-state slot grammar (which both render, in their own idiom).
+- Quippy's overlay visibly *sits on top of* AMBER (it is a wrapper, diegetically and visually) — AMBER should remain partly visible behind it, reinforcing that Quippy is a costume over the real tool.
+
+### 7.4 Four-state grammar in CLI idiom (+ provenance distinction)
+Four-state CSS tokens (custom properties, themeable + reduced-glitch mode), now monochrome-terminal rather than windowed-GUI:
 ```css
 :root {
-  --slot-redacted: /* solid bar */;
-  --slot-inserted: /* amber */;
-  --slot-propagated: /* teal + glitch */;
-  --slot-contradiction: /* red diff */;
+  --slot-redacted:      /* solid block, █████ */;
+  --slot-inserted:      /* amber — player guess */;
+  --slot-propagated:    /* terminal-corruption styling + provenance on hover */;
+  --slot-contradiction: /* diff: revealed truth vs amber guess */;
+  /* possible fifth distinction (re-frame): AMBER-solved vs Quippy-solved, via `via` */
+  --slot-via-amber:     /* e.g. clean amber */;
+  --slot-via-quippy:    /* e.g. amber with the entity's tell */;
 }
 ```
-`SlotSpan` switches token by `state`. Provenance (`caused_by`) renders on hover for `propagated`. Reduced-motion disables glitch animation, keeping color/strike-through distinctions intact.
+`SlotSpan` switches token by `state`; provenance (`caused_by`) renders on hover for `propagated`. The **fifth distinction** lets the player *see their Quippy-reliance accumulate* per file — a glance shows how much of a dossier they earned in AMBER vs. let Quippy fill (design doc §5.9). Whether this is a distinct state or a modifier on the inserted/propagated states is an info-design call. Reduced-motion disables corruption animation, keeping color/strike-through distinctions intact.
+
+### 7.5 The citation-cost gate — engine seam  *(RESOLVED [R§6.2])*
+
+AMBER's manual unredaction is a **cited commit** built on existing engine state (`conceptClues`, `crossMentions`, `mapMutation`, `revealedTruth`, `overlay`). It does not replace `insert()` — it *guards* it: a successful citation calls the same `insert(ref, value, 'amber')`. Quippy calls `insert(ref, value, 'quippy')` directly with no gate. So the two routes share the propagation primitive and differ only at the commit boundary (the gate) and in `via`/exposure — exactly design doc §3.
+
+**What counts as corroboration.** A co-carrier `c` of `ref`'s concept corroborates candidate *k* iff `c`'s slot *currently reads* the index-*k* value — i.e. the player can *see* index *k* there, by either:
+- **revealed truth:** `revealedTruth.has(c)` and `anchorOf(c).truth === c.mutations[k]` (clearance has shown it), or
+- **prior player solve:** `overlay[c]?.source === 'inserted'` and `overlay[c].value === c.mutations[k]` (the player solved it earlier).
+
+A *propagated* value at `c` does **not** corroborate — propagation is the player's own unconfirmed ripple, not evidence. (This keeps the gate honest: you can only cite something independently known, never something your own earlier guess pushed there.)
+
+```ts
+// k = the candidate's index in anchorOf(ref).mutations
+// citations = co-carrier refs the player names as justification
+export function corroborates(citationRef: string, ref: string, k: number): boolean {
+  const concept = anchorOf(ref).concept;
+  if (!concept || anchorOf(citationRef).concept !== concept) return false; // must be a co-carrier
+  const c = anchorOf(citationRef);
+  const target = c.mutations[k];                       // index-aligned reading at the citation
+  if (target === undefined) return false;
+  if (revealedTruth.has(citationRef) && c.truth === target) return true;   // clearance-revealed
+  const o = overlay[citationRef];
+  return o?.source === 'inserted' && o.value === target;                   // player-solved
+  // a 'propagated' value never corroborates
+}
+
+/** AMBER commit. Accept iff ≥1 cited co-carrier corroborates the candidate's index. */
+export function commitWithCitations(ref: string, value: string, citations: string[]): CommitResult {
+  const k = anchorOf(ref).mutations.indexOf(value);
+  if (k < 0) return { ok: false, reason: 'not-a-candidate' };
+  const good = citations.filter((c) => corroborates(c, ref, k));
+  if (good.length === 0) return { ok: false, reason: 'uncorroborated' };   // rejected: go read more
+  insert(ref, value, 'amber');                          // same primitive, via=amber, exposure +0
+  return { ok: true, citedBy: good };
+}
+```
+
+**Design properties this gives for free:**
+- **No leak (invariant 4).** The gate never reveals an untouched slot's truth — it only confirms a *candidate the player already chose* against evidence *already on screen*. It says "your citation supports this," not "here is the answer."
+- **The temptation is mechanical (design doc §3).** A player who hasn't read/solved enough has no corroborating co-carrier to cite → `uncorroborated` → must read more or summon Quippy. Early game, few slots are corroboratable, so Quippy is genuinely tempting; as the corpus fills, more slots become AMBER-soluble. That *is* the difficulty curve.
+- **Orphan/local slots (`concept: ""` or single-carrier) can't be cited.** They have no co-carrier, so the citation gate can't apply. **Open sub-question for the build:** such slots need an alternate AMBER path (e.g. cite an in-file textual ground, or fall to clearance-reveal only). Flag in the build handoff; most slots are multi-carrier by the roster's ≥2-keys discipline, so this is an edge, not the common case.
+- **`CommitResult.reason`** drives AMBER's terse rejection line (`✗ no corroborating citation`), the §5a clinical register.
+
+This is the whole new verb. `AmberLookup.svelte` renders `conceptClues(ref)` as selectable citations; selecting them + a candidate calls `commitWithCitations`; the terminal prints accept/reject. Quippy's one-click bypasses all of it.
 
 ## 8. Authoring pipeline (Obsidian → corpus)
 
@@ -198,31 +282,41 @@ Validation failures are build errors. This makes the wiki authoritative: write e
 ```
 /src
   /lib
-    game.svelte.ts        // runes store + displayedSlot
-    propagation.ts        // insert(), mapMutation()
+    game.svelte.ts        // runes store + displayedSlot; insert(value, via); provenance
+    propagation.ts        // insert(), mapMutation()  (propagation is tool-agnostic)
     validation.ts         // raiseClearance()
     breaches.ts           // evaluateBreaches(), applyBreachEffect()
     parseBody.ts          // ⟦token⟧ + [[wikilink]] runtime parsing
   /components
-    Desktop.svelte  FileWindow.svelte  SlotSpan.svelte
-    HelpUtility.svelte  SearchPane.svelte  ClearancePanel.svelte
-  /styles  tokens.css
+    App.svelte  AmberTerminal.svelte  FilePane.svelte  SlotSpan.svelte
+    AmberLookup.svelte    // honest manual-unredaction tooling (was half of HelpUtility)
+    QuippyPanel.svelte    // refusable GUI overlay = SCP-X (was the other half)
+    RippleLog.svelte  SearchPane.svelte  ClearancePanel.svelte
+  /styles  tokens.css     // four-state grammar + AMBER/Quippy disjoint registers
 /vault
   /entries  SCP-41B-###.md ...   // Obsidian vault, the source of truth
 /scripts  build-corpus.ts
 /static   corpus.json        // generated artifact
 ```
 
-## 10. Build order (milestones)
+*(Re-frame: `Desktop.svelte` → `AmberTerminal.svelte`; `HelpUtility.svelte` splits into `AmberLookup.svelte` (honest) + `QuippyPanel.svelte` (entity). `FileWindow` → `FilePane` is an optional rename to match the CLI idiom. The current tree still uses the old names with re-frame flag markers; the code track does the actual split post-§6. Pipeline files under `/scripts` are unchanged.)*
 
-1. **Schema + parser + 3 stub entries.** Prove Obsidian → corpus.json round-trips and validates.
-2. **Static file viewer.** Render entries, redaction bars, clearance gating. No propagation yet.
-3. **Insertion + overlay + `displayedSlot`.** Single-file guesses, two states (redacted/inserted).
-4. **Propagation engine.** Concept-keyed cross-file mutation; add propagated state + provenance.
-5. **Exposure + batched validation.** Clearance unlocks truth batches; add contradiction state. Four-state grammar complete.
-6. **Breach system.** Thresholds, terminal-mutating effects, stabilization/recovery.
-7. **Endgame.** `entity_self` file; ouroboros resolution; fork on overlay state.
-8. **Dials + accessibility.** Autofill, set size, exposure decay, reduced-glitch.
-9. **Content pass.** Scale from stubs to 15–30 densely interlinked entities.
+## 10. Build order (milestones) — *reordered for the re-frame*
 
-Each milestone is playable in isolation, so the loop can be felt before content scales.
+Milestones 1–6 are **mechanic-stable** (the propagation/overlay/clearance/breach core survives the re-frame; much is already built — see the planning docs). Milestones M5+ are **reordered**: the old single "HelpUtility" milestone splits into **AMBER tooling** and **Quippy**, and the endgame becomes **no-Quippy completion.** The two PENDING design questions ([R§6.2] AMBER tooling, [R§6.4] exposure model) **gate M5b/M6**; do not build them before the human answers.
+
+1. **Schema + parser + 3 stub entries.** Obsidian → corpus.json round-trips and validates. *(done)*
+2. **Static file viewer.** Render entries, redaction bars, clearance gating. *(done)*
+3. **Insertion + overlay + `displayedSlot`.** Single-file guesses; redacted/inserted states. *(done)*
+4. **Propagation engine.** Concept-keyed cross-file mutation; propagated state + provenance (`caused_by`). *(done)*
+5. **Exposure + batched validation.** Clearance unlocks truth batches; contradiction state; four-state grammar. *(done)*
+   - **5a. Provenance prep (safe now).** Add `via?: 'amber' | 'quippy'` to `OverlayEntry`; thread an optional `via` through `insert()`, default-preserving. Don't branch on it yet. *(code-track prep; janitor handoff)*
+6. **Breach system.** Thresholds, terminal-mutating effects, stabilization/recovery. *(done; survives — breaches are now "all non-true endings")*
+7. **Full AMBER CLI + mode scaffold.** *(RESOLVED [R§6.6]: full CLI now.)* Build the `AmberTerminal` shell — command input, keybound file traversal, redacted-span jumping, terminal log — and restyle `FilePane`/`SlotSpan`/`RippleLog`/`SearchPane` to monochrome-terminal idiom. Introduce the `InterfaceMode` switch. This rebuilds the interaction layer, not just the skin.
+8. **AMBER manual unredaction — the citation-cost gate (`AmberLookup`).** *(RESOLVED [R§6.2].)* Render `conceptClues` as selectable citations; build `corroborates()` + `commitWithCitations()` (§7.5); selecting candidate + cited co-carriers commits `via: 'amber'`, exposure +0; uncorroborated → rejected. The whole evidentiary verb.
+9. **Quippy (`QuippyPanel`).** *(Exposure model RESOLVED [R§6.4]: Quippy carries all exposure; AMBER zero.)* The refusable GUI overlay: candidate suggestions, one-click fill tagged `via: 'quippy'` (bypassing the gate), the degrading-tone bands, the paperclip-diamondback presence. Quippy insertions drive exposure.
+10. **The no-Quippy endgame.** Read `via` across all solved slots; the true ending = full restoration with zero Quippy assists; every other outcome is a breach ending. **Replaces** the old `entity_self`/ouroboros-decipher milestone. Enforcement gate (hard/tolerance/spectrum) per `scp_x_bible.md` §5.3.
+11. **Dials + accessibility.** Quippy-temptation/AMBER-difficulty dial (the new central one), autofill, set size, exposure decay, reduced-glitch, provenance-visibility toggle.
+12. **Content pass.** Scale to the full corpus as **longer, multi-section dossiers** ([R§3]); fold in the area arc and (later) the redactor thread.
+
+Each milestone is playable in isolation, so the loop can be felt before content scales. *(The retired old M7 "ouroboros resolution; fork on overlay state" is superseded by M10; the `entity_self` file `SCP-41B-000` is still authored, but as the entity you starve, not the puzzle you decipher — `scp_x_bible.md` §5.4.)*
