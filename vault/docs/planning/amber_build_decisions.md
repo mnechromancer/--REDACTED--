@@ -1,0 +1,110 @@
+# AMBER/Quippy build — decisions record
+
+Companion to `handoff_amber_build.md`. Records the decisions made executing the
+seven build steps (branch `feat/amber-quippy-mechanic`), so the watch items the
+handoff flagged each have an explicit, documented answer — not a default the code
+fell into. Cross-references the inline code comments that enforce each.
+
+## The four watch items (handoff §"Watch items")
+
+### 1. AMBER-onto-Quippy-touched slot — **redemption: YES**
+A slot filled `via:'quippy'` and later correctly re-solved in AMBER is **redeemed**:
+the AMBER commit re-writes the entry to `via:'amber'`, its exposure drops to zero,
+and the no-Quippy ending counts it as clean. Implemented via *via-aware
+idempotency* — `insert()` treats a same-value re-insert with a different `via` as a
+real write (`game.svelte.ts` `alreadyInserted`). This makes recovery meaningful
+and the hard gate humane: a tainted run is recoverable by honest re-work.
+Tests: `game.test.ts` "WATCH ITEM 1", `game.test.ts` redemption case in the
+idempotency block.
+
+### 2. Propagation provenance — **ripples inherit the cause's route**
+A single Quippy edit rippling to N carriers counts as Quippy reliance at all N: the
+propagated entry inherits the originating edit's `via` (`game.svelte.ts` insert
+step 2). An AMBER edit propagating onto an untouched slot marks those ripples
+`via:'amber'` — they are consequences of honest work. `boardState.viaQuippy` tallies
+over *every* live entry (inserted + propagated), so the ending sees the full
+reliance footprint. Tests: `provenance.test.ts` "Step 1".
+
+### 3. The orphan-slot AMBER path — **clearance-reveal fallback**
+An orphan slot (`concept:""` or single-carrier) has no co-carrier to cite. Decided
+fallback: it is **AMBER-soluble only once its own truth is clearance-revealed, and
+only to that truth** (`game.svelte.ts` `commitWithCitations` orphan branch). So an
+orphan can't be pre-empted by AMBER guessing, but is always AMBER-soluble once the
+player climbs to its tier — the no-Quippy win stays reachable for any corpus with
+one, and no leak is introduced (truth must already be on screen). Tests:
+`citation-gate.test.ts` "orphan-slot fallback".
+
+### 4. The temptation must be real but escapable — **the central dial**
+`CITATIONS_REQUIRED` (`game.svelte.ts`, default **1**) is the
+Quippy-temptation/AMBER-difficulty dial: 1 = any single corroborating co-carrier
+commits; 2+ = the player must assemble a multi-source case (harder AMBER, more
+tempting Quippy early). Clamped to a slot's co-carrier count so raising it never
+makes a slot unsolvable. Quippy's cheapness/curdle is the other half
+(`quippy.svelte.ts` `QUIPPY_MID/HIGH_THRESHOLD`, `game.svelte.ts`
+`BREACH_THRESHOLD`). **Tuning note:** the earliest tier must have slots
+corroboratable from clearance-1/2 reveals or the moral inverts — see the reveal
+model below and the content finding.
+
+## The keystone enforcement — **HARD GATE**
+The no-Quippy ending uses the hard gate: **any** Quippy assist forecloses the true
+ending (`game.svelte.ts` `endState`, `loop-broken` requires `quippyAssists === 0`).
+Started hard for design clarity (the no-Quippy run is a clean mastery expression);
+relax to a tolerance band only if playtest shows it inhumane. The hard gate is
+humane *because redemption exists* (watch item 1), not because the gate is soft.
+
+## The self-file's role in the ending — **excluded from the restoration target**
+`endState` excludes the `entity_self` file from the restoration numerator/denominator
+(`game.svelte.ts` `endState`, `if (isSelf) continue`), per `scp_x_bible.md` §5.4:
+the self-file is the entity you *starve*, not the puzzle you *solve* — you win by
+reconstructing everything **else**. This also means the placeholder `SCP-41B-000`
+does not block the win. A Quippy assist landing on the self-file would still count
+as taint (defensive), but the player never reaches it.
+
+## Reveal model — **"spec reveal, scoped to open files"** (user decision, 2026-06-13)
+The Sprint-1 `raiseClearance` revealed truth for *filled* slots only. The citation
+gate cannot bootstrap under that rule (to cite a co-carrier you need its truth
+revealed; truth only revealed for filled slots; player-solving is itself circular).
+Reconciled to the `technical_document.md` §5 pseudocode, scoped to accessible files:
+**reaching a tier reveals in-tier truth for slots in files open at that tier**
+(`game.svelte.ts` `raiseClearance`). This seeds the gate (a clearance-revealed
+co-carrier is the only non-circular evidence). Invariant #4 holds in its
+load-bearing sense — the reveal writes **no overlay entry** (never volunteers a
+value into the player's guess layer); and a not-yet-met file (gated by its baseline
+clearance) is not pre-revealed. Tests: `validation.test.ts` (rewritten),
+`endgame-integration.test.ts`.
+
+## SCP-41B-000 placeholder — **`--allow-incomplete` flag added**
+`SCP-41B-000.md` is still the placeholder stub (the only `entity_self:true` file,
+holding `build:corpus` green). Rather than delete it (which would break the
+"exactly one self-file" invariant) or author the real Quippy self-file (lore work,
+out of this build's scope), `build-corpus` gained `--allow-incomplete`
+(`scripts/build-corpus.ts`, `validate-corpus.ts` `checkEntitySelf`): it relaxes the
+rule to "at most one self-file" so the placeholder can be removed in the gap before
+the real one is authored. `npm run build:corpus -- --allow-incomplete`. More than
+one self-file is still always an error.
+
+## OPEN — content finding for the lore track (watch item 4, content × mechanic)
+**The authored trio is not fully AMBER-winnable as written**, because two concept
+groups are not *truth-index-aligned*:
+- `acquisition-lot`: SCP-41B-001#a2 truth at index 0, SCP-41B-002#a1 truth at
+  index **1**.
+- `audit-cycle`: SCP-41B-001#a3 truth at index 1, SCP-41B-002#a2 truth at index **2**.
+
+The citation gate (and propagation) assume a known correct value at one carrier
+fixes the *truth index* at every co-carrier (`concept_key_registry.md`: index 0 =
+the mundane truth; same-tier carriers should share it). When co-carriers' truths
+sit at different indices, the high carrier cannot be corroborated by citing the low
+one — so it is AMBER-unsolvable to its truth, and the no-Quippy win is unreachable
+on the real corpus. (Note: tier-*escalating* keys like `concordance-program` and
+`the-transfer` intentionally hold different indices across tiers — those are
+**not** a bug; the contradiction-on-reveal is by design. The problem is only
+same-tier teaching keys whose truths drifted off index 0.)
+
+This is a content fix (entry ground-truth / mutation ordering), owned by the lore
+track — the engine is correct and is proven AMBER-winnable end to end on an aligned
+corpus (`endgame-integration.test.ts`). **Action for the lore author:** align the
+same-tier teaching keys' truths to a common index (index 0 per the registry), or
+re-coin them as escalating keys if the divergence is intended. A build-time
+truth-index-alignment validator was *considered but not added*, because it would
+falsely flag the intentionally-escalating keys; the right check is per-key (aligned
+vs escalating), which needs the registry's per-key intent encoded first.

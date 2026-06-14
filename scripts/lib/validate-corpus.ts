@@ -22,13 +22,25 @@ export class CorpusValidationError extends Error {
   }
 }
 
+/** Build-time options. `allowIncomplete` relaxes the must-have-a-self-file rule. */
+export interface ValidateOptions {
+  /**
+   * When true, the "exactly one entity_self" rule is relaxed to "at most one":
+   * a corpus with NO self-file is allowed. This is the escape hatch for deleting
+   * the placeholder SCP-41B-000 before the real Quippy self-file is authored —
+   * `npm run build:corpus -- --allow-incomplete` keeps the build green in the gap.
+   * (More than one self-file is always an error.)
+   */
+  allowIncomplete?: boolean;
+}
+
 /**
  * Validate every cross-file invariant over the full set. Collects all failures
  * rather than throwing on the first, so authors see every problem in one build.
  * Returns the error list (empty = valid); the build driver turns a non-empty
  * list into a CorpusValidationError.
  */
-export function validateCorpus(files: ScpFile[]): ValidationError[] {
+export function validateCorpus(files: ScpFile[], opts: ValidateOptions = {}): ValidationError[] {
   const errors: ValidationError[] = [];
   const byItem = new Map<string, ScpFile>();
 
@@ -44,19 +56,20 @@ export function validateCorpus(files: ScpFile[]): ValidationError[] {
     byItem.set(f.item, f);
   }
 
-  errors.push(...checkEntitySelf(files));
+  errors.push(...checkEntitySelf(files, opts.allowIncomplete));
   errors.push(...checkXrefs(files, byItem));
   errors.push(...checkConceptAlignment(files));
 
   return errors;
 }
 
-/** Rule 4: exactly one file has entity_self: true. */
-export function checkEntitySelf(files: ScpFile[]): ValidationError[] {
+/** Rule 4: exactly one file has entity_self: true (at most one if allowIncomplete). */
+export function checkEntitySelf(files: ScpFile[], allowIncomplete = false): ValidationError[] {
   const selves = files.filter((f) => f.entity_self);
   if (selves.length === 1) return [];
   if (selves.length === 0) {
-    return [{ rule: 'entity-self', message: 'no file sets entity_self: true (exactly one required)' }];
+    if (allowIncomplete) return []; // explicit gap: placeholder removed, real one not yet authored
+    return [{ rule: 'entity-self', message: 'no file sets entity_self: true (exactly one required; pass --allow-incomplete to permit the gap)' }];
   }
   return [
     {

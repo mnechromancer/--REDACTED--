@@ -155,6 +155,16 @@ export function conceptClues(ref: string): ConceptClue[] {
 // rejected with no write. This GUARDS insert(); it does not replace it. Quippy
 // bypasses this entirely by calling insert(ref, value, 'quippy') directly.
 
+// ── The central dial (design_document.md §8) ───────────────────────────────
+// The Quippy-temptation / AMBER-difficulty dial. How much corroboration a commit
+// needs sets the whole curve: 1 = easy AMBER (any single co-carrier suffices);
+// 2+ = hard AMBER (the player must assemble a multi-source case before committing,
+// making Quippy more tempting early). Clamped to what a slot's co-carrier count
+// can supply (a 2-carrier concept can never field 3 citations), so raising this
+// never makes a slot unsolvable — it just demands more reading where the evidence
+// exists. Start at 1 (the recommended floor); raise to tune difficulty up.
+export const CITATIONS_REQUIRED = 1;
+
 export type CommitReason =
   | 'not-a-candidate' // value is not in the anchor's authored set
   | 'uncorroborated'  // multi-carrier slot, but no cited co-carrier supports index k
@@ -243,7 +253,11 @@ export function commitWithCitations(
   }
 
   const good = citations.filter((c) => corroborates(c, ref, k));
-  if (good.length === 0) return { ok: false, reason: 'uncorroborated' }; // go read more
+  // Require CITATIONS_REQUIRED corroborating citations, but never more than the
+  // slot's co-carriers can supply — so the dial tunes difficulty without making a
+  // thinly-carried slot unsolvable (a 2-carrier concept caps the demand at 1).
+  const need = Math.min(CITATIONS_REQUIRED, crossMentions(ref).length);
+  if (good.length < need) return { ok: false, reason: 'uncorroborated' }; // go read more
   const propagatedTo = insert(ref, value, 'amber', canPropagateTo); // same primitive, via=amber, +0
   return { ok: true, citedBy: good, propagatedTo };
 }

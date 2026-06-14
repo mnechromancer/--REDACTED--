@@ -16,6 +16,7 @@ import {
   commitWithCitations,
   isOrphanSlot,
   anchorOf,
+  CITATIONS_REQUIRED,
 } from '../game.svelte.ts';
 import { makeCorpus } from './fixtures.ts';
 
@@ -161,6 +162,17 @@ describe('orphan-slot fallback (watch item 3): clearance-reveal only', () => {
     const r = commitWithCitations(LOCAL, 'loc-1', []); // not the truth
     expect(r.ok).toBe(false);
     expect(r.reason).toBe('orphan-unrevealed');
+  });
+});
+
+describe('the citations-required dial (design §8)', () => {
+  it('default requires one citation, capped at the slot co-carrier count', () => {
+    // the trio seam is 2-carrier, so the demand is min(CITATIONS_REQUIRED, 1) = 1
+    // at the default. One good citation suffices.
+    expect(CITATIONS_REQUIRED).toBeGreaterThanOrEqual(1);
+    insert(TQE_001, 'tqe-1', 'amber');
+    const r = commitWithCitations(TQE_003, 'tqe-1', [TQE_001]);
+    expect(r.ok).toBe(true); // one citation meets the (clamped) requirement
   });
 });
 

@@ -19,7 +19,14 @@ export const ui = $state<{
   activeFile: string | null;
   /** the anchor_ref of the redacted span the cursor is on, or null */
   activeSpan: string | null;
-}>({ mode: 'amber', activeFile: null, activeSpan: null });
+  /**
+   * Provenance-visibility toggle (the §7.4 fifth distinction / design §8 dial):
+   * when on, a Quippy-routed slot shows its violet tell so the player can see
+   * reliance accumulate per file. A legibility aid for the no-Quippy goal; some
+   * players may prefer it off. Default on.
+   */
+  showProvenance: boolean;
+}>({ mode: 'amber', activeFile: null, activeSpan: null, showProvenance: true });
 
 // ── Terminal log ─────────────────────────────────────────────────────────
 // AMBER's terse status register (design doc §5a): command echoes, accept/reject

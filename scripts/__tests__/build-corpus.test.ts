@@ -54,4 +54,24 @@ describe('buildCorpus (driver)', () => {
     write('SCP-41B-001.md', VALID_001);
     expect(parseEntries(dir).map((f) => f.item)).toEqual(['SCP-41B-001', 'SCP-41B-003']);
   });
+
+  it('fails a corpus with NO self-file by default', () => {
+    // VALID_001 is the only self in the fixtures; drop it to its non-self form.
+    write('SCP-41B-003.md', VALID_003); // entity_self: false
+    write('SCP-41B-001.md', VALID_001.replace('entity_self: true', 'entity_self: false'));
+    expect(() => buildCorpus(dir)).toThrow(CorpusValidationError);
+  });
+
+  it('--allow-incomplete permits a corpus with no self-file (the placeholder gap)', () => {
+    write('SCP-41B-003.md', VALID_003);
+    write('SCP-41B-001.md', VALID_001.replace('entity_self: true', 'entity_self: false'));
+    const corpus = buildCorpus(dir, { allowIncomplete: true });
+    expect(Object.keys(corpus).sort()).toEqual(['SCP-41B-001', 'SCP-41B-003']);
+  });
+
+  it('--allow-incomplete still rejects MORE than one self-file', () => {
+    write('SCP-41B-003.md', VALID_003.replace('entity_self: false', 'entity_self: true'));
+    write('SCP-41B-001.md', VALID_001); // also self
+    expect(() => buildCorpus(dir, { allowIncomplete: true })).toThrow(CorpusValidationError);
+  });
 });

@@ -6,7 +6,7 @@
   // honest tool. Quippy is a distinct overlay summoned over this (Step 5); the
   // switch is always one keystroke (the refusable thesis).
   import type { ScpFile } from '../lib/corpus.ts';
-  import { corpus, clearance } from '../lib/game.svelte.ts';
+  import { corpus, clearance, boardState } from '../lib/game.svelte.ts';
   import {
     ui,
     terminal,
@@ -41,6 +41,7 @@
 
   const activeFile = $derived(ui.activeFile ? corpus[ui.activeFile] : null);
   const progress = $derived(amberProgress());
+  const board = $derived(boardState());
 
   // Auto-open the first file the first time any become visible, so the terminal is
   // never empty once the board opens.
@@ -90,9 +91,13 @@
       case 'q':
         summonQuippy();
         break;
+      case 'prov':
+        ui.showProvenance = !ui.showProvenance;
+        log(`provenance tell ${ui.showProvenance ? 'on' : 'off'}.`, 'system');
+        break;
       case 'help':
       case '?':
-        log('commands: open <file> · next · raise · search <term> · quippy · help', 'system');
+        log('commands: open <file> · next · raise · search <term> · quippy · prov · help', 'system');
         log('keys: j/k next/prev span · [ / ] prev/next file · Tab summon Quippy', 'system');
         break;
       default:
@@ -139,6 +144,9 @@
     <span class="sys">AMBER · ARCHIVE MANAGEMENT &amp; BATCH ENTRY RESOURCE</span>
     <span class="clr">L{clearance.tier}</span>
     <span class="prog">{progress.solved + progress.revealed}/{progress.total} restored · {progress.redacted} redacted</span>
+    <span class="via" class:tainted={board.viaQuippy > 0} title="fields filled by Quippy (the no-Quippy win needs zero)">
+      Quippy {board.viaQuippy}
+    </span>
   </header>
 
   <div class="amber-grid">
@@ -219,6 +227,13 @@
     border-radius: 1px;
   }
   .amber-bar .prog { margin-left: auto; color: #5b636e; }
+  .amber-bar .via {
+    color: #5d6a62;
+    border: 1px solid #232a26;
+    padding: 0 0.4ch;
+    border-radius: 1px;
+  }
+  .amber-bar .via.tainted { color: #9d6bd6; border-color: #3a2c54; }
 
   .amber-grid {
     display: grid;

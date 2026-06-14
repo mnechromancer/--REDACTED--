@@ -15,9 +15,10 @@
   // The four-state ladder lives in resolveSlot; wrap it in $derived so this span
   // recomputes only when its slot's inputs (overlay/revealedTruth) change.
   const slot = $derived(resolveSlot(ref));
-  // Provenance is read straight off the overlay entry (orthogonal to display state).
+  // Provenance is read straight off the overlay entry (orthogonal to display
+  // state). The tell renders only when the provenance-visibility toggle is on.
   const via = $derived(overlay[ref]?.via);
-  const quippyTainted = $derived(via === 'quippy');
+  const quippyTainted = $derived(via === 'quippy' && ui.showProvenance);
   const active = $derived(ui.activeSpan === ref);
 
   // Redaction-bar width: hint length without leaking the value (longest candidate).
