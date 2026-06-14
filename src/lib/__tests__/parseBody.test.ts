@@ -44,4 +44,21 @@ describe('parseBody', () => {
     const segs = parseBody('⟦a1⟧ ⟦a2⟧');
     expect(segs.some((s) => s.kind === 'text' && s.text === '')).toBe(false);
   });
+
+  // Janitor fix: markup inside an HTML comment must be inert, not parsed as a real
+  // anchor token / wikilink (which would dangle the build or render a phantom slot).
+  it('ignores anchor tokens and wikilinks inside HTML comments', () => {
+    const segs = parseBody('real ⟦a1⟧ <!-- not ⟦a2⟧ nor [[SCP-41B-999]] --> tail');
+    expect(segs).toEqual([
+      { kind: 'text', text: 'real ' },
+      { kind: 'anchor', id: 'a1' },
+      { kind: 'text', text: '  tail' },
+    ]);
+  });
+
+  it('strips a multi-line HTML comment containing markup', () => {
+    const segs = parseBody('a ⟦x⟧ <!--\n ⟦buried⟧\n [[SCP-41B-000]]\n--> b');
+    expect(segs.filter((s) => s.kind === 'anchor')).toEqual([{ kind: 'anchor', id: 'x' }]);
+    expect(segs.some((s) => s.kind === 'wikilink')).toBe(false);
+  });
 });

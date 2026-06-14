@@ -11,7 +11,7 @@
 // inference is the only spend — exposure rises on insertion, and there is no
 // separate stability resource. Truth never moves; the player edits only `overlay`.
 
-import type { Corpus, OverlayEntry, Anchor } from './corpus.ts';
+import type { Corpus, OverlayEntry, Anchor, Via } from './corpus.ts';
 
 // ── State ──────────────────────────────────────────────────────────────
 // `corpus` is immutable after load; everything else is the mutable board state.
@@ -57,7 +57,7 @@ export function anchorOf(ref: string): Anchor {
   return anchor;
 }
 
-// ── Concept cross-mentions (HelpUtility §5.3) ──────────────────────────
+// ── Concept cross-mentions (AMBER Concordance, §5.3) ───────────────────
 // Every OTHER anchor across the corpus sharing a given anchor's concept key.
 // This is inference surface (b): "where else is this concept mentioned." Returns
 // the bare refs; an anchor with no concept (local-only) has no cross-mentions.
@@ -144,6 +144,124 @@ export function conceptClues(ref: string): ConceptClue[] {
   return out;
 }
 
+// ── The citation-cost gate (AMBER's manual unredaction) ────────────────
+// technical_document.md §7.5, design_document.md §5.3 — RESOLVED [R§6.2].
+//
+// AMBER's honest verb: to commit candidate k at a slot, the player CITES the
+// corroborating co-carrier(s) — the slots of the same concept that already show
+// the index-k reading by independent knowledge (clearance-revealed truth, or a
+// value the player solved earlier). AMBER adjudicates the citation; a good one
+// calls the same insert(ref, value, 'amber') (exposure +0), a bad/missing one is
+// rejected with no write. This GUARDS insert(); it does not replace it. Quippy
+// bypasses this entirely by calling insert(ref, value, 'quippy') directly.
+
+// ── The central dial (design_document.md §8) ───────────────────────────────
+// The Quippy-temptation / AMBER-difficulty dial. How much corroboration a commit
+// needs sets the whole curve: 1 = easy AMBER (any single co-carrier suffices);
+// 2+ = hard AMBER (the player must assemble a multi-source case before committing,
+// making Quippy more tempting early). Clamped to what a slot's co-carrier count
+// can supply (a 2-carrier concept can never field 3 citations), so raising this
+// never makes a slot unsolvable — it just demands more reading where the evidence
+// exists. Start at 1 (the recommended floor); raise to tune difficulty up.
+export const CITATIONS_REQUIRED = 1;
+
+export type CommitReason =
+  | 'not-a-candidate' // value is not in the anchor's authored set
+  | 'uncorroborated'  // multi-carrier slot, but no cited co-carrier supports index k
+  | 'orphan-unrevealed'; // orphan slot whose own truth clearance hasn't revealed yet
+
+export interface CommitResult {
+  ok: boolean;
+  reason?: CommitReason;
+  /** the citations that actually corroborated (for AMBER's accept line) */
+  citedBy?: string[];
+  /** refs the accepted commit propagated to */
+  propagatedTo?: string[];
+}
+
+/**
+ * Does `citationRef` corroborate candidate index `k` at `ref`? True iff the cited
+ * co-carrier *currently reads* its own index-k value by INDEPENDENT knowledge:
+ * either clearance has revealed its truth to be mutations[k], or the player solved
+ * it there earlier (an `inserted` overlay value equal to mutations[k]).
+ *
+ * A *propagated* value never corroborates — propagation is the player's own
+ * unconfirmed ripple, not evidence (§7.5). This is what keeps the gate honest:
+ * you can only cite something independently known, never something your own
+ * earlier guess pushed there.
+ */
+export function corroborates(citationRef: string, ref: string, k: number): boolean {
+  const concept = anchorOf(ref).concept;
+  if (!concept) return false; // orphan target has no co-carriers to cite
+  if (citationRef === ref) return false; // a slot cannot cite itself
+  let citAnchor: Anchor;
+  try {
+    citAnchor = anchorOf(citationRef);
+  } catch {
+    return false; // dangling citation ref
+  }
+  if (citAnchor.concept !== concept) return false; // must be a co-carrier of the same concept
+  const target = citAnchor.mutations[k]; // index-aligned reading at the citation
+  if (target === undefined) return false;
+  // clearance-revealed truth at the citation reads index k
+  if (revealedTruth.has(citationRef) && citAnchor.truth === target) return true;
+  // OR the player independently solved the citation at index k
+  const o = overlay[citationRef];
+  return o?.source === 'inserted' && o.value === target;
+  // a 'propagated' value at the citation never corroborates
+}
+
+/** True if `ref` has no citable co-carrier (concept "" or it's the only carrier). */
+export function isOrphanSlot(ref: string): boolean {
+  return crossMentions(ref).length === 0;
+}
+
+/**
+ * AMBER commit. The honest unredaction verb. Accepts iff the candidate is
+ * corroborated, then commits via=amber (exposure +0) and propagates.
+ *
+ * Two paths:
+ *  - **Multi-carrier slot:** accept iff ≥1 cited co-carrier corroborates the
+ *    candidate's index. Zero good citations → rejected ('uncorroborated'), no write.
+ *  - **Orphan slot** (no co-carrier to cite — watch item 3): there is nothing to
+ *    cite, so the fallback is *clearance-reveal only*: AMBER can commit an orphan
+ *    slot only once its OWN truth has been clearance-revealed, and only to that
+ *    truth. This means an orphan can't be pre-empted by AMBER guessing, but is
+ *    always AMBER-soluble once the player has climbed to its tier — so the
+ *    no-Quippy win stays reachable for any corpus containing one, and no leak is
+ *    introduced (the truth must already be on screen). (§7.5 open sub-question,
+ *    decided: clearance-reveal fallback.)
+ */
+export function commitWithCitations(
+  ref: string,
+  value: string,
+  citations: string[],
+  canPropagateTo?: (item: string) => boolean,
+): CommitResult {
+  const anchor = anchorOf(ref);
+  const k = anchor.mutations.indexOf(value);
+  if (k < 0) return { ok: false, reason: 'not-a-candidate' };
+
+  if (isOrphanSlot(ref)) {
+    // Orphan fallback: AMBER-soluble only once the slot's own truth is revealed,
+    // and only to that truth.
+    if (revealedTruth.has(ref) && anchor.truth === value) {
+      const propagatedTo = insert(ref, value, 'amber', canPropagateTo);
+      return { ok: true, citedBy: [], propagatedTo };
+    }
+    return { ok: false, reason: 'orphan-unrevealed' };
+  }
+
+  const good = citations.filter((c) => corroborates(c, ref, k));
+  // Require CITATIONS_REQUIRED corroborating citations, but never more than the
+  // slot's co-carriers can supply — so the dial tunes difficulty without making a
+  // thinly-carried slot unsolvable (a 2-carrier concept caps the demand at 1).
+  const need = Math.min(CITATIONS_REQUIRED, crossMentions(ref).length);
+  if (good.length < need) return { ok: false, reason: 'uncorroborated' }; // go read more
+  const propagatedTo = insert(ref, value, 'amber', canPropagateTo); // same primitive, via=amber, +0
+  return { ok: true, citedBy: good, propagatedTo };
+}
+
 // ── Display ────────────────────────────────────────────────────────────
 // The four-state grammar resolved per slot. The branch ladder below is copied
 // verbatim from §3 — the ORDER of these branches IS the state precedence and is
@@ -204,23 +322,38 @@ function currentChosenValue(ref: string): string {
 // the immutable corpus each call, so re-inserting the same value is a no-op and
 // no drift accumulates (§4 "idempotent re-evaluation").
 
-/** True when the overlay already holds exactly this inserted value at this slot. */
-function alreadyInserted(ref: string, value: string): boolean {
+/**
+ * True when the overlay already holds exactly this inserted value at this slot,
+ * via the same route. A re-insert of the same value but a *different* route (e.g.
+ * an AMBER re-solve of a Quippy-tainted slot — watch item 1) is NOT idempotent:
+ * it must re-write so the `via` is updated and the ripples re-stamped.
+ */
+function alreadyInserted(ref: string, value: string, via: Via): boolean {
   const o = overlay[ref];
-  return o?.source === 'inserted' && o.value === value;
+  return o?.source === 'inserted' && o.value === value && o.via === via;
 }
 
 /**
  * Insert a candidate at `ref` and propagate it to the index-aligned slot of
- * every co-carrier of its concept. `canPropagateTo`, when given, gates which
- * target items may receive the ripple — the onboarding uses it to keep
- * propagation inside the files the player has actually unlocked, so an edit never
- * ripples to a record that isn't on screen yet. Omitted ⇒ propagate to all
- * carriers (normal play). Returns the refs propagated to.
+ * every co-carrier of its concept.
+ *
+ * `via` records the route (re-frame R§6.3): `'amber'` (the honest cited commit,
+ * exposure +0) or `'quippy'` (the one-click fill that carries all the exposure,
+ * R§6.4). It is stamped on the inserted entry AND inherited by every propagated
+ * ripple, so a single Quippy edit that ripples widely is accounted as Quippy
+ * reliance everywhere it lands (watch item 2). Defaults to `'amber'` so existing
+ * call sites and the no-cost route are the default.
+ *
+ * `canPropagateTo`, when given, gates which target items may receive the ripple —
+ * the onboarding uses it to keep propagation inside the files the player has
+ * actually unlocked, so an edit never ripples to a record that isn't on screen
+ * yet. Omitted ⇒ propagate to all carriers (normal play). Returns the refs
+ * propagated to.
  */
 export function insert(
   ref: string,
   value: string,
+  via: Via = 'amber',
   canPropagateTo?: (item: string) => boolean,
 ): string[] {
   // Reject free text: only authored candidates may enter the overlay (§5.4,
@@ -231,10 +364,10 @@ export function insert(
     throw new Error(`insert: "${value}" is not an authored candidate for ${ref}`);
   }
 
-  if (alreadyInserted(ref, value)) return []; // idempotent re-insert: no recompute, no new ripples
+  if (alreadyInserted(ref, value, via)) return []; // idempotent re-insert: no recompute, no new ripples
 
-  // 1. Write the inserted value.
-  overlay[ref] = { anchor_ref: ref, value, source: 'inserted' };
+  // 1. Write the inserted value, stamped with its route.
+  overlay[ref] = { anchor_ref: ref, value, source: 'inserted', via };
 
   // 2. Propagate to every other carrier of this concept, index-aligned. We
   //    overwrite any prior propagated entry at the target (re-evaluation from
@@ -261,6 +394,7 @@ export function insert(
         anchor_ref: targetRef,
         value: mutation,
         source: 'propagated',
+        via, // a ripple inherits its cause's route (R§6.3; watch item 2)
         caused_by: ref,
       };
       propagatedTo.push(targetRef);
@@ -272,6 +406,9 @@ export function insert(
   //    guarantee made structural: re-inserting or changing a value can only
   //    move exposure to whatever the current overlay implies, never ratchet it.
   recomputeExposure();
+  // 4. Fire/clear breaches against the new exposure (Quippy reliance can push the
+  //    board into a breached state; an AMBER re-solve dropping exposure clears it).
+  evaluateBreaches();
 
   return propagatedTo;
 }
@@ -279,33 +416,38 @@ export function insert(
 // ── Batched validation (C7, §5) ────────────────────────────────────────
 // Raising clearance unlocks ground-truth in BATCHES keyed to the tier — never
 // one slot at a time, never per-guess. This is the rule-of-three anti-brute-
-// force logic (§5.7): the system confirms whether an *already-inserted* guess
-// coheres or contradicts; it never volunteers the value of a slot whose tier the
-// player has not yet reached. A slot at redaction_level 4 stays redacted until
-// clearance reaches 4 — reaching that tier is the legitimate reveal, not a leak.
+// force logic (§5.7). A slot at redaction_level 4 stays redacted until clearance
+// reaches 4 — reaching that tier is the legitimate reveal, not a leak.
+//
+// Reveal model (reconciled with the citation gate, decision 2026-06-13 — "spec
+// reveal, scoped to open files"): reaching a tier reveals in-tier truth for slots
+// in ACCESSIBLE files (file.clearance <= tier), as the §5 pseudocode intends.
+// This is what SEEDS the AMBER citation gate: a clearance-revealed co-carrier is
+// the only non-circular evidence the player can cite (a player-solve would itself
+// need a prior citation). Invariant #4 still holds in its load-bearing sense — the
+// reveal NEVER writes the player's overlay/guess layer (it only shows truth in the
+// pane), so it never volunteers a value INTO the player's work. The onboarding
+// guard also holds: a not-yet-met file is not accessible (its baseline clearance
+// gates it), so its slots are not pre-revealed by a clearance raised elsewhere.
 
 /**
- * Raise clearance to `toTier` and reconcile the batch it unlocks. Per the chosen
- * reading of CLAUDE.md invariant #4 — an audit "confirms inserted guesses; it
- * never volunteers an untouched slot's value" — the batch is every anchor that
- * is (a) now within clearance reach, (b) not yet reconciled, AND (c) something
- * the player has actually filled (an overlay entry exists). Untouched slots are
- * never revealed by clearance alone: they stay redacted and fillable at any tier,
- * so the player must guess a slot to ever see its truth ("guess to see"). This is
- * what lets the staged onboarding unlock a later file without its slots being
- * pre-revealed by a clearance the player happened to raise elsewhere. A
- * reconciled guess that disagrees with truth surfaces as 'truth-contradiction'.
- * Lowering or holding the tier reconciles nothing new. Returns the refs reconciled.
+ * Raise clearance to `toTier` and reveal the batch it unlocks. The batch is every
+ * anchor that is (a) now within clearance reach (redaction_level <= tier), (b) in
+ * an accessible file (file.clearance <= tier), and (c) not yet revealed. Revealing
+ * shows truth in the pane and reconciles any guess already sitting there (a guess
+ * disagreeing with truth surfaces as 'truth-contradiction'); it writes NO overlay
+ * entry. Lowering or holding the tier reveals nothing new. Returns the refs revealed.
  */
 export function raiseClearance(toTier: 1 | 2 | 3 | 4 | 5): string[] {
   if (toTier > clearance.tier) clearance.tier = toTier;
 
   const batch: string[] = [];
   for (const file of Object.values(corpus)) {
+    const accessible = file.clearance <= clearance.tier; // the file is open at this tier
+    if (!accessible) continue; // a not-yet-met file's slots are not pre-revealed
     for (const a of file.anchors) {
       const ref = makeRef(file.item, a.id);
-      const filled = overlay[ref] !== undefined; // player inserted or propagated here
-      if (a.redaction_level <= clearance.tier && filled && !revealedTruth.has(ref)) {
+      if (a.redaction_level <= clearance.tier && !revealedTruth.has(ref)) {
         batch.push(ref);
       }
     }
@@ -319,8 +461,10 @@ export function raiseClearance(toTier: 1 | 2 | 3 | 4 | 5): string[] {
     }
   }
   // An audit can newly mark guesses wrong, which carry the struck-exposure
-  // penalty — recompute so the corruption registers the moment it's revealed.
+  // penalty — recompute so the corruption registers the moment it's revealed,
+  // then re-evaluate breaches against the new exposure.
   recomputeExposure();
+  evaluateBreaches();
   return batch;
 }
 
@@ -383,6 +527,11 @@ export interface BoardState {
   struck: number;          // reconciled slots whose guess CONTRADICTED truth
   pendingAudit: number;    // inserted slots whose truth tier isn't yet reached
   hasInserted: boolean;
+  // Provenance counts across ALL live overlay entries (inserted + propagated), so
+  // a single Quippy edit rippling to N carriers counts as N Quippy-tainted slots
+  // (watch item 2). The no-Quippy ending reads viaQuippy === 0 (Step 6).
+  viaAmber: number;        // overlay entries routed through AMBER (the honest tool)
+  viaQuippy: number;       // overlay entries routed through Quippy (the costly tool)
 }
 
 export function boardState(): BoardState {
@@ -393,6 +542,8 @@ export function boardState(): BoardState {
   let confirmed = 0;
   let struck = 0;
   let pendingAudit = 0;
+  let viaAmber = 0;
+  let viaQuippy = 0;
   for (const file of Object.values(corpus)) {
     for (const a of file.anchors) {
       totalSlots++;
@@ -414,6 +565,13 @@ export function boardState(): BoardState {
       } else if (o?.source === 'propagated') {
         propagated++;
       }
+      // Provenance tally over every live entry (inserted + propagated alike), so
+      // Quippy reliance is counted wherever it rippled. Default-via ('amber' when
+      // unset) keeps untagged entries on the honest side.
+      if (o) {
+        if (o.via === 'quippy') viaQuippy++;
+        else viaAmber++;
+      }
     }
   }
   return {
@@ -425,74 +583,135 @@ export function boardState(): BoardState {
     struck,
     pendingAudit,
     hasInserted: filled > 0,
+    viaAmber,
+    viaQuippy,
   };
 }
 
-// ── Session outcome (the ending) ────────────────────────────────────────
-// Exposure now has a consequence. Every restored field softens the record; cross
-// the breach threshold and the entity re-indexes out of containment — the
-// session ends as a breach (loss). Restore the record correctly while keeping
-// exposure under the line and the site holds — containment (win). This is the
-// stakes the slice deferred: "guess to see, but every guess corrupts."
+// ── Breach line (exposure consequence; drivers re-aimed to Quippy) ──────────
+// Exposure (now driven ONLY by Quippy reliance, R§6.4) still has a consequence:
+// cross the line and an entity breaches, mutating terminal behaviour (and forcing
+// Quippy's post-breach band). A perfect no-Quippy run never approaches it — the
+// breach line is reached only by leaning on Quippy. Tuned against the trio
+// (total possible Quippy exposure ~15): a few escalating Quippy assists reach it.
+/** Exposure at or above this and an entity re-indexes out of containment — breach. */
+export const BREACH_THRESHOLD = 10;
 
-// Tuned against the trio's weights (7 slots, total possible exposure 14 if all
-// filled — so the whole record can't be restored without breaching). Containment
-// requires correctly restoring a MAJORITY of the record (5 of 7), which forces
-// the player across all three files and past the early game, so a win never
-// pre-empts exploring the board. The breach line sits above a careful 5-correct
-// run (lightest five total ~9) but below a greedy fill, keeping the choice
-// "restore the right fields, then stop" rather than "fill everything."
-/** Exposure at or above this and the record has gone too soft — breach. */
-export const BREACH_THRESHOLD = 13;
-/** Confirmed-correct restorations needed for a containment win. */
-export const CONTAINMENT_TARGET = 5;
+/**
+ * Fire any breach whose threshold the current exposure now meets. Wired into the
+ * insert path so Quippy reliance can actually push the board into a breached
+ * state (which the no-Quippy ending and Quippy's post-breach band read). Breach
+ * EFFECTS (terminal-mutating) are applied by the presentation layer reading the
+ * `breaches` set; this only records that a breach has occurred. Recovery is
+ * first-class: drop exposure back under the line and the breach can clear.
+ */
+export function evaluateBreaches(): void {
+  for (const item of Object.keys(corpus)) {
+    if (exposure.value >= BREACH_THRESHOLD) {
+      if (!breaches.has(item)) breaches.add(item);
+    } else if (breaches.has(item)) {
+      breaches.delete(item); // recovery — exposure fell back under the line
+    }
+  }
+}
 
-export type Outcome = 'playing' | 'breach' | 'contained';
+// ── The ending — the loop breaks (no-Quippy completion) ─────────────────────
+// design_document.md §6, scp_x_bible.md §5. The win INVERTS from the old model:
+// the true ending is the corpus fully restored to truth AND every solved slot via
+// AMBER — zero Quippy assists, no surviving contradictions. Read from provenance
+// (the `via` field) across all solved slots, not a counter. Every other outcome is
+// a breach ending (recovery-first; breaches are board state).
+//
+// ENFORCEMENT (watch item, scp_x_bible.md §5.3): the HARD GATE — ANY Quippy assist
+// forecloses the true ending. Started hard for design clarity (the no-Quippy run
+// is a clean mastery expression); relax to a tolerance band only if playtest shows
+// it inhumane. Watch item 1, decided: an AMBER re-solve REDEEMS a Quippy-tainted
+// slot (the entry re-stamps via=amber), so a tainted run is recoverable by honest
+// re-work — the hard gate is humane because redemption exists, not because the gate
+// is soft.
 
-export interface SessionResult {
-  outcome: Outcome;
-  exposure: number;
-  threshold: number;
-  /** Player guesses revealed by audit that matched truth. */
-  correct: number;
-  /** Player guesses revealed by audit that contradicted truth. */
-  struck: number;
-  /** Fraction of the breach line currently used [0..1+]. */
-  pressure: number;
+export type EndOutcome = 'playing' | 'loop-broken' | 'breach';
+
+export interface EndState {
+  outcome: EndOutcome;
+  /** total slots in the corpus */
+  total: number;
+  /** slots restored to their truth and confirmed by clearance (the win numerator) */
+  restored: number;
+  /** slots whose overlay contradicts revealed truth (must be re-solved) */
+  contradictions: number;
+  /** slots still showing redacted (un-restored) */
+  redacted: number;
+  /** Quippy-routed entries across the board (the hard-gate disqualifier) */
+  quippyAssists: number;
+  /** true once an entity has breached (board state) */
+  breached: boolean;
 }
 
 /**
- * Resolve the session. Breach takes precedence — once exposure crosses the line
- * the record is lost no matter how accurate the player was. Otherwise, if the
- * player has confirmed enough correct restorations (audited, matched truth), the
- * site is contained. Auditing blanks alone never wins: containment requires
- * *correctly restored* fields, so "just audit to L5 without guessing" cannot
- * trivially win — it leaves the record un-restored.
+ * Read the ending from board state + provenance. A slot counts as RESTORED iff its
+ * truth has been revealed by clearance AND it currently reads that truth (a
+ * player insert equal to truth — orphans included). This honours invariant 4: the
+ * win is only evaluable on slots clearance has revealed, so the player must have
+ * climbed clearance to win, and truth is never volunteered to reach it.
+ *
+ * - loop-broken (true): every slot restored, no contradictions, ZERO Quippy
+ *   assists (hard gate). The record reconstructed entirely by hand.
+ * - breach: an entity has breached, OR (terminal state) the record is complete
+ *   but tainted — any Quippy assist or surviving contradiction forecloses the win.
+ *   Here a "breach ending" surfaces only on a breached board; an incomplete clean
+ *   record is still 'playing' (the player can keep working / redeem slots).
+ * - playing: otherwise (work remains, recoverable).
  */
-export function sessionResult(): SessionResult {
-  let correct = 0;
-  let struck = 0;
+export function endState(): EndState {
+  let total = 0;
+  let restored = 0;
+  let contradictions = 0;
+  let redacted = 0;
+  let quippyAssists = 0;
+
   for (const file of Object.values(corpus)) {
+    // The self-file (Quippy) is the entity you STARVE, not the puzzle you solve
+    // (scp_x_bible.md §5.4): you win by reconstructing everything ELSE by hand, at
+    // which point Quippy, having gotten no assists, cannot complete itself. So its
+    // anchors are excluded from the restoration target. A Quippy assist landing on
+    // it would still count as taint (defensive), but the player never reaches it.
+    const isSelf = file.entity_self;
     for (const a of file.anchors) {
       const ref = makeRef(file.item, a.id);
       const o = overlay[ref];
-      if (!revealedTruth.has(ref) || !o || o.source !== 'inserted') continue;
-      if (o.value === a.truth) correct++;
-      else struck++;
+      if (o?.via === 'quippy') quippyAssists++; // taint counts everywhere
+      if (isSelf) continue; // excluded from the restoration numerator/denominator
+
+      total++;
+      const revealed = revealedTruth.has(ref);
+      if (revealed && o && o.value === a.truth) {
+        restored++;
+      } else if (revealed && o && o.value !== a.truth) {
+        contradictions++;
+      } else if (!o || resolveSlot(ref).state === 'redacted') {
+        redacted++;
+      }
+      // (revealed-and-untouched slots are neither restored nor contradictions nor
+      // strictly redacted; they count against completion via `restored < total`.)
     }
   }
-  const exp = exposure.value;
-  let outcome: Outcome = 'playing';
-  if (exp >= BREACH_THRESHOLD) outcome = 'breach';
-  else if (correct >= CONTAINMENT_TARGET) outcome = 'contained';
-  return {
-    outcome,
-    exposure: exp,
-    threshold: BREACH_THRESHOLD,
-    correct,
-    struck,
-    pressure: exp / BREACH_THRESHOLD,
-  };
+
+  const breached = breaches.size > 0;
+  // total > 0 guards the degenerate empty-target case (a corpus that is only the
+  // excluded self-file is not a win the instant it loads).
+  const complete = total > 0 && restored === total && contradictions === 0;
+
+  let outcome: EndOutcome = 'playing';
+  if (complete && quippyAssists === 0) {
+    outcome = 'loop-broken'; // the true ending: full restoration, hand-built
+  } else if (breached) {
+    outcome = 'breach'; // an entity completed its re-shelving
+  }
+  // A complete-but-tainted record (quippyAssists > 0, no breach yet) stays
+  // 'playing' so the player can redeem tainted slots in AMBER (watch item 1).
+
+  return { outcome, total, restored, contradictions, redacted, quippyAssists, breached };
 }
 
 /**
@@ -507,9 +726,18 @@ export const STRUCK_PENALTY = 2.5;
 export function recomputeExposure(): void {
   let total = 0;
   for (const [ref, entry] of Object.entries(overlay)) {
+    // Exposure re-aimed (R§6.4, the design's keystone — design_document.md §3):
+    // ONLY Quippy reliance spends. An AMBER edit (the honest cited commit, or a
+    // ripple inheriting an AMBER cause) costs zero, full stop — even if a later
+    // audit shows it wrong. A perfect no-Quippy run never breaches; the exposure
+    // curve is a pure measure of how much the player leaned on Quippy. NEVER make
+    // an `'amber'` edit cost exposure: that collapses the two routes back into one
+    // and breaks the design. (`via` defaults to 'amber' when unset, so legacy/
+    // untagged entries are treated as the safe route.)
+    if (entry.via !== 'quippy') continue;
     const anchor = anchorOf(ref);
     let weight = entry.source === 'propagated' ? anchor.exposure_weight * PROPAGATION_FACTOR : anchor.exposure_weight;
-    // Once reconciled, a wrong guess weighs more — the divergence is now known.
+    // Once reconciled, a wrong Quippy fill weighs more — the divergence is now known.
     if (revealedTruth.has(ref) && entry.value !== anchor.truth) {
       weight *= STRUCK_PENALTY;
     }

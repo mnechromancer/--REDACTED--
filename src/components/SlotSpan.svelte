@@ -1,37 +1,52 @@
 <script lang="ts">
-  // ⚠ RE-FRAME (vault/docs/planning/reframe_amber_quippy.md §1, §6.3): four-state
-  //   grammar survives but re-rendered in CLI idiom; provenance (via amber|quippy)
-  //   may add a 5th visual distinction (AMBER-solved vs Quippy-solved). Hover/focus
-  //   interaction → explicit keybound span-jumping. See planning/handoff_janitor.md.
+  // Renders one anchor slot via resolveSlot(ref), in AMBER's monochrome-terminal
+  // idiom (re-frame §7.4). Owns the four-state grammar plus a fifth, provenance
+  // distinction: a Quippy-routed slot carries the entity's violet tell over its
+  // normal colour, so the player can see their reliance accumulate per file.
   //
-  // Renders one anchor slot via displayedSlot(ref). Owns the four-state CSS and
-  // hosts the SCP-X mouse-over (HelpUtility). technical_document.md §7.
-  import { resolveSlot, anchorOf } from '../lib/game.svelte.ts';
-  import HelpUtility from './HelpUtility.svelte';
+  // Interaction is keybound, not hover-driven (the old GUI model): clicking or
+  // focusing a span makes it the terminal's active span, which is what AmberLookup
+  // targets. The active span is outlined so the keyboard cursor is always visible.
+  import { resolveSlot, anchorOf, overlay } from '../lib/game.svelte.ts';
+  import { ui } from '../lib/ui.svelte.ts';
 
   let { ref }: { ref: string } = $props();
 
-  // The four-state ladder lives in resolveSlot; wrap it in $derived here so this
-  // span recomputes only when its slot's inputs (overlay/revealedTruth) change.
+  // The four-state ladder lives in resolveSlot; wrap it in $derived so this span
+  // recomputes only when its slot's inputs (overlay/revealedTruth) change.
   const slot = $derived(resolveSlot(ref));
+  // Provenance is read straight off the overlay entry (orthogonal to display
+  // state). The tell renders only when the provenance-visibility toggle is on.
+  const via = $derived(overlay[ref]?.via);
+  const quippyTainted = $derived(via === 'quippy' && ui.showProvenance);
+  const active = $derived(ui.activeSpan === ref);
 
-  let hovered = $state(false);
-
-  // Resolve once for the redaction-bar width: a bar should hint length without
-  // leaking the value. Use the longest candidate as the visual budget.
+  // Redaction-bar width: hint length without leaking the value (longest candidate).
   const barWidth = $derived(
     Math.min(24, Math.max(...anchorOf(ref).mutations.map((m) => m.length))),
   );
+
+  function select() {
+    ui.activeSpan = ref;
+    ui.activeFile = ref.slice(0, ref.indexOf('#'));
+  }
 </script>
 
 <span
   class="slot {slot.state}"
+  class:quippy-tainted={quippyTainted}
+  class:active
   role="button"
   tabindex="0"
-  onmouseenter={() => (hovered = true)}
-  onmouseleave={() => (hovered = false)}
-  onfocus={() => (hovered = true)}
-  onblur={() => (hovered = false)}
+  aria-current={active ? 'true' : undefined}
+  onclick={select}
+  onkeydown={(e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      select();
+    }
+  }}
+  onfocus={select}
 >
   {#if slot.state === 'redacted'}
     <span class="bar" style="--ch: {barWidth}" aria-label="redacted slot">█████</span>
@@ -40,36 +55,33 @@
   {:else}
     {slot.text}
   {/if}
-
-  {#if hovered}
-    <HelpUtility {ref} />
-  {/if}
 </span>
 
 <style>
-  /* Slots sit in running prose as discrete "fields" — a typed form blank the
-     archivist fills. Horizontal margin keeps them off the adjacent words and
-     punctuation; the small inline-block padding gives each state a boxed extent
-     so a filled value reads as an entry stamped into the record, not just
-     coloured text. */
+  /* Slots sit in running prose as discrete fields the archivist fills. In CLI
+     idiom they read as inline bracketed tokens rather than rounded GUI chips. */
   .slot {
     position: relative;
-    cursor: help;
+    cursor: pointer;
     margin: 0 0.12em;
-    padding: 0.02em 0.34em;
-    border-radius: 2px;
-    /* A filled slot can hold a whole clause, so it must wrap with the prose
-       rather than push past the document's edge. Only the redacted bar (a short
-       run of block chars) is kept nowrap, below. */
+    padding: 0.02em 0.3em;
+    border-radius: 1px;
     overflow-wrap: anywhere;
+  }
+  /* The keyboard cursor: the active span is always visibly outlined, since
+     traversal is keybound, not hover-driven. */
+  .slot.active {
+    outline: 1px solid var(--slot-inserted-fg);
+    outline-offset: 1px;
+    background: rgba(232, 163, 61, 0.08);
   }
   .slot:focus-visible {
     outline: 1px solid var(--slot-inserted-fg);
     outline-offset: 1px;
   }
 
-  /* 1. Redacted — a struck-through classified bar, slightly inset like ink over
-        the scan. user-select off so the value can't be lifted from the DOM. */
+  /* 1. Redacted — a solid classified bar. user-select off so the value can't be
+        lifted from the DOM. */
   .slot.redacted {
     padding: 0;
     margin: 0 0.18em;
@@ -85,31 +97,25 @@
     vertical-align: baseline;
   }
 
-  /* 2. Player-inserted — the amber typed-in value, boxed like a form field. */
+  /* 2. Player-inserted — amber, bracketed like a typed entry. */
   .slot.inserted {
     color: var(--slot-inserted-fg);
-    background: #1c1608;
-    border: 1px solid var(--slot-inserted-underline);
-    border-radius: 2px;
+    border-bottom: 1px solid var(--slot-inserted-underline);
   }
+  .slot.inserted::before { content: '['; color: var(--slot-inserted-underline); }
+  .slot.inserted::after { content: ']'; color: var(--slot-inserted-underline); }
 
-  /* 3. Propagated — the teal cross-file mutation, dotted box + glitch. */
+  /* 3. Propagated — teal cross-file mutation, dotted underline + faint glitch. */
   .slot.propagated {
     color: var(--slot-propagated-fg);
-    background: #08201d;
-    border: 1px dotted var(--slot-propagated-underline);
-    border-radius: 2px;
+    border-bottom: 1px dotted var(--slot-propagated-underline);
     animation: slot-glitch 4s steps(1) infinite;
   }
 
-  /* 4. Truth-contradiction — the audit payoff: the struck-through guess sits
-        beside the truth that just bled in. Boxed red, with an entry flash so the
-        eye lands on it the moment an audit reveals the discrepancy. */
+  /* 4. Truth-contradiction — struck guess beside the truth that bled in. */
   .slot.truth-contradiction {
-    padding: 0.02em 0.4em;
     background: #1f0d0d;
     border: 1px solid var(--slot-contradiction-fg, #e85d5d);
-    border-radius: 2px;
     animation: reveal-flash 0.7s ease-out;
   }
   .slot.truth-contradiction .guess {
@@ -122,33 +128,29 @@
     margin-left: 0.4ch;
   }
 
-  /* Coherent reveal — your guess matched, or truth shown for an unguessed slot. */
+  /* Coherent reveal — guess matched, or truth shown for an unguessed slot. */
   .slot.revealed {
     color: var(--slot-revealed-fg);
-    padding: 0.02em 0.34em;
-    background: #0c1810;
-    border: 1px solid #224a30;
-    border-radius: 2px;
+    border-bottom: 1px solid #224a30;
     animation: reveal-flash 0.7s ease-out;
   }
 
+  /* 5. Provenance modifier — a Quippy-routed slot carries the entity's tell: a
+        violet underglow over whatever the slot's colour already is. AMBER-routed
+        slots get nothing (clean is honest). A glance shows reliance per file. */
+  .slot.quippy-tainted {
+    text-shadow: 0 0 6px var(--slot-via-quippy-tell);
+    border-bottom-color: var(--slot-via-quippy-tell);
+  }
+
   @keyframes reveal-flash {
-    0% {
-      box-shadow: 0 0 0 0 rgba(232, 93, 93, 0);
-      filter: brightness(1.8);
-    }
-    30% {
-      box-shadow: 0 0 12px 2px rgba(232, 93, 93, 0.5);
-    }
-    100% {
-      box-shadow: 0 0 0 0 rgba(232, 93, 93, 0);
-      filter: brightness(1);
-    }
+    0% { box-shadow: 0 0 0 0 rgba(232, 93, 93, 0); filter: brightness(1.8); }
+    30% { box-shadow: 0 0 12px 2px rgba(232, 93, 93, 0.5); }
+    100% { box-shadow: 0 0 0 0 rgba(232, 93, 93, 0); filter: brightness(1); }
   }
   @media (prefers-reduced-motion: reduce) {
     .slot.truth-contradiction,
-    .slot.revealed {
-      animation: none;
-    }
+    .slot.revealed { animation: none; }
+    .slot.quippy-tainted { text-shadow: none; text-decoration: underline wavy var(--slot-via-quippy-tell); }
   }
 </style>

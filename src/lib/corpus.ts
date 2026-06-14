@@ -1,8 +1,3 @@
-// ⚠ RE-FRAME (vault/docs/planning/reframe_amber_quippy.md §6.3): add optional
-//   `via?: 'amber' | 'quippy'` to OverlayEntry to track HOW each unredaction was
-//   made (the no-Quippy win, R§2). entity_self framing changes (self-file = Quippy).
-//   See planning/handoff_janitor.md → "corpus.ts".
-//
 // Corpus schema — the canonical data model.
 // Authored in Obsidian frontmatter, parsed to these types by scripts/build-corpus.ts.
 // Mirrors technical_document.md §2 exactly. The vault is the source of truth; these
@@ -56,6 +51,9 @@ export interface ScpFile {
 // ── Runtime overlay state ──────────────────────────────────────────────
 // Separate from the immutable corpus. The player edits this; truth never moves.
 
+/** How an unredaction was made: the honest AMBER route, or the costly Quippy one. */
+export type Via = 'amber' | 'quippy';
+
 /** A player-inserted or propagated value sitting over a slot. */
 export interface OverlayEntry {
   /** "SCP-41B-XXX#a1" */
@@ -63,6 +61,16 @@ export interface OverlayEntry {
   /** player-inserted or propagated value */
   value: string;
   source: 'inserted' | 'propagated';
+  /**
+   * HOW this unredaction was made (re-frame R§6.3). The no-Quippy ending reads
+   * this across all solved slots: the true ending requires `'amber'` throughout.
+   * Propagated entries inherit the originating edit's `via`, so a single Quippy
+   * edit that ripples widely is accounted as Quippy reliance everywhere it lands.
+   * Orthogonal to `source` — a slot can be inserted-via-amber, inserted-via-quippy,
+   * or propagated (inheriting its cause's `via`). Optional for back-compat; the
+   * engine threads it through insert() and defaults to 'amber' when omitted.
+   */
+  via?: Via;
   /** anchor_ref of the edit that propagated here (provenance) */
   caused_by?: string;
   /** set true once truth for this slot is revealed and differs */

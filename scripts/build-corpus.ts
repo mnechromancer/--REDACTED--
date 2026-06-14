@@ -8,7 +8,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Corpus, ScpFile } from '../src/lib/corpus.ts';
 import { parseEntry, EntryParseError } from './lib/parse-entry.ts';
-import { validateCorpus, CorpusValidationError } from './lib/validate-corpus.ts';
+import { validateCorpus, CorpusValidationError, type ValidateOptions } from './lib/validate-corpus.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(HERE, '..');
@@ -40,9 +40,9 @@ export function parseEntries(dir: string): ScpFile[] {
 }
 
 /** Parse + validate + serialize. Returns the corpus; throws on any failure. */
-export function buildCorpus(dir: string): Corpus {
+export function buildCorpus(dir: string, opts: ValidateOptions = {}): Corpus {
   const files = parseEntries(dir);
-  const errors = validateCorpus(files);
+  const errors = validateCorpus(files, opts);
   if (errors.length > 0) {
     throw new CorpusValidationError(errors);
   }
@@ -52,9 +52,12 @@ export function buildCorpus(dir: string): Corpus {
 }
 
 function main(): void {
+  // `--allow-incomplete` permits a corpus with no self-file (the gap between
+  // deleting the placeholder SCP-41B-000 and authoring the real Quippy self-file).
+  const allowIncomplete = process.argv.includes('--allow-incomplete');
   let corpus: Corpus;
   try {
-    corpus = buildCorpus(ENTRIES_DIR);
+    corpus = buildCorpus(ENTRIES_DIR, { allowIncomplete });
   } catch (e) {
     if (e instanceof EntryParseError || e instanceof CorpusValidationError) {
       console.error(`\n✗ build-corpus failed:\n${e.message}\n`);
