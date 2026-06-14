@@ -23,6 +23,14 @@
 
   /* Revealed truth that the player never guessed (coherent reveal). */
   --slot-revealed-fg: #8ad0a0;
+
+  /* Provenance distinction (re-frame §7.4): a modifier on solved slots so the
+   * player can SEE their Quippy-reliance accumulate per file. A Quippy-routed
+   * slot carries the entity's tell — a faint violet underglow — over its normal
+   * inserted/propagated colour. AMBER-routed slots get no extra mark (clean is
+   * honest). This is the fifth visual distinction, rendered as a modifier rather
+   * than a sixth state so the four-state ladder is untouched. */
+  --slot-via-quippy-tell: #9d6bd6;
 }
 
 /* Propagated slots carry a subtle glitch flicker so a cross-file mutation reads

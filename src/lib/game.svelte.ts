@@ -57,7 +57,7 @@ export function anchorOf(ref: string): Anchor {
   return anchor;
 }
 
-// ── Concept cross-mentions (HelpUtility §5.3) ──────────────────────────
+// ── Concept cross-mentions (AMBER Concordance, §5.3) ───────────────────
 // Every OTHER anchor across the corpus sharing a given anchor's concept key.
 // This is inference surface (b): "where else is this concept mentioned." Returns
 // the bare refs; an anchor with no concept (local-only) has no cross-mentions.
