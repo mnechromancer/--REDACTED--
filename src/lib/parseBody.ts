@@ -5,7 +5,7 @@
 // runtime and build-time tokenizing stay byte-for-byte identical — there is
 // exactly one definition of what `⟦id⟧` and `[[link]]` mean.
 
-import { ANCHOR_TOKEN, WIKILINK } from '../../scripts/lib/parse-entry.ts';
+import { ANCHOR_TOKEN, WIKILINK, stripComments } from '../../scripts/lib/parse-entry.ts';
 
 /** A run of literal prose between markup tokens. */
 export interface TextSegment {
@@ -36,7 +36,12 @@ export type BodySegment = TextSegment | AnchorSegment | WikilinkSegment;
  * The two markup forms are disjoint by construction (`⟦…⟧` vs `[[…]]`) so their
  * matches never overlap; we merge both match streams and walk them in order.
  */
-export function parseBody(body: string): BodySegment[] {
+export function parseBody(bodyRaw: string): BodySegment[] {
+  // Strip HTML comments first (shared with the build-time parser) so markup inside
+  // `<!-- … -->` is inert and runtime/build-time tokenizing stay identical. The
+  // built corpus is already comment-free; this also defends raw bodies passed in
+  // directly (fixtures, tests).
+  const body = stripComments(bodyRaw);
   // Collect every markup match with its absolute position, from both patterns.
   // `matchAll` on a /g regex yields matches with `.index`; we tag each by kind.
   const marks: Array<{ index: number; length: number; seg: BodySegment }> = [];

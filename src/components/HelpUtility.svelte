@@ -17,9 +17,11 @@
 
   function fill(candidate: string) {
     // Propagate only to records the onboarding has unlocked, so an edit never
-    // ripples to a file the player hasn't met yet.
+    // ripples to a file the player hasn't met yet. (Transitional: this combined
+    // panel is being split into AMBER's cited commit + Quippy's one-click fill in
+    // Step 4/5; until then it commits via the honest route.)
     const unlocked = unlockedFiles(progression.step);
-    const propagated = insert(ref, candidate, (item) => unlocked.has(item));
+    const propagated = insert(ref, candidate, 'amber', (item) => unlocked.has(item));
     logPropagation(ref, propagated);
   }
 

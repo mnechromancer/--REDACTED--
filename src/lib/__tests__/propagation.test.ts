@@ -68,10 +68,11 @@ describe('idempotent re-evaluation (no drift)', () => {
   });
 
   it('changing the source value moves the carrier instead of layering edits', () => {
-    insert(TQE_003, 'tqe-0');
-    insert(TQE_003, 'tqe-2');
+    insert(TQE_003, 'tqe-0', 'quippy');
+    insert(TQE_003, 'tqe-2', 'quippy');
     expect(overlay[TQE_001].value).toBe('tqe-2');
     // exposure reflects the current overlay: source weight + carrier weight, once
+    // (Quippy route, since only Quippy reliance spends — R§6.4)
     const expected =
       anchorOf(TQE_003).exposure_weight +
       anchorOf(TQE_001).exposure_weight * PROPAGATION_FACTOR;
@@ -90,12 +91,18 @@ describe('idempotent re-evaluation (no drift)', () => {
 });
 
 describe('exposure accounting', () => {
-  it('charges the source weight plus each propagated carrier weight', () => {
-    insert(TQE_003, 'tqe-1');
+  it('a Quippy edit charges the source weight plus each propagated carrier weight', () => {
+    insert(TQE_003, 'tqe-1', 'quippy');
     const expected =
       anchorOf(TQE_003).exposure_weight +
       anchorOf(TQE_001).exposure_weight * PROPAGATION_FACTOR;
     expect(exposure.value).toBe(expected);
+  });
+
+  it('an AMBER edit charges ZERO across the source and every ripple (keystone)', () => {
+    insert(TQE_003, 'tqe-1', 'amber');
+    expect(overlay[TQE_001]).toMatchObject({ source: 'propagated', via: 'amber' });
+    expect(exposure.value).toBe(0);
   });
 });
 

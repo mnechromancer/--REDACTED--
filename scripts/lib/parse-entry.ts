@@ -27,6 +27,19 @@ const BREACH_KINDS: ReadonlySet<string> = new Set([
 export const ANCHOR_TOKEN = /⟦([^⟧]+)⟧/g;
 /** Wikilink markup: [[SCP-41B-001]] */
 export const WIKILINK = /\[\[([^\]]+)\]\]/g;
+/** HTML comments: `<!-- … -->`, including multi-line. */
+const HTML_COMMENT = /<!--[\s\S]*?-->/g;
+
+/**
+ * Strip HTML comments from body prose so markup inside them is inert. Authors use
+ * `<!-- … -->` for re-frame flags and notes; without this, a `⟦id⟧` or `[[link]]`
+ * left in a comment would be parsed as a real anchor token / wikilink, dangling
+ * the build or rendering a phantom slot. Applied once at parse time so the stored
+ * `body` is comment-free and build-time and runtime tokenizing stay identical.
+ */
+export function stripComments(body: string): string {
+  return body.replace(HTML_COMMENT, '');
+}
 
 /** Raised for any structural problem in a single file. `file` is set by the caller. */
 export class EntryParseError extends Error {
@@ -47,7 +60,9 @@ export function splitFrontmatter(raw: string): { yaml: string; body: string } {
   if (!m) {
     throw new EntryParseError('no YAML frontmatter block (expected leading ---)');
   }
-  return { yaml: m[1], body: m[2] };
+  // Strip HTML comments from the body up front so every downstream consumer
+  // (token validation, wikilink checks, runtime rendering) sees comment-free prose.
+  return { yaml: m[1], body: stripComments(m[2]) };
 }
 
 function asString(v: unknown, field: string): string {

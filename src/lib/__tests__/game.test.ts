@@ -42,9 +42,20 @@ beforeEach(() => {
 });
 
 describe('insert — single-file overlay (concept-less slot)', () => {
-  it('writes an inserted overlay entry and charges its exposure weight', () => {
+  it('writes an inserted overlay entry stamped with its route (default amber)', () => {
     insert(LOCAL, LOCAL_GUESS);
-    expect(overlay[LOCAL]).toMatchObject({ value: LOCAL_GUESS, source: 'inserted' });
+    expect(overlay[LOCAL]).toMatchObject({ value: LOCAL_GUESS, source: 'inserted', via: 'amber' });
+  });
+
+  // Exposure re-aim (R§6.4): AMBER charges zero, Quippy charges the weight.
+  it('an AMBER insert charges ZERO exposure (the safe route)', () => {
+    insert(LOCAL, LOCAL_GUESS, 'amber');
+    expect(exposure.value).toBe(0);
+  });
+
+  it('a Quippy insert charges its exposure weight (the costly route)', () => {
+    insert(LOCAL, LOCAL_GUESS, 'quippy');
+    expect(overlay[LOCAL]).toMatchObject({ via: 'quippy' });
     expect(exposure.value).toBe(LOCAL_WEIGHT);
   });
 
@@ -63,28 +74,38 @@ describe('insert — single-file overlay (concept-less slot)', () => {
 });
 
 describe('idempotent re-insert (no accumulated drift, §4)', () => {
-  it('re-inserting the SAME value leaves exposure at one weight', () => {
-    insert(LOCAL, LOCAL_GUESS);
-    insert(LOCAL, LOCAL_GUESS);
-    insert(LOCAL, LOCAL_GUESS);
+  it('re-inserting the SAME quippy value leaves exposure at one weight', () => {
+    insert(LOCAL, LOCAL_GUESS, 'quippy');
+    insert(LOCAL, LOCAL_GUESS, 'quippy');
+    insert(LOCAL, LOCAL_GUESS, 'quippy');
     expect(exposure.value).toBe(LOCAL_WEIGHT);
     expect(overlay[LOCAL].value).toBe(LOCAL_GUESS);
   });
 
-  it('re-inserting a DIFFERENT value replaces in place, exposure does NOT ratchet', () => {
-    insert(LOCAL, LOCAL_GUESS);
-    insert(LOCAL, 'loc-2');
+  it('re-inserting a DIFFERENT quippy value replaces in place, exposure does NOT ratchet', () => {
+    insert(LOCAL, LOCAL_GUESS, 'quippy');
+    insert(LOCAL, 'loc-2', 'quippy');
     expect(overlay[LOCAL].value).toBe('loc-2');
     // exposure is a function of the current overlay (one live edit), not history
     expect(exposure.value).toBe(LOCAL_WEIGHT);
   });
 
-  // Property: any sequence of inserts of any candidates at one concept-less slot
-  // leaves exposure at exactly that slot's weight — recompute, never accumulate.
-  it('property: exposure equals one weight for any insert sequence at one slot', () => {
+  // Watch item 1: an AMBER re-solve of a Quippy-tainted slot redeems it — the
+  // entry is re-stamped via=amber and its exposure drops back to zero.
+  it('an AMBER re-solve of a Quippy slot clears the taint and the exposure', () => {
+    insert(LOCAL, LOCAL_GUESS, 'quippy');
+    expect(exposure.value).toBe(LOCAL_WEIGHT);
+    insert(LOCAL, LOCAL_GUESS, 'amber'); // same value, honest route
+    expect(overlay[LOCAL].via).toBe('amber');
+    expect(exposure.value).toBe(0);
+  });
+
+  // Property: any sequence of QUIPPY inserts of any candidates at one concept-less
+  // slot leaves exposure at exactly that slot's weight — recompute, never accumulate.
+  it('property: quippy exposure equals one weight for any insert sequence at one slot', () => {
     const candidates = FIXTURE['SCP-41B-003'].anchors[1].mutations;
     for (let i = 0; i < 12; i++) {
-      insert(LOCAL, candidates[i % candidates.length]);
+      insert(LOCAL, candidates[i % candidates.length], 'quippy');
       expect(exposure.value).toBe(LOCAL_WEIGHT);
     }
   });
@@ -213,9 +234,11 @@ describe('sessionResult — the ending (exposure consequence)', () => {
   }
   const oref = (id: string) => makeRef('SCP-41B-001', id);
 
+  // Exposure re-aim (R§6.4): only Quippy reliance drives exposure, so these
+  // legacy-outcome tests now lean on Quippy to cross the line.
   it('breaches once exposure crosses the threshold', () => {
     makeOutcomeCorpus();
-    insert(oref('heavy'), 'truth-heavy'); // weight = BREACH_THRESHOLD
+    insert(oref('heavy'), 'truth-heavy', 'quippy'); // weight = BREACH_THRESHOLD
     const r = sessionResult();
     expect(r.exposure).toBeGreaterThanOrEqual(BREACH_THRESHOLD);
     expect(r.outcome).toBe('breach');
@@ -223,9 +246,9 @@ describe('sessionResult — the ending (exposure consequence)', () => {
 
   it('breach takes precedence over containment even with enough correct fields', () => {
     makeOutcomeCorpus();
-    // CONTAINMENT_TARGET correct light reads + the heavy slot → over the line.
+    // CONTAINMENT_TARGET correct light reads + the heavy Quippy slot → over the line.
     for (let i = 0; i < CONTAINMENT_TARGET; i++) insert(oref(`s${i}`), `truth-${i}`);
-    insert(oref('heavy'), 'truth-heavy');
+    insert(oref('heavy'), 'truth-heavy', 'quippy');
     raiseClearance(5);
     const r = sessionResult();
     expect(r.correct).toBeGreaterThanOrEqual(CONTAINMENT_TARGET);
