@@ -1,3 +1,8 @@
+// ⚠ RE-FRAME (vault/docs/planning/reframe_amber_quippy.md §6.3): add optional
+//   `via?: 'amber' | 'quippy'` to OverlayEntry to track HOW each unredaction was
+//   made (the no-Quippy win, R§2). entity_self framing changes (self-file = Quippy).
+//   See planning/handoff_janitor.md → "corpus.ts".
+//
 // Corpus schema — the canonical data model.
 // Authored in Obsidian frontmatter, parsed to these types by scripts/build-corpus.ts.
 // Mirrors technical_document.md §2 exactly. The vault is the source of truth; these
