@@ -83,9 +83,9 @@
         </div>
         {#if lastLine}<p class="q-fillline {band}">{lastLine}</p>{/if}
       {:else if ref}
-        <p class="q-settled">That one's already settled — nothing for me to do there.</p>
+        <p class="q-settled">That one's settled already. Nothing there for me — find me a blank.</p>
       {:else}
-        <p class="q-settled">Open a record and point at a blank. I'll handle the rest.</p>
+        <p class="q-settled">Open a record and point me at a blank. I'll see to the rest.</p>
       {/if}
 
       <p class="q-foot">{files.length} record{files.length === 1 ? '' : 's'} open · exposure {exposure.value}</p>

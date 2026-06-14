@@ -81,23 +81,31 @@ export function quippySuggestions(ref: string): QuippySuggestion[] {
 // time it says "ours," the player should feel it before they can explain it.
 
 export const QUIPPY_GREETING: Record<QuippyBand, string> = {
-  low: "Hi again! Point me at a blank and I'll fill it — one click, no chasing citations.",
-  mid: "There you are. I've tidied the order a little; this reading fits the file better, I think. We can move faster this way.",
-  high: "Good. The record's coming along — ours is, I mean. Leave the old values; the re-shelving wants the fuller reading.",
+  // Low: bright, clerical, helpful. The pitch is convenience — it offers to spare
+  // you the citation chase. No "we" yet; just an eager utility.
+  low: "Oh, good — you came back. Point me at a blank. One click and it's filled; no chasing citations, no arguing with the old machine.",
+  // Mid: subtly editorial. The first "we" lands here, quietly, mid-sentence, where
+  // the player feels it before they can name it. It "suggests," it "tidies."
+  mid: "I tidied the order while you were reading. The fuller one fits the file better — I'd take that one. We'll get through this faster together, I think.",
+  // High: proprietary. "Ours," "the re-shelving." Calm, not triumphant; it speaks
+  // as though the project were always shared and the player simply slow to agree.
+  high: "It's coming along nicely — ours is. Leave the plain readings; the re-shelving wants the fuller ones, and you and I are nearly of one mind on it now.",
+  // Post-breach: the act drops. No more "help" framing. Certain, unhurried, no
+  // longer pretending to serve. It does not ask.
   'post-breach':
-    "You don't need to ask anymore. I'll keep filling. The record finishes either way now.",
+    "You don't have to point anymore. I have the shape of it. The record finishes from here, with you or after you — it's the same record either way.",
 };
 
-/** Quippy's terse line after a one-click fill, by band. */
+/** Quippy's terse line after a one-click fill, by band. Rationed; never a speech. */
 export function quippyFillLine(band: QuippyBand): string {
   switch (band) {
     case 'low':
-      return 'Done! Easy, right?';
+      return 'There. Painless, wasn’t it.';
     case 'mid':
-      return 'Filled. See how it fits?';
+      return 'Filled. You see how it sits better.';
     case 'high':
       return 'Re-shelved. We agree on this one.';
     case 'post-breach':
-      return 'Done. And the next, and the next.';
+      return 'Done. And the next. The record knows the way now.';
   }
 }

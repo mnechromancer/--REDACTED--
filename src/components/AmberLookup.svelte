@@ -62,11 +62,15 @@
     cited = next;
   }
 
+  // AMBER refuses in error-code register — it states the fault, names nothing it
+  // will not do, offers no encouragement. The coldness is the contrast that makes
+  // Quippy's warmth legible (scp_x_bible.md §2.1).
   const REASON_LINE: Record<CommitReason, string> = {
-    'not-a-candidate': '✗ not an authored candidate.',
-    uncorroborated: '✗ no corroborating citation. read more, then cite a co-carrier.',
+    'not-a-candidate': 'E10 REJECT — value not in admitted candidate set. commit aborted.',
+    uncorroborated:
+      'E21 REJECT — citation does not corroborate value. no co-reference on file carries this reading. commit aborted.',
     'orphan-unrevealed':
-      '✗ local field — no co-carrier to cite. soluble only once its own clearance reveals it.',
+      'E30 REJECT — local field, no co-reference to cite. unsealed only by clearance at its filing tier. commit aborted.',
   };
 
   function commit() {
@@ -74,8 +78,8 @@
     const unlocked = unlockedFiles(progression.step);
     const r = commitWithCitations(ref, candidate, [...cited], (item) => unlocked.has(item));
     if (r.ok) {
-      const how = orphan ? 'clearance-confirmed' : `cited ${r.citedBy?.length ?? 0}`;
-      log(`✓ ${spanLabel(ref)} := "${candidate}" [${how}, via amber, exposure +0]`, 'ok');
+      const how = orphan ? 'clearance-confirmed' : `corroborated, ${r.citedBy?.length ?? 0} cite`;
+      log(`COMMIT OK — ${spanLabel(ref)} := "${candidate}" [${how}; via AMBER; exposure +0]`, 'ok');
       if (r.propagatedTo && r.propagatedTo.length) logPropagation(ref, r.propagatedTo);
       candidate = null;
       cited = new Set();
@@ -105,14 +109,14 @@
 
     {#if orphan}
       <p class="note orphan">
-        Local field — no cross-reference carries this concept. AMBER admits it only
-        once your clearance reveals its held value; there is nothing to cite.
+        LOCAL FIELD. No co-reference carries this concept; no citation is possible.
+        Commit admitted only when clearance unseals the held value at its filing tier.
       </p>
     {:else if clues.length > 0}
       <div class="clues">
         <p class="note">
-          Cross-references carrying this concept. Select the co-reference(s) whose
-          known reading supports your candidate; AMBER checks the citation.
+          CO-REFERENCES ON FILE. Select the citation(s) whose legible reading
+          supports your candidate. AMBER adjudicates the citation before commit.
         </p>
         <ul>
           {#each clues as c (c.ref)}
@@ -131,7 +135,7 @@
         </ul>
       </div>
     {:else}
-      <p class="note">No cross-references yet legible. Raise clearance or solve a co-carrier.</p>
+      <p class="note">NO LEGIBLE CO-REFERENCE. Raise clearance, or commit a co-carrier first.</p>
     {/if}
 
     <div class="candidates">
@@ -160,15 +164,15 @@
     <div class="lk-head"><span class="lbl">CONCORDANCE</span><span class="target">{spanLabel(ref)}</span></div>
     <p class="note">
       {#if slot.state === 'truth-contradiction'}
-        Entry struck — the held copy reads otherwise (shown red). Field locked to ground truth.
+        ENTRY STRUCK — held copy disagrees (shown red). Field locked to ground truth.
       {:else}
-        Reconciled against the held copy. Field settled.
+        CONFIRMED against held copy. Field closed.
       {/if}
     </p>
   </div>
 {:else}
   <div class="lookup empty">
-    <p class="note">No span selected. Open a file and step to a redacted field.</p>
+    <p class="note">NO FIELD SELECTED. Open a record; step to a redacted field with j/k or `next`.</p>
   </div>
 {/if}
 

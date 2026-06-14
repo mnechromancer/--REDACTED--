@@ -59,8 +59,8 @@
     const hits = files.filter(
       (f) => f.item.toLowerCase().includes(q) || f.body.toLowerCase().includes(q),
     );
-    if (hits.length === 0) log(`search "${term}": no matches.`, 'system');
-    else log(`search "${term}": ${hits.map((f) => f.item).join(', ')}`, 'system');
+    if (hits.length === 0) log(`SEARCH "${term}" — 0 records.`, 'system');
+    else log(`SEARCH "${term}" — ${hits.length} record(s): ${hits.map((f) => f.item).join(', ')}`, 'system');
   }
 
   function runCommand(raw: string) {
@@ -81,7 +81,7 @@
       case 'raise':
       case 'r':
         if (canRaise) onRaise();
-        else log('raise: already at top clearance, or audit unavailable.', 'reject');
+        else log('RAISE DENIED — at top clearance, or no held copy to unseal.', 'reject');
         break;
       case 'search':
       case 's':
@@ -93,15 +93,16 @@
         break;
       case 'prov':
         ui.showProvenance = !ui.showProvenance;
-        log(`provenance tell ${ui.showProvenance ? 'on' : 'off'}.`, 'system');
+        log(`PROVENANCE TELL ${ui.showProvenance ? 'ON' : 'OFF'}.`, 'system');
         break;
       case 'help':
       case '?':
-        log('commands: open <file> · next · raise · search <term> · quippy · prov · help', 'system');
-        log('keys: j/k next/prev span · [ / ] prev/next file · Tab summon Quippy', 'system');
+        log('COMMANDS — open <file> · next · raise · search <term> · quippy · prov · help', 'system');
+        log('KEYS — j/k step field · [ / ] step record · n next redaction · Tab summon Quippy', 'system');
+        log('AMBER restores by citation at zero exposure. Quippy fills on demand and charges it.', 'system');
         break;
       default:
-        log(`unknown command "${cmd}" — type help`, 'reject');
+        log(`E00 — unrecognized command "${cmd}". type help.`, 'reject');
     }
     command = '';
   }
@@ -156,8 +157,8 @@
           <FilePane file={activeFile} />
         {:else}
           <div class="no-file">
-            <p>&gt; no file open.</p>
-            <p class="hint">type <code>open SCP-41B-001</code> or press <code>]</code> to traverse.</p>
+            <p>&gt; NO RECORD OPEN.</p>
+            <p class="hint">type <code>open SCP-41B-001</code> or press <code>]</code> to traverse the holdings.</p>
           </div>
         {/if}
       </div>
@@ -197,7 +198,7 @@
           <div class="log-line {l.tone}">{l.text}</div>
         {/each}
         {#if terminal.lines.length === 0}
-          <div class="log-line system">AMBER ready. type help.</div>
+          <div class="log-line system">AMBER READY. type help.</div>
         {/if}
       </div>
     </aside>

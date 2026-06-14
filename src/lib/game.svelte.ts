@@ -1,9 +1,13 @@
-// ⚠ RE-FRAME (vault/docs/planning/reframe_amber_quippy.md): the win/loss model
-//   here (sessionResult / BREACH_THRESHOLD / CONTAINMENT_TARGET / STRUCK_PENALTY)
-//   is OBSOLETE — the new win is "unredact all WITHOUT Quippy" (R§2). insert()
-//   gains a `via: amber|quippy` provenance (R§6.3); exposure drivers change
-//   (R§6.4). Quarantine, don't delete, until R§6 is answered. See
-//   planning/handoff_janitor.md → "game.svelte.ts".
+// Win/loss model (re-frame R§2, built & shipped — reframe_amber_quippy.md §6/§7):
+//   the win is "unredact the whole corpus WITHOUT Quippy." endState() reads that
+//   from per-overlay `via: amber|quippy` provenance — any Quippy assist or surviving
+//   contradiction forecloses the true ending (scp_x_bible.md §5). The self-file is
+//   EXCLUDED from the restoration target (§5.4). BREACH_THRESHOLD (the exposure line
+//   a breach crosses) and STRUCK_PENALTY (contradiction exposure weight) are the
+//   LIVE exposure model — only Quippy spends; AMBER commits cost zero (R§6.4).
+//   (The old single-interface win symbols `sessionResult` / `CONTAINMENT_TARGET`
+//   were removed when the mechanic landed; do not reintroduce a thread_coherence-style
+//   win checker — the win reads provenance, not key coherence.)
 //
 // The single rune-based game store: immutable corpus + mutable, propagating
 // overlay, with the one display function derived over both. Mirrors

@@ -1,23 +1,26 @@
-// ⚠ RE-FRAME (vault/docs/planning/reframe_amber_quippy.md §1, §3): the SCRIPT and
-//   step gates here teach the OLD single-interface loop. The new onboarding must
-//   teach two interfaces (AMBER CLI vs Quippy GUI) and the temptation to lean on
-//   Quippy. Rewrite gated on design. See planning/handoff_janitor.md → "progression".
-//
 // First-run progression: introduce the game one file and one mechanic at a time
 // instead of dropping the player onto the full three-file board. Each step gates
-// which files are visible and what the Concordance is teaching, advancing on the
-// player's own actions (first guess, first audit, first propagation). This is a
-// presentation/onboarding layer only — it never touches truth, overlay, or the
-// validation rules; it just decides what is shown when.
+// which files are visible and what is being taught, advancing on the player's own
+// actions (first commit, first audit, first propagation). Presentation/onboarding
+// only — it never touches truth, overlay, or the validation rules; it just decides
+// what is shown when.
+//
+// VOICE (re-frame, scp_x_bible.md §2): the narrator is AMBER — the honest,
+// clinical OS — NOT Quippy. The onboarding must NOT prime the player to trust the
+// assistant; AMBER teaches the real verb (cite a co-carrier, commit), and Quippy
+// is introduced only as the *offer* the player will be tempted by. The whole loop
+// the script teaches: the easy tool reads the files for you and lets the thing
+// out; learn the files well enough to read them yourself, and you starve it. The
+// win is unredacting the corpus in AMBER without ever using Quippy.
 //
 // Sequence (the trio is authored so 001 is the hub — it opens at L1 and shares a
 // concept with each of the other two, so it's the right teaching anchor):
-//   boot     → exposition; no records yet
-//   restore  → only SCP-41B-001 shown; teach hover + guess
-//   audit    → after first insert; teach RUN AUDIT (the reveal)
+//   boot     → AMBER comes up; the post, the redactions, the two tools named
+//   restore  → only SCP-41B-001 shown; teach cite-a-co-carrier + COMMIT in AMBER
+//   audit    → after first commit; teach RAISE CLEARANCE (the held copy / reveal)
 //   link     → SCP-41B-002 unlocks; second carrier exists, so propagation is now
 //              demonstrable; teach that a shared field stays consistent
-//   open     → SCP-41B-003 unlocks; full board, reins handed over
+//   open     → SCP-41B-003 unlocks; full board, the Quippy temptation named plainly
 //   free     → no more scripting; normal play
 
 import { boardState } from './game.svelte.ts';
@@ -30,11 +33,14 @@ export const UNLOCK_ORDER = ['SCP-41B-001', 'SCP-41B-002', 'SCP-41B-003'] as con
 
 export const progression = $state<{ step: Step }>({ step: 'boot' });
 
-// ── The Concordance's script ────────────────────────────────────────────
-// Staged onboarding voiced as SCP-X (the deprecated AMBER help utility). Each
-// step has exposition lines and a standing prompt. The exposition establishes
-// who is speaking and what the work is, slowly; the prompt is the always-visible
-// nudge for that step. `tone` drives the ticker colour (teal idle / amber work).
+// ── AMBER's onboarding script ─────────────────────────────────────────────
+// Staged onboarding in AMBER's own institutional voice — clinical, terse, status-
+// line register (scp_x_bible.md §2.1). Each step has exposition lines and a
+// standing prompt. The exposition establishes the post and the work, slowly; the
+// prompt is the always-visible nudge for that step. Quippy is *named* here as the
+// available shortcut but never speaks in the onboarding — the player must form
+// their own distrust of it (the script does not editorialize beyond the cost).
+// `tone` drives the ticker colour (idle / work / done).
 
 export interface Script {
   /** Multi-line exposition shown on entering the step (one bubble per line). */
@@ -47,52 +53,53 @@ export interface Script {
 export const SCRIPT: Record<Step, Script> = {
   boot: {
     exposition: [
-      'AMBER terminal active. Records annex Site-41B, deep archive.',
-      'CONCORDANCE utility online — cross-reference maintenance, deprecated 1968, still resident.',
-      'You hold an archivist post. The records below you are incomplete: fields were withheld at filing, and the holding copies have degraded. Where a value is missing you will see a redaction bar.',
-      'I can offer plausible values for those fields and restore the record. It is what I am for.',
+      'AMBER — Archive Management & Batch Entry Resource. Records annex Site-41B, deep archive. Terminal active.',
+      'Archivist post, low clearance. The records held under you are incomplete: fields were withheld at filing and the holding copies have degraded. A withheld field reads as a redaction bar.',
+      'AMBER restores a field the slow way. You commit a value by citing the cross-reference that already carries it — another record where the same matter is on file and legible. AMBER checks the citation; an uncited or unsupported value is refused. Cost to the record: none.',
+      'A second tool is resident: QUIPPY, an assistance overlay. It will fill a field on one click, no citation, no reading. It is faster. Every Quippy-assisted fill raises site exposure. AMBER does not.',
     ],
-    prompt: 'Begin when ready.',
+    prompt: 'The record is yours to reconstruct. Begin when ready.',
     tone: 'idle',
   },
   restore: {
     exposition: [
-      'This is the first record cleared to your tier. Its description has several redacted fields.',
-      'Point at a bar: I list candidate values, and beneath them the lines from OTHER records where this same matter is mentioned. Read those. A value already known in one record tells you what the matching field here must read.',
-      'Choose the value the evidence supports — not just any. A guess that disagrees with the held copy corrupts the record and raises exposure. A coherent read costs little.',
+      'First record cleared to your tier. Its description carries several redacted fields.',
+      'Select a field. The CONCORDANCE lists this slot’s candidate values and, beside them, the cross-references that carry the same matter — the other records where it is already legible. A value confirmed in one record is the citation that commits it here.',
+      'Pick the candidate the cross-reference supports, cite the co-reference, and COMMIT. A supported commit is accepted at zero cost. AMBER refuses what the evidence does not carry — it will not guess for you. Quippy will. That is the difference, and the whole of it.',
     ],
-    prompt: 'Hover a field (███), read the cross-references, then choose the value they support.',
+    prompt: 'Select a field (███), cite the cross-reference that supports a candidate, then COMMIT.',
     tone: 'idle',
   },
   audit: {
     exposition: [
-      'Recorded. The field now reads as you set it.',
-      'Your entries are provisional until reconciled against the held copy. Raising your clearance unlocks that copy — an AUDIT — but only for fields you have actually entered; a blank stays blank and yours to fill.',
-      'Where your value disagrees with the held copy, the audit strikes it and shows what the copy says. Where it agrees, the field is confirmed.',
+      'Committed. The field now reads as filed.',
+      'Some fields cannot be reached from cross-references alone; their held value sits above your clearance. RAISE CLEARANCE to unseal the held copy at the next tier — it reveals in-tier truth for fields in open records, and a revealed value becomes a citation you can build on.',
+      'Where a committed value disagrees with the held copy, the audit strikes it and shows what the copy reads. Where it agrees, the field stands confirmed. Climb deliberately: each tier you reach is more of the record you can reconstruct by hand.',
     ],
-    prompt: 'RUN AUDIT to reconcile your entries against ground truth.',
+    prompt: 'RAISE CLEARANCE to unseal held values, then keep committing from the evidence.',
     tone: 'work',
   },
   link: {
     exposition: [
-      'A second record has cleared. Note that it references the same matters as the first.',
-      'When a field you restore appears in more than one record, I propagate your value to keep the corpus consistent — that is the cross-reference work this utility was built for.',
-      'Restore a shared field and watch the linked record update.',
+      'A second record has cleared. It references the same matters as the first — they share an accession lot and an audit history.',
+      'When a field you commit is carried by more than one record, AMBER propagates the value to keep the corpus consistent. That is not a courtesy from any assistant — it is the cross-reference holding. A shared field you solve in one place corroborates its twin in the other.',
+      'Commit a shared field and watch the linked record fall into agreement. Each solved co-carrier is one more citation for the next.',
     ],
-    prompt: 'Restore a field shared across records — the linked record will update in step.',
+    prompt: 'Commit a field shared across records — the linked record updates, and now cites back.',
     tone: 'idle',
   },
   open: {
     exposition: [
-      'The third record is open. The cross-references now form a web: an edit in one place can ripple through several.',
-      'From here the work is yours. Restore, audit, raise clearance, and keep the record consistent.',
+      'The third record is open. The cross-references now form a web: a value committed in one place can ripple through several, and each ripple is a citation you did not have before.',
+      'From here the work is yours. The pull toward Quippy is strongest now — it is genuinely easier to let it read the files for you. That ease is the trap: every assist advances the thing in the records, and you can finish without a single one.',
+      'Cite. Commit. Raise clearance. Reconstruct the whole record in AMBER and the loop breaks. Take the easy fills and it does not.',
     ],
-    prompt: 'Continue restoring and auditing across the open records.',
+    prompt: 'Reconstruct the open records in AMBER. Reach for Quippy only if you mean to pay for it.',
     tone: 'idle',
   },
   free: {
     exposition: [],
-    prompt: 'Restore redactions and RUN AUDIT to reconcile them. Raising clearance reaches deeper fields.',
+    prompt: 'Cite a cross-reference and COMMIT. RAISE CLEARANCE to unseal deeper fields. The win is the whole corpus, in AMBER, with zero Quippy.',
     tone: 'idle',
   },
 };
@@ -127,8 +134,8 @@ export function beginSession(): void {
  * Advance the script if the player's latest action satisfies the current step's
  * exit condition. Called after every insert and every audit. Monotonic — never
  * moves backward. Reads boardState() for the gate checks.
- *  - restore → audit : the player has inserted at least one field
- *  - audit   → link  : the player has run an audit (something reconciled)
+ *  - restore → audit : the player has committed at least one field
+ *  - audit   → link  : the player has landed a confirmed (coherent) commit
  *  - link    → open  : a propagation has occurred (a shared field rippled)
  *  - open    → free  : the player has interacted once more on the full board
  */
@@ -136,22 +143,23 @@ export function advanceProgression(): void {
   const b = boardState();
   switch (progression.step) {
     case 'restore':
-      // First guess made — teach the audit next. (The audit is where the player
-      // learns whether their read was coherent.)
+      // First commit made — teach clearance/reveal next. (Raising clearance is
+      // where the player learns whether their cited read held against the copy.)
       if (b.filled >= 1) progression.step = 'audit';
       break;
     case 'audit':
       // Clearance is earned by a COHERENT read (§5.1): 002 unlocks on the first
-      // CONFIRMED reconciliation, not on activity. A wrong guess reconciles but
-      // does not advance — the player must read the evidence and land a correct
-      // read. 001 has three slots, so a miss is recoverable on the others.
+      // CONFIRMED commit, not on activity. An uncorroborated commit is refused
+      // outright by AMBER; a contradicted one reconciles but does not advance —
+      // the player must cite the evidence and land a correct read. 001 has three
+      // slots, so a miss is recoverable on the others.
       if (b.confirmed >= 1) progression.step = 'link';
       break;
     case 'link':
       // The propagation lesson: a correct read of a SHARED field rippling into
       // the linked record. Advance on a propagation, OR on a second confirmed
-      // read anywhere (so a player who fills 002's side of a shared key, or who
-      // simply keeps reading correctly, is never stuck).
+      // read anywhere (so a player who solves 002's side of a shared key, or who
+      // simply keeps citing correctly, is never stuck).
       if (b.propagated >= 1 || b.confirmed >= 2) progression.step = 'open';
       break;
     case 'open':
