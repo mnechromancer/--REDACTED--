@@ -20,9 +20,17 @@ The mechanic is live, so authoring decisions now have *mechanical* consequences 
 
 ---
 
-## BLOCKER — the authored trio is not fully AMBER-winnable as written
+## ~~BLOCKER~~ RESOLVED (2026-06-14) — the authored trio is now fully AMBER-winnable
 
-Two same-tier teaching keys have truths at **different indices** across their carriers, which (per #1 above) makes the high carrier AMBER-unsolvable and the no-Quippy win unreachable on the real corpus:
+**Fixed** via the preferred path: both teaching keys' truths moved to **index 0** on every (same-tier) carrier, per `concept_key_registry.md` (index 0 = the mundane reading). Mutation arrays were left untouched and index-aligned; only the `truth:` fields moved, plus the surrounding prose in 001/002 was recast so the baseline reading is the mundane one and the drift now lives as undocketed margin/suggestion rather than asserted fact (the anomaly is the contradiction the player surfaces, not a baseline claim). Edits: `SCP-41B-001#a3`, `SCP-41B-002#a1`, `SCP-41B-002#a2` (`001#a2` was already correct).
+
+Verified: `npm run build:corpus` clean, `npm run check` clean, `npm test` green (129 tests). A new regression guard — `src/lib/__tests__/real-corpus-winnable.test.ts` — loads the **real** `static/corpus.json` and proves (a) a static audit that every same-tier concept key shares a truth index, and (b) an end-to-end solve of the actual trio reaching `loop-broken` at exposure 0 with zero Quippy assists. (Confirmed it fails red when a truth is re-misaligned, so it genuinely guards the fix.) The original diagnosis is preserved below for the record.
+
+---
+
+### Original diagnosis (for the record)
+
+Two same-tier teaching keys had truths at **different indices** across their carriers, which (per #1 above) made the high carrier AMBER-unsolvable and the no-Quippy win unreachable on the real corpus:
 
 | Concept | Carrier A | Carrier B | Problem |
 |---|---|---|---|
@@ -31,13 +39,11 @@ Two same-tier teaching keys have truths at **different indices** across their ca
 
 (For contrast, `the-quiet-exchange` is correct: 001#a1 and 003#a1 both truth at index 0.)
 
-**Fix (content, your call which):**
-- **Preferred:** make each key's truth index 0 on *both* carriers, per `concept_key_registry.md` (index 0 = the mundane reading; e.g. acquisition-lot index 0 = "the 1962 lot as administrative intake event"). Adjust the entries' `truth:` values and/or re-order the `mutations:` arrays so the true reading is index 0 on every same-tier carrier — keeping all carriers of a key length-equal and index-aligned.
-- **Alternative:** if you *intend* these to diverge, re-coin them as tier-escalating keys (carriers at different `redaction_level`s) and document the intent in the registry — then the divergence is legitimate and the high carrier is solved by clearance-reveal, not citation.
+**Fix taken (the "Preferred" path):** each key's truth is now index 0 on *both* same-tier carriers, per `concept_key_registry.md` (index 0 = the mundane reading; acquisition-lot index 0 = "the 1962 lot as administrative intake event", audit-cycle index 0 = "the annual audit finds no discrepancy"). `truth:` fields were moved to index 0; `mutations:` arrays were left untouched (still length-equal and index-aligned). The licensing wall held (`scp_x_bible.md` §8): truths stay original.
 
-Keep the licensing wall (`scp_x_bible.md` §8): truths stay original; flavor may resemble canon, solutions may not.
+The alternative (re-coin as tier-escalating keys with carriers at different `redaction_level`s) was *not* taken — these are genuinely same-tier teaching keys and the registry already designates index 0 as their truth.
 
-How to verify your fix: after editing, the trio should be fully solvable in AMBER with zero Quippy assists, reaching the "loop breaks" ending. The engine path is proven on an aligned corpus in `src/lib/__tests__/endgame-integration.test.ts` — mirror that shape with the real entries to confirm.
+Verified as called for: the trio is fully solvable in AMBER with zero Quippy assists, reaching the "loop breaks" ending, proven on the **real** corpus by `src/lib/__tests__/real-corpus-winnable.test.ts` (the engine-only proof on a synthetic corpus remains in `endgame-integration.test.ts`).
 
 ---
 
