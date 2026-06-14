@@ -17,9 +17,10 @@ import {
   resolveSlot,
   crossMentions,
   raiseClearance,
-  sessionResult,
+  endState,
+  evaluateBreaches,
+  breaches,
   BREACH_THRESHOLD,
-  CONTAINMENT_TARGET,
 } from '../game.svelte.ts';
 import { makeCorpus } from './fixtures.ts';
 import type { Corpus } from '../corpus.ts';
@@ -37,6 +38,7 @@ beforeEach(() => {
   loadCorpus(makeCorpus());
   for (const k of Object.keys(overlay)) delete overlay[k];
   revealedTruth.clear();
+  breaches.clear();
   exposure.value = 0;
   clearance.tier = 1;
 });
@@ -171,62 +173,31 @@ describe('crossMentions (HelpUtility inference surface)', () => {
   });
 });
 
-describe('sessionResult — the ending (exposure consequence)', () => {
-  // Fixture weights: 003#a1=2, 003#a2=5, 001#a1=1, 001#a2=3, 002#a1=4.
-  const TQE_3 = makeRef('SCP-41B-003', 'a1'); // weight 2, truth tqe-truth-003
-  const TQE_1 = makeRef('SCP-41B-001', 'a1'); // weight 1, truth tqe-truth-001
-  const LOT_1 = makeRef('SCP-41B-001', 'a2'); // weight 3, truth lot-truth-001
-  const LOT_2 = makeRef('SCP-41B-002', 'a1'); // weight 4, truth lot-truth-002
-
-  // Like the real entries, make each slot's truth its own first candidate so the
-  // player can guess correctly. (The base fixture's truths are not candidates,
-  // which is fine for the wrong-guess paths but blocks the correct-guess ones.)
-  function withGuessableTruths() {
-    const c = makeCorpus();
-    for (const f of Object.values(c)) {
-      for (const a of f.anchors) {
-        if (!a.mutations.includes(a.truth)) a.mutations = [a.truth, ...a.mutations.slice(1)];
-      }
-    }
-    // keep concept partners index-aligned: truth at index 0 on both carriers
-    loadCorpus(c);
-    return c;
-  }
-
-  it('starts in the playing state with a fresh board', () => {
-    expect(sessionResult().outcome).toBe('playing');
-  });
-
-  // A purpose-built corpus for the outcome logic: enough light, concept-less,
-  // truth-guessable slots that CONTAINMENT_TARGET correct reads stay under
-  // BREACH_THRESHOLD, plus one heavy slot to force a breach. Derived from the
-  // constants so it survives balance retuning.
-  function makeOutcomeCorpus(lightWeight = 1): Corpus {
-    const anchors = [];
-    for (let i = 0; i < CONTAINMENT_TARGET + 1; i++) {
-      anchors.push({
-        id: `s${i}`,
-        slot_type: 'object' as const,
-        truth: `truth-${i}`,
-        redaction_level: 1 as const,
-        mutations: [`truth-${i}`, `wrong-${i}`],
-        exposure_weight: lightWeight,
-      });
-    }
-    // one heavy slot able to push a small number of fills over the line
-    anchors.push({
-      id: 'heavy',
+describe('endState — the no-Quippy ending (design_document.md §6)', () => {
+  // A corpus with a restorable TARGET file (001, two concept-less rl-1 slots whose
+  // truth is each slot's index-0 candidate) plus a separate excluded SELF file
+  // (000), so the restoration target is non-empty and the self-file is starved,
+  // not solved (scp_x_bible.md §5.4).
+  function makeWinnableCorpus(): Corpus {
+    const mk = (id: string, w: number) => ({
+      id,
       slot_type: 'object' as const,
-      truth: 'truth-heavy',
+      truth: `${id}-truth`,
       redaction_level: 1 as const,
-      mutations: ['truth-heavy', 'wrong-heavy'],
-      exposure_weight: BREACH_THRESHOLD,
+      mutations: [`${id}-truth`, `${id}-wrong`],
+      exposure_weight: w,
     });
     const c: Corpus = {
       'SCP-41B-001': {
         item: 'SCP-41B-001', object_class: 'Euclid', site: 'Site-41B', clearance: 1,
+        entity_self: false, xrefs: [], breach_effect: { kind: 'corrupt_search' },
+        anchors: [mk('s0', 1), mk('s1', 1)],
+        body: '⟦s0⟧ ⟦s1⟧',
+      },
+      'SCP-41B-000': {
+        item: 'SCP-41B-000', object_class: 'Euclid', site: 'Site-41B', clearance: 5,
         entity_self: true, xrefs: [], breach_effect: { kind: 'corrupt_search' },
-        anchors, body: anchors.map((a) => `⟦${a.id}⟧`).join(' '),
+        anchors: [mk('z', 1)], body: '⟦z⟧',
       },
     };
     loadCorpus(c);
@@ -234,62 +205,114 @@ describe('sessionResult — the ending (exposure consequence)', () => {
   }
   const oref = (id: string) => makeRef('SCP-41B-001', id);
 
-  // Exposure re-aim (R§6.4): only Quippy reliance drives exposure, so these
-  // legacy-outcome tests now lean on Quippy to cross the line.
-  it('breaches once exposure crosses the threshold', () => {
-    makeOutcomeCorpus();
-    insert(oref('heavy'), 'truth-heavy', 'quippy'); // weight = BREACH_THRESHOLD
-    const r = sessionResult();
-    expect(r.exposure).toBeGreaterThanOrEqual(BREACH_THRESHOLD);
-    expect(r.outcome).toBe('breach');
+  /** Restore every slot to truth via the given route, then reveal all truth. */
+  function restoreAll(via: 'amber' | 'quippy') {
+    for (const id of ['s0', 's1']) insert(oref(id), `${id}-truth`, via);
+    raiseClearance(5);
+  }
+
+  it('starts in the playing state with a fresh board', () => {
+    makeWinnableCorpus();
+    expect(endState().outcome).toBe('playing');
   });
 
-  it('breach takes precedence over containment even with enough correct fields', () => {
-    makeOutcomeCorpus();
-    // CONTAINMENT_TARGET correct light reads + the heavy Quippy slot → over the line.
-    for (let i = 0; i < CONTAINMENT_TARGET; i++) insert(oref(`s${i}`), `truth-${i}`);
-    insert(oref('heavy'), 'truth-heavy', 'quippy');
-    raiseClearance(5);
-    const r = sessionResult();
-    expect(r.correct).toBeGreaterThanOrEqual(CONTAINMENT_TARGET);
-    expect(r.exposure).toBeGreaterThanOrEqual(BREACH_THRESHOLD);
-    expect(r.outcome).toBe('breach'); // breach wins the tie
+  it('THE TRUE ENDING: full restoration via AMBER only → loop-broken', () => {
+    makeWinnableCorpus();
+    restoreAll('amber');
+    const e = endState();
+    expect(e.outcome).toBe('loop-broken');
+    expect(e.restored).toBe(e.total);
+    expect(e.quippyAssists).toBe(0);
+    expect(e.contradictions).toBe(0);
+    expect(e.breached).toBe(false);
   });
 
-  it('contains when enough fields are correctly restored under the line', () => {
-    makeOutcomeCorpus(1); // light slots weight 1 each
-    // One short of the target: still playing.
-    for (let i = 0; i < CONTAINMENT_TARGET - 1; i++) insert(oref(`s${i}`), `truth-${i}`);
+  it('HARD GATE: a single Quippy assist forecloses the true ending', () => {
+    makeWinnableCorpus();
+    insert(oref('s0'), 's0-truth', 'amber');
+    insert(oref('s1'), 's1-truth', 'quippy'); // one assist
     raiseClearance(5);
-    expect(sessionResult().correct).toBeLessThan(CONTAINMENT_TARGET);
-    expect(sessionResult().outcome).toBe('playing');
-
-    // The CONTAINMENT_TARGET-th correct read, still under the line (weights = 1).
-    insert(oref(`s${CONTAINMENT_TARGET - 1}`), `truth-${CONTAINMENT_TARGET - 1}`);
-    raiseClearance(5);
-    const r = sessionResult();
-    expect(r.correct).toBeGreaterThanOrEqual(CONTAINMENT_TARGET);
-    expect(r.exposure).toBeLessThan(BREACH_THRESHOLD);
-    expect(r.outcome).toBe('contained');
+    const e = endState();
+    expect(e.restored).toBe(e.total); // record IS complete + correct…
+    expect(e.quippyAssists).toBe(1); // …but tainted
+    expect(e.outcome).not.toBe('loop-broken'); // the win is foreclosed
   });
 
-  it('auditing blanks without guessing never wins (must restore, not just read)', () => {
-    withGuessableTruths();
-    // Reveal every truth via clearance, but insert nothing.
+  it('WATCH ITEM 1: an AMBER re-solve REDEEMS a Quippy-tainted slot → loop-broken', () => {
+    makeWinnableCorpus();
+    insert(oref('s0'), 's0-truth', 'quippy'); // tainted
+    insert(oref('s1'), 's1-truth', 'amber');
     raiseClearance(5);
-    const r = sessionResult();
-    expect(r.correct).toBe(0);
-    expect(r.exposure).toBe(0);
-    expect(r.outcome).toBe('playing'); // read the whole record, restored none of it
+    expect(endState().outcome).not.toBe('loop-broken'); // tainted, foreclosed
+    // Redeem s0 by re-solving it honestly:
+    insert(oref('s0'), 's0-truth', 'amber');
+    const e = endState();
+    expect(e.quippyAssists).toBe(0); // taint cleared
+    expect(e.outcome).toBe('loop-broken'); // the win is now reachable
   });
 
-  it('a struck (wrong) guess counts toward struck, not correct', () => {
-    // Base fixture: 001#a1's truth (tqe-truth-001) is not a candidate, so 'tqe-1'
-    // is a genuine wrong guess.
-    insert(TQE_1, 'tqe-1');
+  it('an incomplete clean record stays playing (recoverable, not a loss)', () => {
+    makeWinnableCorpus();
+    insert(oref('s0'), 's0-truth', 'amber'); // only one of two
     raiseClearance(5);
-    const r = sessionResult();
-    expect(r.struck).toBeGreaterThanOrEqual(1);
-    expect(r.correct).toBe(0);
+    const e = endState();
+    expect(e.restored).toBeLessThan(e.total);
+    expect(e.outcome).toBe('playing');
+  });
+
+  it('a surviving contradiction forecloses the win even with zero Quippy', () => {
+    makeWinnableCorpus();
+    insert(oref('s0'), 's0-truth', 'amber');
+    insert(oref('s1'), 's1-wrong', 'amber'); // a wrong AMBER guess
+    raiseClearance(5);
+    const e = endState();
+    expect(e.contradictions).toBe(1);
+    expect(e.outcome).not.toBe('loop-broken');
+  });
+
+  it('BREACH ENDING: Quippy reliance pushes exposure over the line → breach', () => {
+    // A heavy slot whose Quippy fill alone crosses BREACH_THRESHOLD.
+    const c: Corpus = {
+      'SCP-41B-001': {
+        item: 'SCP-41B-001', object_class: 'Euclid', site: 'Site-41B', clearance: 1,
+        entity_self: true, xrefs: [], breach_effect: { kind: 'corrupt_search' },
+        anchors: [
+          {
+            id: 'h', slot_type: 'object', truth: 'h-truth', redaction_level: 1,
+            mutations: ['h-truth', 'h-wrong'], exposure_weight: BREACH_THRESHOLD,
+          },
+        ],
+        body: '⟦h⟧',
+      },
+    };
+    loadCorpus(c);
+    insert(makeRef('SCP-41B-001', 'h'), 'h-truth', 'quippy');
+    expect(exposure.value).toBeGreaterThanOrEqual(BREACH_THRESHOLD);
+    expect(breaches.size).toBeGreaterThan(0); // wired evaluateBreaches fired
+    expect(endState().outcome).toBe('breach');
+  });
+
+  it('recovery: dropping exposure back under the line clears the breach', () => {
+    const c: Corpus = {
+      'SCP-41B-001': {
+        item: 'SCP-41B-001', object_class: 'Euclid', site: 'Site-41B', clearance: 1,
+        entity_self: true, xrefs: [], breach_effect: { kind: 'corrupt_search' },
+        anchors: [
+          {
+            id: 'h', slot_type: 'object', truth: 'h-truth', redaction_level: 1,
+            mutations: ['h-truth', 'h-wrong'], exposure_weight: BREACH_THRESHOLD,
+          },
+        ],
+        body: '⟦h⟧',
+      },
+    };
+    loadCorpus(c);
+    const ref = makeRef('SCP-41B-001', 'h');
+    insert(ref, 'h-truth', 'quippy'); // breach
+    expect(breaches.size).toBeGreaterThan(0);
+    insert(ref, 'h-truth', 'amber'); // redeem → exposure drops to 0
+    expect(exposure.value).toBe(0);
+    evaluateBreaches();
+    expect(breaches.size).toBe(0); // recovered
   });
 });

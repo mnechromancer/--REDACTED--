@@ -11,6 +11,7 @@ import {
   exposure,
   revealedTruth,
   clearance,
+  breaches,
   makeRef,
   insert,
   anchorOf,
@@ -24,6 +25,7 @@ beforeEach(() => {
   loadCorpus(makeCorpus());
   for (const k of Object.keys(overlay)) delete overlay[k];
   revealedTruth.clear();
+  breaches.clear();
   exposure.value = 0;
   clearance.tier = 1;
 });

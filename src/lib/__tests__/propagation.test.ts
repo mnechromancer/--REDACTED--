@@ -8,6 +8,7 @@ import {
   loadCorpus,
   overlay,
   exposure,
+  breaches,
   makeRef,
   insert,
   mapMutation,
@@ -24,6 +25,7 @@ const LOT_002 = makeRef('SCP-41B-002', 'a1'); // its carrier
 beforeEach(() => {
   loadCorpus(makeCorpus());
   for (const k of Object.keys(overlay)) delete overlay[k];
+  breaches.clear();
   exposure.value = 0;
 });
 

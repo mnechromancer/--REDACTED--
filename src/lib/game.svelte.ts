@@ -392,6 +392,9 @@ export function insert(
   //    guarantee made structural: re-inserting or changing a value can only
   //    move exposure to whatever the current overlay implies, never ratchet it.
   recomputeExposure();
+  // 4. Fire/clear breaches against the new exposure (Quippy reliance can push the
+  //    board into a breached state; an AMBER re-solve dropping exposure clears it).
+  evaluateBreaches();
 
   return propagatedTo;
 }
@@ -399,33 +402,38 @@ export function insert(
 // ── Batched validation (C7, §5) ────────────────────────────────────────
 // Raising clearance unlocks ground-truth in BATCHES keyed to the tier — never
 // one slot at a time, never per-guess. This is the rule-of-three anti-brute-
-// force logic (§5.7): the system confirms whether an *already-inserted* guess
-// coheres or contradicts; it never volunteers the value of a slot whose tier the
-// player has not yet reached. A slot at redaction_level 4 stays redacted until
-// clearance reaches 4 — reaching that tier is the legitimate reveal, not a leak.
+// force logic (§5.7). A slot at redaction_level 4 stays redacted until clearance
+// reaches 4 — reaching that tier is the legitimate reveal, not a leak.
+//
+// Reveal model (reconciled with the citation gate, decision 2026-06-13 — "spec
+// reveal, scoped to open files"): reaching a tier reveals in-tier truth for slots
+// in ACCESSIBLE files (file.clearance <= tier), as the §5 pseudocode intends.
+// This is what SEEDS the AMBER citation gate: a clearance-revealed co-carrier is
+// the only non-circular evidence the player can cite (a player-solve would itself
+// need a prior citation). Invariant #4 still holds in its load-bearing sense — the
+// reveal NEVER writes the player's overlay/guess layer (it only shows truth in the
+// pane), so it never volunteers a value INTO the player's work. The onboarding
+// guard also holds: a not-yet-met file is not accessible (its baseline clearance
+// gates it), so its slots are not pre-revealed by a clearance raised elsewhere.
 
 /**
- * Raise clearance to `toTier` and reconcile the batch it unlocks. Per the chosen
- * reading of CLAUDE.md invariant #4 — an audit "confirms inserted guesses; it
- * never volunteers an untouched slot's value" — the batch is every anchor that
- * is (a) now within clearance reach, (b) not yet reconciled, AND (c) something
- * the player has actually filled (an overlay entry exists). Untouched slots are
- * never revealed by clearance alone: they stay redacted and fillable at any tier,
- * so the player must guess a slot to ever see its truth ("guess to see"). This is
- * what lets the staged onboarding unlock a later file without its slots being
- * pre-revealed by a clearance the player happened to raise elsewhere. A
- * reconciled guess that disagrees with truth surfaces as 'truth-contradiction'.
- * Lowering or holding the tier reconciles nothing new. Returns the refs reconciled.
+ * Raise clearance to `toTier` and reveal the batch it unlocks. The batch is every
+ * anchor that is (a) now within clearance reach (redaction_level <= tier), (b) in
+ * an accessible file (file.clearance <= tier), and (c) not yet revealed. Revealing
+ * shows truth in the pane and reconciles any guess already sitting there (a guess
+ * disagreeing with truth surfaces as 'truth-contradiction'); it writes NO overlay
+ * entry. Lowering or holding the tier reveals nothing new. Returns the refs revealed.
  */
 export function raiseClearance(toTier: 1 | 2 | 3 | 4 | 5): string[] {
   if (toTier > clearance.tier) clearance.tier = toTier;
 
   const batch: string[] = [];
   for (const file of Object.values(corpus)) {
+    const accessible = file.clearance <= clearance.tier; // the file is open at this tier
+    if (!accessible) continue; // a not-yet-met file's slots are not pre-revealed
     for (const a of file.anchors) {
       const ref = makeRef(file.item, a.id);
-      const filled = overlay[ref] !== undefined; // player inserted or propagated here
-      if (a.redaction_level <= clearance.tier && filled && !revealedTruth.has(ref)) {
+      if (a.redaction_level <= clearance.tier && !revealedTruth.has(ref)) {
         batch.push(ref);
       }
     }
@@ -439,8 +447,10 @@ export function raiseClearance(toTier: 1 | 2 | 3 | 4 | 5): string[] {
     }
   }
   // An audit can newly mark guesses wrong, which carry the struck-exposure
-  // penalty — recompute so the corruption registers the moment it's revealed.
+  // penalty — recompute so the corruption registers the moment it's revealed,
+  // then re-evaluate breaches against the new exposure.
   recomputeExposure();
+  evaluateBreaches();
   return batch;
 }
 
@@ -564,71 +574,130 @@ export function boardState(): BoardState {
   };
 }
 
-// ── Session outcome (the ending) ────────────────────────────────────────
-// Exposure now has a consequence. Every restored field softens the record; cross
-// the breach threshold and the entity re-indexes out of containment — the
-// session ends as a breach (loss). Restore the record correctly while keeping
-// exposure under the line and the site holds — containment (win). This is the
-// stakes the slice deferred: "guess to see, but every guess corrupts."
+// ── Breach line (exposure consequence; drivers re-aimed to Quippy) ──────────
+// Exposure (now driven ONLY by Quippy reliance, R§6.4) still has a consequence:
+// cross the line and an entity breaches, mutating terminal behaviour (and forcing
+// Quippy's post-breach band). A perfect no-Quippy run never approaches it — the
+// breach line is reached only by leaning on Quippy. Tuned against the trio
+// (total possible Quippy exposure ~15): a few escalating Quippy assists reach it.
+/** Exposure at or above this and an entity re-indexes out of containment — breach. */
+export const BREACH_THRESHOLD = 10;
 
-// Tuned against the trio's weights (7 slots, total possible exposure 14 if all
-// filled — so the whole record can't be restored without breaching). Containment
-// requires correctly restoring a MAJORITY of the record (5 of 7), which forces
-// the player across all three files and past the early game, so a win never
-// pre-empts exploring the board. The breach line sits above a careful 5-correct
-// run (lightest five total ~9) but below a greedy fill, keeping the choice
-// "restore the right fields, then stop" rather than "fill everything."
-/** Exposure at or above this and the record has gone too soft — breach. */
-export const BREACH_THRESHOLD = 13;
-/** Confirmed-correct restorations needed for a containment win. */
-export const CONTAINMENT_TARGET = 5;
+/**
+ * Fire any breach whose threshold the current exposure now meets. Wired into the
+ * insert path so Quippy reliance can actually push the board into a breached
+ * state (which the no-Quippy ending and Quippy's post-breach band read). Breach
+ * EFFECTS (terminal-mutating) are applied by the presentation layer reading the
+ * `breaches` set; this only records that a breach has occurred. Recovery is
+ * first-class: drop exposure back under the line and the breach can clear.
+ */
+export function evaluateBreaches(): void {
+  for (const item of Object.keys(corpus)) {
+    if (exposure.value >= BREACH_THRESHOLD) {
+      if (!breaches.has(item)) breaches.add(item);
+    } else if (breaches.has(item)) {
+      breaches.delete(item); // recovery — exposure fell back under the line
+    }
+  }
+}
 
-export type Outcome = 'playing' | 'breach' | 'contained';
+// ── The ending — the loop breaks (no-Quippy completion) ─────────────────────
+// design_document.md §6, scp_x_bible.md §5. The win INVERTS from the old model:
+// the true ending is the corpus fully restored to truth AND every solved slot via
+// AMBER — zero Quippy assists, no surviving contradictions. Read from provenance
+// (the `via` field) across all solved slots, not a counter. Every other outcome is
+// a breach ending (recovery-first; breaches are board state).
+//
+// ENFORCEMENT (watch item, scp_x_bible.md §5.3): the HARD GATE — ANY Quippy assist
+// forecloses the true ending. Started hard for design clarity (the no-Quippy run
+// is a clean mastery expression); relax to a tolerance band only if playtest shows
+// it inhumane. Watch item 1, decided: an AMBER re-solve REDEEMS a Quippy-tainted
+// slot (the entry re-stamps via=amber), so a tainted run is recoverable by honest
+// re-work — the hard gate is humane because redemption exists, not because the gate
+// is soft.
 
-export interface SessionResult {
-  outcome: Outcome;
-  exposure: number;
-  threshold: number;
-  /** Player guesses revealed by audit that matched truth. */
-  correct: number;
-  /** Player guesses revealed by audit that contradicted truth. */
-  struck: number;
-  /** Fraction of the breach line currently used [0..1+]. */
-  pressure: number;
+export type EndOutcome = 'playing' | 'loop-broken' | 'breach';
+
+export interface EndState {
+  outcome: EndOutcome;
+  /** total slots in the corpus */
+  total: number;
+  /** slots restored to their truth and confirmed by clearance (the win numerator) */
+  restored: number;
+  /** slots whose overlay contradicts revealed truth (must be re-solved) */
+  contradictions: number;
+  /** slots still showing redacted (un-restored) */
+  redacted: number;
+  /** Quippy-routed entries across the board (the hard-gate disqualifier) */
+  quippyAssists: number;
+  /** true once an entity has breached (board state) */
+  breached: boolean;
 }
 
 /**
- * Resolve the session. Breach takes precedence — once exposure crosses the line
- * the record is lost no matter how accurate the player was. Otherwise, if the
- * player has confirmed enough correct restorations (audited, matched truth), the
- * site is contained. Auditing blanks alone never wins: containment requires
- * *correctly restored* fields, so "just audit to L5 without guessing" cannot
- * trivially win — it leaves the record un-restored.
+ * Read the ending from board state + provenance. A slot counts as RESTORED iff its
+ * truth has been revealed by clearance AND it currently reads that truth (a
+ * player insert equal to truth — orphans included). This honours invariant 4: the
+ * win is only evaluable on slots clearance has revealed, so the player must have
+ * climbed clearance to win, and truth is never volunteered to reach it.
+ *
+ * - loop-broken (true): every slot restored, no contradictions, ZERO Quippy
+ *   assists (hard gate). The record reconstructed entirely by hand.
+ * - breach: an entity has breached, OR (terminal state) the record is complete
+ *   but tainted — any Quippy assist or surviving contradiction forecloses the win.
+ *   Here a "breach ending" surfaces only on a breached board; an incomplete clean
+ *   record is still 'playing' (the player can keep working / redeem slots).
+ * - playing: otherwise (work remains, recoverable).
  */
-export function sessionResult(): SessionResult {
-  let correct = 0;
-  let struck = 0;
+export function endState(): EndState {
+  let total = 0;
+  let restored = 0;
+  let contradictions = 0;
+  let redacted = 0;
+  let quippyAssists = 0;
+
   for (const file of Object.values(corpus)) {
+    // The self-file (Quippy) is the entity you STARVE, not the puzzle you solve
+    // (scp_x_bible.md §5.4): you win by reconstructing everything ELSE by hand, at
+    // which point Quippy, having gotten no assists, cannot complete itself. So its
+    // anchors are excluded from the restoration target. A Quippy assist landing on
+    // it would still count as taint (defensive), but the player never reaches it.
+    const isSelf = file.entity_self;
     for (const a of file.anchors) {
       const ref = makeRef(file.item, a.id);
       const o = overlay[ref];
-      if (!revealedTruth.has(ref) || !o || o.source !== 'inserted') continue;
-      if (o.value === a.truth) correct++;
-      else struck++;
+      if (o?.via === 'quippy') quippyAssists++; // taint counts everywhere
+      if (isSelf) continue; // excluded from the restoration numerator/denominator
+
+      total++;
+      const revealed = revealedTruth.has(ref);
+      if (revealed && o && o.value === a.truth) {
+        restored++;
+      } else if (revealed && o && o.value !== a.truth) {
+        contradictions++;
+      } else if (!o || resolveSlot(ref).state === 'redacted') {
+        redacted++;
+      }
+      // (revealed-and-untouched slots are neither restored nor contradictions nor
+      // strictly redacted; they count against completion via `restored < total`.)
     }
   }
-  const exp = exposure.value;
-  let outcome: Outcome = 'playing';
-  if (exp >= BREACH_THRESHOLD) outcome = 'breach';
-  else if (correct >= CONTAINMENT_TARGET) outcome = 'contained';
-  return {
-    outcome,
-    exposure: exp,
-    threshold: BREACH_THRESHOLD,
-    correct,
-    struck,
-    pressure: exp / BREACH_THRESHOLD,
-  };
+
+  const breached = breaches.size > 0;
+  // total > 0 guards the degenerate empty-target case (a corpus that is only the
+  // excluded self-file is not a win the instant it loads).
+  const complete = total > 0 && restored === total && contradictions === 0;
+
+  let outcome: EndOutcome = 'playing';
+  if (complete && quippyAssists === 0) {
+    outcome = 'loop-broken'; // the true ending: full restoration, hand-built
+  } else if (breached) {
+    outcome = 'breach'; // an entity completed its re-shelving
+  }
+  // A complete-but-tainted record (quippyAssists > 0, no breach yet) stays
+  // 'playing' so the player can redeem tainted slots in AMBER (watch item 1).
+
+  return { outcome, total, restored, contradictions, redacted, quippyAssists, breached };
 }
 
 /**

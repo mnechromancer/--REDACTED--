@@ -26,6 +26,7 @@
   import { logAudit } from './lib/ripples.svelte.ts';
   import AmberTerminal from './components/AmberTerminal.svelte';
   import QuippyPanel from './components/QuippyPanel.svelte';
+  import EndState from './components/EndState.svelte';
   import corpusData from '../static/corpus.json';
 
   loadCorpus(corpusData as Corpus);
@@ -108,6 +109,9 @@
 
   <!-- Quippy overlay: visible only in mode 'quippy', sitting over AMBER. -->
   <QuippyPanel files={visibleFiles} />
+
+  <!-- The ending, read from provenance: loop-broken (true) or breach. -->
+  <EndState />
 {/if}
 
 <style>
