@@ -1,5 +1,7 @@
 # Roadmap
 
+> **⚠ Pivot (2026-06-13): the project re-framed — see `reframe_amber_quippy.md`.** The single "help utility" interface splits into **AMBER (honest CLI)** + **Quippy (refusable GUI = SCP-X)**, and the endgame inverts to **unredact everything without Quippy.** The epic/milestone table below predates the pivot: Epic D's "endgame" is now the no-Quippy completion (not the ouroboros fork), and the M5+ milestones reorder per `technical_document.md` §10 (AMBER tooling + Quippy split; M7–M10). Sprint 1 (below) **completed under the prior design and stands as history** — its code core (pipeline, propagation, clearance, four-state grammar) is mechanic-stable and survives. Future sprints are planned to the re-frame; two design questions ([R§6.2] AMBER tooling, [R§6.4] exposure model) are **PENDING (human)** and gate the next mechanic sprint.
+
 The horizon: epics (`agents.md` §3.1) mapped to sprints. Fine-grained for the current and next sprint; deliberately coarse beyond — scope past Sprint 2 will shift as the loop teaches us what's fun. The milestone spine is `technical_document.md` §10; the content spine is `entity_roster.md`.
 
 ---

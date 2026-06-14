@@ -1,8 +1,16 @@
 # Entity Roster / Series Bible
 
-The 25-entity corpus, planned up front for graph density and tier pacing. One line per entity: item #, class, hook, concept-key memberships, clearance tier, breach effect. Drafted from `site_41b.md` §2 clusters and `concept_key_registry.md`; every entity carries ≥2 concept-keys (CLAUDE.md invariant; design doc §7).
+> **Re-frame note (2026-06-13):** Updated per `planning/reframe_amber_quippy.md`. Three changes: (1) `SCP-41B-000`'s roster line is updated — it is **Quippy** (SCP-X), and its role changed (the entity you *starve* by reconstructing the record without it, not the puzzle you decipher; `scp_x_bible.md` §5.4). (2) Two **new content threads are reserved**: a **Site-41B-area arc** (the Rocky Mountain surroundings; `site_41b.md` §6a) and a **redactor entity** (the second entity that *made* the redactions, distinct from Quippy; `site_41b.md` §3.1) — see the new "Reserved threads" section below. (3) The **15–30 budget is re-confirmed against the longer-file scale** ([R§3]) — flagged for the human below. The existing 25-entity roster and its key-coverage/tier audits **survive unchanged**; the new threads are additive scope, not a rebuild.
 
-**Budget split** (`site_41b.md` §7): 4 / 5 / 5 / 6 / 5 across the five clusters, ouroboros file inside the Drift. **Total: 25.**
+The corpus, planned up front for graph density and tier pacing. One line per entity: item #, class, hook, concept-key memberships, clearance tier, breach effect. Drafted from `site_41b.md` §2 clusters and `concept_key_registry.md`; every entity carries ≥2 concept-keys (CLAUDE.md invariant; design doc §7).
+
+**Budget split** (`site_41b.md` §7): 4 / 5 / 5 / 6 / 5 across the five clusters, the Quippy self-file (`SCP-41B-000`) inside the Drift. **Original total: 25** (the authored core). The area arc and redactor are reserved additive scope — see "Reserved threads" and the budget re-confirmation below.
+
+> **Budget re-confirmation under the longer-file scale ([R§3]) — PENDING (human).** The re-frame wants **longer, multi-section, densely cross-referenced dossiers** (`entry_template.md` §"Longer files"), which raises the cost-per-file and the depth-per-file. Two readings:
+> - **Keep 25 + add the area arc** (toward ~28–32): more files, each now longer. Risks authoring-budget blowout if every file is a full dossier.
+> - **Trim toward fewer, richer files** (~18–24): drop or merge the thinner planned entries, make every surviving file a full dossier, and fold the area arc in by *re-pointing* existing Drift slots rather than adding net-new entities.
+>
+> Recommendation: **fewer, richer.** Graph density (design doc §7) scales with shared keys, not node count, and longer files give each node more grounding surface — so a tighter set of deep dossiers serves the manual-unredaction "a-ha" (the re-frame's core ask) better than a larger set of shallow ones. But this is a content-budget call the human owns. The roster below is left at 25 pending that decision; do not delete entities yet.
 
 **This roster's job over the registry:** the registry defines the keys; the roster guarantees every key gets ≥2 carriers (no orphans), distributes tiers across the four-act arc, and assigns breach effects per cluster affinity. When a discrepancy appears between this file and `concept_key_registry.md`, the registry is authoritative on *mutation-set ordering*; this file is authoritative on *who carries what*.
 
@@ -116,9 +124,39 @@ Archive and territory are coupled. SCP-X's approach vector; the primary arc's ev
 | SCP-41B-022 | Keter | The 1962 lot re-read as the first import from an external catalog | **acquisition-lot**, the-transfer, misprint-survey | 5 | inject_xrefs | Andrade, Sze |
 | SCP-41B-023 | Keter | Storage-decay statistics that track site-wide events before they occur | **record-reality-coupling**, audit-cycle | 5 | inject_xrefs | Sze |
 | SCP-41B-024 | Keter | Sze's terminal finding: a cross-referenced record competes with its subject | **sze-experiment**, concordance-program, record-reality-coupling | 5 | inject_xrefs | Sze, Halloran |
-| **SCP-41B-000** | **Keter** | **The ouroboros — fully redacted, accessioned 1962, every audit logging only "present"** | **concordance-program**, acquisition-lot, the-transfer, record-reality-coupling, halloran-marginalia | 5 | inject_xrefs | all five |
+| **SCP-41B-000** | **Keter** | **Quippy (SCP-X) — fully redacted, accessioned 1962, every audit logging only "present." The friendly assistant's true file.** | **concordance-program**, acquisition-lot, the-transfer, record-reality-coupling, halloran-marginalia | 5 | inject_xrefs | all five |
 
-**Cluster keys closed:** `misprint-survey` (×2), `record-reality-coupling` (×3 — promoted, Tier-5 only), `acquisition-lot` (closes the Act I→IV loop), `sze-experiment` (×2), `concordance-program` (the entity thread terminates in the self-file). **SCP-41B-000 is the `entity_self: true` file** — the one such file in the corpus. It threads five keys across all five clusters per the locked endgame design.
+**Cluster keys closed:** `misprint-survey` (×2), `record-reality-coupling` (×3 — promoted, Tier-5 only), `acquisition-lot` (closes the Act I→IV loop), `sze-experiment` (×2), `concordance-program` (the entity thread terminates in the self-file). **SCP-41B-000 is the `entity_self: true` file** — the one such file in the corpus; it is **Quippy** (SCP-X). It still threads five keys across all five clusters (narrative wiring), but its **role changed under the re-frame** (`scp_x_bible.md` §5.4): it is no longer the puzzle you decipher to win — it is the entity you *starve* by reconstructing the rest of the corpus in AMBER without its help. The five entity-thread keys keep their narrative role but no longer feed the old `thread_coherence` fork (`concept_key_registry.md` re-frame note). When authored, give it the bright-assistant mask in prose (the paperclip-diamondback presence) over the redacted self-file — the reveal that the helper *is* the center is the entity's whole turn.
+
+---
+
+## Reserved threads (re-frame [R§4] — additive scope, not yet authored)
+
+New content the re-frame seeds. These are **reservations**, not commissioned entities: register, direction, and reserved concept-keys (`concept_key_registry.md` §3b), so a future lore-author can run with them without re-deriving placement. **Do not author against them until their PENDING items resolve.** They are deliberately *not* numbered into the clean 001–024 sequence yet — numbering waits on the budget decision (keep-25-and-add vs. fewer-richer, above) and, for the area arc, on whether it is a sixth cluster or an expansion of the Drift.
+
+### The Site-41B-area arc (`site_41b.md` §6a)
+
+Files about the **site and its Rocky Mountain surroundings** — the mountain the mine was dug into and the country around it. Reads the cosmology (record/territory coupling) at *ground level* before the cosmic Drift does. Reserved seeds:
+
+| Seed | Hook | Reserved keys | Likely tier | Notes |
+|---|---|---|---|---|
+| The adit & the road | The access road whose mileage disagrees with the survey; present on some map editions, not others | `the-access-road` (new), `misprint-survey` (sibling) | 2–3 | Early, legible record/territory drift. The site's umbilical to the outside. |
+| The played-out town | The depopulated boomtown that served the mine — fully documented, entirely absent | `the-claim` (new), `shift-roster`/`the-transfer` (siblings) | 2–4 | Area-scale Quiet Department: structured absence, outdoors. Original, not a named real ghost town. |
+| The resurvey country | The terrain around the 1974 resurvey where the land agrees with the wrong map | `misprint-survey`, `record-reality-coupling` | 4 | Ties the area arc into the existing Drift (`SCP-41B-021`). Surface manifestation of the coupling. |
+| The watershed | The mountain's water — snowpack, runoff, the source of the flood of '71 | `the-watershed` (new), `the-flood-of-71` (sibling) | 3–4 | Grounds the Wet Stacks (`SCP-41B-012`) in real geography; gives the site a climate. |
+| The claim & deed | Mineral claims and deed history; the Foundation's acquisition of the land | `the-claim` (new), `acquisition-lot`/`the-transfer` (siblings) | 2–3 | Ground-level carrier of the acquisition/transfer energy. The land's "object class." |
+
+**Cluster placement PENDING (human):** sixth cluster, or Drift expansion, or fold into existing files. **Budget PENDING** (above). **Location PENDING (low-stakes):** confirm Colorado Front Range or relocate within the Rockies (`site_41b.md` §6a recommends keep). The new keys (`the-access-road`, `the-claim`, `the-watershed`) are reserved in `concept_key_registry.md` §3b with TBD indices.
+
+### The redactor (`site_41b.md` §3.1)
+
+A **single reserved slot** for the second entity — the one that *made* the redactions, distinct from Quippy (which *fills* them). **Initially unknown to the player; revealed late.**
+
+| Slot | Hook | Reserved key | Tier | Status |
+|---|---|---|---|---|
+| *(unnumbered — reserved)* | The perpetrator behind the redactions, inferred from the gaps long before it is named | `the-redactor` (new, dormant) | High (late reveal) | **Reserved, do NOT author.** Nature/motive unwritten — three candidate readings in `site_41b.md` §3.1. No designation, no cast line, no cluster yet. |
+
+**PENDING (human / future lore):** the redactor's nature and motive gate everything about it — designation, cluster, key indices, and whether it gets one file or a thread. Keep it as negative space (like Site-41's silence) until it earns authoring. The OS framing already leaves room (AMBER's infohazard-countermeasure capability presupposes a *source* of corruption — the redactor is that source). Seed it implicitly via redacted *surface* records in the area arc; do not give it a self-file.
 
 ---
 
@@ -184,5 +222,5 @@ Shared keys across the trio: `the-quiet-exchange` (003↔001), `acquisition-lot`
 - [x] ~~Finalize SCP numbers~~ — resolved: site-local `SCP-41B-###`, clean sequence, ouroboros `-000`. Propagated to `entry_template.md`, `handoff.md`, `agents.md`, `concept_key_registry.md`.
 - [x] ~~Promote the seven seed keys in `concept_key_registry.md`~~ — done.
 - [x] ~~Confirm `vivified-wing`'s second carrier~~ — resolved: SCP-41B-017 (reading rota) carries it via the Wing's enclosures appearing on the rota. See the cluster 2.4 note.
-- [x] ~~**SCP-X bible:** assign the overlay-state thresholds that fork SCP-41B-000's two endings~~ — done in `scp_x_bible.md`. Fork = `thread_coherence` (0–5) over the five threaded keys' carriers; 5 → Recontainment, 0–2 → Restructuring, 3–4 → contested (tiebroken by the self-file's `concordance-program` + `halloran-marginalia` anchors). The self-file's five anchors are the five keys at `redaction_level: 5`, truths = the index-0 mundane readings.
+- [x] ~~**SCP-X bible:** assign the overlay-state thresholds that fork SCP-41B-000's two endings~~ — done in `scp_x_bible.md`. Fork was `thread_coherence` (0–5) over the five threaded keys' carriers. **⚠ SUPERSEDED by the re-frame (2026-06-13):** the `thread_coherence` fork is **retired as the win condition**; the win is now the **no-Quippy completion** (read per-edit provenance, not key coherence) — `scp_x_bible.md` §5. The self-file (`SCP-41B-000` = Quippy) is still threaded by the five keys narratively, but its anchors no longer fork the ending. Do not author against the old fork. *(Item kept for history, annotated; not rewritten.)*
 - [ ] **When writing entries:** per-entity mutation sets are *not* in this roster — they live in each entry's frontmatter, ordered per the registry's mutation index. The roster fixes carriers and keys; the entry fixes the candidate strings. Author against `entry_template.md`; register every new carrier back in `concept_key_registry.md` per its §5 checklist before committing. For SCP-41B-017 specifically, write the addendum so the Vivified Wing is named on the rota explicitly (see cluster 2.4 note) — otherwise the three-cluster propagation off one edit reads as coincidence, not cause.

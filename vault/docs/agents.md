@@ -1,5 +1,7 @@
 # Agents — Agentic Development Methodology
 
+> **Re-frame note (2026-06-13):** The project pivoted — see `planning/reframe_amber_quippy.md` (the master doc) and the two companion handoffs in `planning/`. The **methodology in this doc is unaffected** (the pipeline, personas, severity tiers, and least-privilege context scoping all survive). A few **design claims** here now conflict with the re-frame and are flagged inline: the old "hover a redacted span" interaction (§4 user-story example) is replaced by the AMBER-CLI / Quippy-overlay split, and the "ouroboros fork on overlay state" endgame (§2.1 track D) is replaced by the **no-Quippy completion** (`scp_x_bible.md` §5). Scan for "SCP-X arc," "Concordance," "hover," and "ouroboros" before quoting this doc's *design* specifics; the *process* it describes is current.
+
 How this game gets built and authored by agents. Method aligned to the five CCA-F (Claude Certified Architect – Foundations) exam domains; every pattern named below is a pattern from that blueprint applied to this repo's actual work. Companion docs: `technical_document.md` (what to build), `site_41b.md` (what to write), `handoff.md` (context routing).
 
 The organizing conceit: **the development process is diegetic.** The agents that author and QA the corpus are Foundation staff personas at Site-41B; the documentation pipeline below is simultaneously the real quality gate and the in-fiction provenance of every file the player reads. The recurring characters in `site_41b.md` §3 are these personas. Nothing about that conceit is decorative — severity-tiered authoring and descending redaction are how the entries acquire their load-bearing properties (original truths, inferable-but-not-trivial prose, index-aligned mutation sets).
@@ -82,12 +84,12 @@ Epics group `technical_document.md` §10 milestones; every milestone is independ
 | A — Corpus pipeline | M1 | 3 stub entries round-trip Obsidian → `corpus.json`; all validation rules fire on deliberately broken fixtures |
 | B — Reader | M2–M3 | Files render with redaction bars + clearance gating; single-file insertion shows redacted/inserted states |
 | C — Propagation core | M4–M5 | Cross-file mutation with provenance; batched truth reveal; four-state grammar complete |
-| D — Breach & endgame | M6–M7 | Terminal-mutating breach effects + recovery; ouroboros fork on overlay state |
-| E — Dials & content | M8–M9 | Difficulty/accessibility dials; corpus scaled to 15–30 entities through the §2 pipeline |
+| D — Breach & endgame | M6–M10 | Terminal-mutating breach effects + recovery; ~~ouroboros fork on overlay state~~ **→ re-frame: AMBER CLI + Quippy overlay (M7–M9) and the no-Quippy completion endgame (M10)** — `technical_document.md` §10, `scp_x_bible.md` §5 |
+| E — Dials & content | M11–M12 | Difficulty/accessibility dials (incl. the Quippy-temptation dial); corpus scaled through the §2 pipeline as **longer dossiers** ([R§3]) |
 
 ### 3.2 Roles
 
-- **Orchestrator/PM** — owns backlog, slices milestones into user stories ("As the archivist, I hover a redacted span and see slot type + cross-mentions + candidates"), dispatches, integrates.
+- **Orchestrator/PM** — owns backlog, slices milestones into user stories (re-frame example: "As the archivist, I open AMBER's cross-reference lookup on a redacted span and assemble the case for a value myself" — the honest tool; vs. "I summon Quippy and one-click-fill, raising exposure" — the costly tool). *(Old example, retired: "I hover a redacted span and see slot type + cross-mentions + candidates" — that single always-on hover panel is split into AMBER lookup + Quippy panel per `technical_document.md` §7.)*
 - **Architect** — plan-mode only; resolves design forks against the six CLAUDE.md invariants before code exists. Any story touching the inference/exposure economy or the overlay/truth boundary routes here first.
 - **Implementer** — writes code per story; one story per worktree when parallel.
 - **Test engineer** — `propagation.ts`, `validation.ts`, `breaches.ts` are pure functions over (corpus, overlay) — ideal unit targets. Property tests for the invariants: idempotent re-insertion, index-aligned mutation mapping, truth never volunteered for untouched slots.

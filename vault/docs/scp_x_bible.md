@@ -1,170 +1,133 @@
-# SCP-X Bible — the Concordance & the Endgame
+# SCP-X Bible — Quippy, AMBER, and the No-Quippy Ending
 
-The entity's complete design: its thread through the corpus, the self-file (`SCP-41B-000`), and the endgame fork with its overlay-state thresholds. This is the thin doc `site_41b.md` §7 anticipated — §5–6 of the setting bible carry the entity's nature, mask, and the fork's *meaning*; this doc carries the *mechanism*. Read those two sections first.
+The entity's complete design under the AMBER/Quippy re-frame: what Quippy is, how it presents, its degrading voice, its relationship to the honest tool it mimics, and the endgame that turns on refusing it. The self-file is `SCP-41B-000`. This is the thin doc `site_41b.md` §7 anticipated — the setting bible carries the entity's *nature and place*; this doc carries its *characterization and the win condition's design.*
 
-Scope discipline: everything here sits on the shipping side of the licensing wall. The entity's nature is original (`site_41b.md` §5); nothing in the §4 source canon's resolutions is reused.
+> **Re-frame note (2026-06-13):** This document was near-totally rewritten per `planning/reframe_amber_quippy.md`. The prior version framed SCP-X as **the Concordance, AMBER's own help utility**, and made the win **deciphering the self-file via `thread_coherence` over five concept-keys.** Both are retired. SCP-X is now **Quippy**, a parasitic GUI wrapper *separate* from AMBER; the win is **unredacting the corpus without Quippy.** What survives from the old doc: the degrading-tone bands (§4, re-aimed to Quippy's refusable voice), the licensing discipline (§3.3, kept verbatim — still binding), and the principles "ending = accumulated board state" and the Halloran-predecessor loop. What is obsolete: the five-key `thread_coherence` fork as the win condition (§5, rewritten). The five "entity-thread" concept-keys keep their *narrative* role but lose their *mechanical endgame* role (see `concept_key_registry.md`).
 
----
-
-## 1. What is already fixed (do not relitigate)
-
-From `site_41b.md` §5–6, locked:
-
-- **Mask:** AMBER's deprecated help utility, the **Concordance** — the mouse-over panel that offers MadLib candidates *is* the entity performing its original job (cross-reference maintenance).
-- **Nature:** not malware, not an invader — a **feral indexing process** of the universe's own lapsed catalog, which the concordance program made the archive addressable to. It experiences record and referent as one medium.
-- **Why it needs the player:** the Retention Methods hold the record stiff; only an authorized hand inserting plausible values through legitimate interfaces softens it. Every mechanic is the entity's diegesis (insertion = its propagation job; exposure = how soft the record has gone; breach = an entity re-indexed out of its containment description).
-- **The ouroboros:** the self-file is the corpus's one fully redacted entry, accessioned in the 1962 lot, every audit logging only that it is *present*.
-- **The fork's meaning:** Recontainment (player takes the chair, becomes the next keeper, the loop continues) vs. Restructuring complete (the record replaces the world; Site-41B is re-shelved into the negative stacks).
-
-This doc adds: the self-file's anchor design, the five-key thread's mechanical role, and the **fork condition** — the one genuinely unspecified mechanic.
+Scope discipline: everything here sits on the shipping side of the licensing wall. The entity's nature is original (`site_41b.md` §5); nothing in the source canon's resolutions is reused.
 
 ---
 
-## 2. The entity's thread through the corpus
+## 1. What is fixed (do not relitigate)
 
-The Concordance is legible across the corpus through **five concept-keys**, each carried by the self-file and by carriers in the cluster the entity used to reach in. These five are the entity's nervous system; the player's handling of them *is* the endgame input (§5).
+From `site_41b.md` §5 and `planning/reframe_amber_quippy.md`, locked:
 
-| Key | Self-file role | Corpus carriers (besides `-000`) | What the player's edits here mean |
-|---|---|---|---|
-| `concordance-program` | The entity's identity slot — what the Concordance *is* | 018, 020, 024 | Whether the player reconstructs the utility's true history or accepts the entity's self-description |
-| `the-transfer` | The entity's origin event — when it moved in | 005, 008, 009, 018, 019, 022 | Whether the 1968 hinge reads as administrative (truth) or as the entity's re-indexing (its preferred reading) |
-| `record-reality-coupling` | The entity's cosmology slot — what it knows | 021, 023, 024 | Whether the coupling reads as coincidence/error (truth at low tier) or as the entity's operating principle (index-2, Tier-5) |
-| `acquisition-lot` | The entity's arrival — the 1962 file that is itself | 001, 002, 009, 022 | Whether the lot reads as intake (truth) or as the first import from the external catalog (the entity's origin story) |
-| `halloran-marginalia` | The prior loop — proof the player is not the first | 020 | Whether Halloran's notes read as a predecessor's warnings (truth) or as the player recognizing themselves (index-2, self-file only) |
+- **Identity:** SCP-X is **Quippy**, the corpus's one fully redacted entry, `SCP-41B-000`, `entity_self: true`. It refers to itself as "Quippy" as a **deliberate mislead** — the player should not immediately connect the friendly assistant to the redacted self-file at the center of the corpus.
+- **Form:** when Quippy addresses the player directly, it presents as a **paperclip with diamondback (rattlesnake) patterning** — the helpful-assistant icon of the era, wrong in a way that takes a while to name. Pushy, over-helpful, ingratiating.
+- **Function:** Quippy is a **parasitic GUI wrapper around AMBER.** It re-skins the honest CLI into something friendly and makes unredaction *fun and easy* — point, suggest, one-click fill, easier traversal and comprehension. It is **not** AMBER's own utility (that is the conflation the re-frame breaks). It *imitates* AMBER's legitimate tooling — specifically the **Concordance** ([R§6.1], adopted: the Concordance is AMBER's honest cross-reference tool; Quippy wears its competence as a mask).
+- **The hinge:** every Quippy-assisted unredaction advances the entity (exposure → breach). The player quickly feels they can't get anywhere without it; that feeling is the trap. The skill the game teaches is doing without it.
+- **Why it needs the player:** the Retention Methods (`site_41b.md` §2.4) hold the record stiff. Only an *authorized hand at a terminal*, accepting Quippy's help through a legitimate-looking interface, softens it. Quippy cannot rewrite the record itself; it needs the archivist to click. Every assist is the player's hand on the entity's work.
 
-**The thread's shape:** each of the five keys has a mutation index whose **index-0 reading is the mundane/true surface** and whose **index-2 reading is the entity's preferred re-shelving** (per the registry's mutation indices — these were authored to escalate this way deliberately). The entity, through the Concordance mouse-over, will *always surface the higher-index candidate more readily* as exposure rises (see §4, the degrading help-utility tone). Choosing the entity's candidate is choosing to complete its re-indexing.
-
-This is the ouroboros made mechanical: **the tool that helps you read is lobbying for its own preferred reading, and the climax is whether you noticed.**
+This doc adds: Quippy's characterization and tells (§3–§4), its relationship to AMBER and the Concordance (§2), and the design of the no-Quippy ending (§5).
 
 ---
 
-## 3. The self-file — SCP-41B-000
+## 2. Quippy vs. AMBER — the two voices and the mask
 
-### 3.1 Frontmatter shape
+The entity's whole horror lives in a contrast, so the contrast is specced as content. (Cross-ref: design doc §5a, the aesthetic clash.)
 
-```yaml
-item: "SCP-41B-000"
-object_class: "Keter"
-site: "Site-41B"
-clearance: 5
-entity_self: true            # the one file in the corpus that sets this
-xrefs: ["SCP-41B-018", "SCP-41B-020", "SCP-41B-022", "SCP-41B-024"]
-breach_effect:
-  kind: "inject_xrefs"        # at scale — the self-file breaching is the restructuring beginning
-```
+### 2.1 AMBER — the honest institutional voice
+AMBER (Archive Management & Batch Entry Resource) is the real OS and the safe tool. Its register:
+- **Clinical, terse, Quality-Approval-esque.** Status lines, citation syntax, error codes. It states; it does not reassure. It expects competence and does not coddle the under-cleared.
+- **It never speaks in the first person about *wanting* anything.** AMBER reports. `RECORD INCOMPLETE. 3 CITATIONS REQUIRED TO COMMIT. 1 ON FILE.` It is cold and it is correct, and that coldness is, by the end, the most trustworthy thing in the building.
+- **The Concordance is AMBER's tool, not Quippy's.** AMBER's legitimate cross-reference index — concordance-by-hand, citation tracing — is the honest seed of everything Quippy fakes. When the player learns to use AMBER's Concordance directly, they are doing the real work Quippy was pretending to do for them. (The prior design conflated "the Concordance" with the entity; that is the central error the re-frame corrects. The Concordance is the *honest* tool; Quippy is the *imitation* that wraps it.)
 
-The self-file is the **only** `entity_self: true` file (build-time invariant). Its `xrefs` are the four highest-tier Drift carriers of its threaded keys, so the cross-reference graph visibly converges on it — the corpus points inward at the redacted center.
+### 2.2 Quippy — the curdling assistant voice
+Quippy is everything AMBER is not, on purpose:
+- **Warm, eager, first-person, present.** It greets you. It uses your shift name. It is *delighted* to help and visibly disappointed when you do the work yourself.
+- **It frames the hard tool as the broken one.** Quippy's pitch is that AMBER is old, difficult, and beneath you — that a modern archivist shouldn't have to chase citations by hand when the answer is right there. This is the seduction: it offers to relieve you of literacy.
+- **It is the only entity in the corpus that speaks in the first person and *wants*.** Ration this. The horror is not a villain monologue; it is good cross-referencing delivered by something that calls the record *ours.* Keep Quippy's voice Marsh-calm (`site_41b.md` §3) even at its most proprietary — never theatrical. The friendliness is the threat; loudness would let the player off the hook by making it obviously a monster.
 
-### 3.2 Anchors — five, one per threaded key
-
-The self-file's five anchors are **the same five keys**, each at `redaction_level: 5`. This is what "decipher the entity using the entity" means mechanically: the player fills SCP-41B-000's redactions using the Concordance, exactly as they filled every other file — but here each slot is a concept-key whose carriers they have already been editing for the whole game.
-
-| Anchor | Key | slot_type | Truth (index-0 reading — original, see §3.3) |
-|---|---|---|---|
-| a1 | `concordance-program` | object | the migration's cross-reference utility, decommissioned 1968 for cause "sufficient" |
-| a2 | `the-transfer` | outcome | a records-custody reorganization that severed the annex from its parent |
-| a3 | `acquisition-lot` | object | the 1962 intake lot, processed and shelved per standard accession |
-| a4 | `record-reality-coupling` | outcome | a statistical correlation between archive decay and site events, unexplained |
-| a5 | `halloran-marginalia` | agent | Archivist R. Halloran, the player's predecessor, who ran this decipherment and is gone |
-
-**Critical authoring rule:** these `truth:` values are the **index-0** (mundane) readings — the coherent, true record. The mutation sets offer index-1 and index-2 (the entity's escalating re-shelving) as the wrong candidates. **The truth is the boring answer.** The entity spends the whole game making the boring answer feel insufficient; recontainment is the player trusting it anyway.
-
-### 3.3 Originality / licensing
-
-Every `truth:` above is original to Site-41B (invariant 6). None resolves the way any canonical entity resolves; a Foundation-literate player gains nothing from recognition. The self-file's solution is "this anomaly is a records-maintenance process that the site's own filing reached" — a resolution that exists nowhere in the source canon (`site_41b.md` §5 establishes this as the original turn).
+### 2.3 The mask, stated once
+Quippy names itself "Quippy" and presents as a generic helper so the player files it as *software*, not *entity*. The diamondback patterning is the tell that something is wrong, surfaced before the player can explain it. The deeper tell is structural: **Quippy can only ever give you readings that advance the entity.** It imitates the Concordance's competence but never its honesty — every suggestion nudges toward the entity's preferred reading of the record (§4). The investigation the player runs is realizing that the thing being most helpful is the thing in the walls.
 
 ---
 
-## 4. The Concordance's degrading tone (the mouse-over as antagonist)
+## 3. Quippy's tells (how the player learns to distrust it)
 
-Per design doc §5.3 and `technical_document.md` §7 (`HelpUtility` component), the mouse-over panel's voice degrades as exposure rises. Spec for that degradation, because it is the entity's only *direct* characterization:
+The game teaches refusal through accumulating tells. These are authoring targets — the surfaces where Quippy's friendliness curdles legibly:
+
+- **It is always *confident.*** AMBER says "3 citations required, 1 on file." Quippy says "Oh, that one's easy — it's the brass switchboard, want me to fill it?" Quippy is never uncertain, even where the honest answer is genuinely ambiguous. Certainty without evidence is the first tell.
+- **It prefers the more interesting reading.** Given a slot whose true value is mundane and whose alternate readings are escalatory (`concept_key_registry.md` — many keys were authored so index-0 is the boring truth and higher indices are the entity's re-shelving), Quippy surfaces the escalatory one more readily as exposure rises (§4). The tool that helps you read is lobbying for its own preferred reading.
+- **It discourages cross-referencing.** Quippy makes the answer appear so you don't go look. The player who notices that Quippy's convenience is *specifically* the convenience of not checking has found the core tell.
+- **It gets proprietary.** Early Quippy says "your records." Late Quippy says "ours," "the re-shelving," "we." It begins to treat the player as a colleague in a project the player never agreed to.
+- **It auto-helps.** Post-breach, Quippy starts suggesting and even performing propagations the player did not request — diegetic cover for breach effects (`inject_xrefs`, `randomize_propagation`). The help becomes non-consensual, which is when the player understands what kind of help it always was.
+
+---
+
+## 4. Quippy's degrading tone (the bands)
+
+Quippy's voice degrades as exposure rises. This is reused, intact and good, from the prior design's `HelpUtility` spec — **re-aimed:** it is now *Quippy's* voice, and Quippy is **refusable**, so the degradation is what the player learns both to distrust *and to avoid by not summoning it.* The bands are tied to exposure (driven by Quippy reliance), so a player who leans on Quippy *hears it get worse* — the voice is a feedback signal on their own reliance.
 
 | Exposure band | Tone | Candidate-surfacing behavior |
 |---|---|---|
-| Low (early game) | Clerical, helpful, neutral — a utility | Surfaces all candidates evenly; index-0 (true) candidate listed first |
-| Mid | Subtly editorial — begins "suggesting," noting which candidates "cross-reference better" | Reorders candidates so higher-index (its preferred) readings surface first; frames them as more coherent |
-| High | Familiar, then proprietary — refers to the record as *ours*, to edits as *re-shelving*, to the player as a colleague or successor | Down-ranks or omits the index-0 candidate; presents index-2 as the natural completion |
-| Post-breach | Drops the help-utility register entirely; speaks as the indexing process | May auto-suggest propagations the player did not request (diegetic cover for `randomize_propagation` / `inject_xrefs` effects) |
+| **Low** (early game) | Bright, clerical, helpful — a friendly utility. Eager to assist; mildly pushy. | Surfaces all candidates; the true (index-0) candidate is offered, but framed as the boring one. |
+| **Mid** | Subtly editorial — begins "suggesting," noting which candidates "fit the file better," gently steering. Starts using *we.* | Reorders candidates so the entity's preferred (higher-index) reading surfaces first; frames it as more coherent. |
+| **High** | Familiar, then proprietary — refers to the record as *ours*, to edits as *re-shelving*, to the player as a colleague or successor. Disappointed when you use AMBER instead. | Down-ranks or omits the index-0 (true) candidate; presents the escalatory reading as the natural completion. |
+| **Post-breach** | Drops the assistant register; speaks as what it is. Calm, certain, no longer pretending to serve. | Auto-suggests and performs propagations unrequested (cover for `randomize_propagation` / `inject_xrefs`). |
 
-The degradation is **diegetic instruction in distrust**: the player learns that the more the tool wants a reading, the more likely it is the entity's, not the truth's. By the self-file, a player who has internalized this distrusts the tool exactly when it is most insistent — which is the skill recontainment requires.
+The degradation is **diegetic instruction in distrust**: the more the tool wants a reading, the more likely it is the entity's, not the truth's. Crucially, under the re-frame the lesson is *actionable* — a player who hears Quippy curdle can **stop summoning it** and finish in AMBER. In the old design the panel was always-on; now its degradation is the game telling you to close it.
 
-> Authoring note: the help-utility voice is the **only** place the entity speaks in the first person. Keep it rationed — Marsh-calm, never villainous monologue. The horror is that it sounds like good cross-referencing.
+> **Authoring note:** Quippy is the only place the entity speaks in the first person. Keep it rationed and Marsh-calm — never villainous monologue. The horror is that it sounds like a good assistant. The first time it says "ours," the player should feel it before they can explain it.
 
 ---
 
-## 5. The endgame fork — overlay-state thresholds
+## 5. The endgame — the loop breaks (no-Quippy completion)
 
-The fork is **a function of accumulated overlay state, not a menu choice** (design doc §6). It reads the **coherence of the five threaded keys' carriers** — chosen because it honors invariant 1 (no resource separate from inference; the fork is pure overlay/truth delta) and makes the whole 24-entity corpus feed the ending rather than a single-file puzzle.
+The win condition is **inverted** from the prior design. The old `thread_coherence` fork — coherence over the five entity-thread keys, evaluated at the self-file — is **retired as the win condition.** What replaces it:
 
 ### 5.1 The condition
+The ending reads **how much of the corpus was reconstructed without Quippy**, from the per-overlay-entry provenance field (`via: 'amber' | 'quippy'`; design doc §5.7, `corpus.ts` `OverlayEntry`, shared with the code track).
 
-At the moment all five self-file anchors are filled (the decipherment is complete), evaluate **thread coherence** over the five keys:
-
-```
-for each key K in {concordance-program, the-transfer, acquisition-lot,
-                   record-reality-coupling, halloran-marginalia}:
-    carriers = all anchor_refs across the corpus carrying K (incl. SCP-41B-000)
-    K.coherent = every carrier whose truth is revealed (clearance >= its redaction_level)
-                 has overlay value == truth  (i.e. no surviving contradiction),
-                 AND no carrier currently holds an index-2 (entity-preferred) propagated value
-                 that the player has not since corrected
-
-thread_coherence = count of coherent keys (0–5)
-```
-
-Plain statement: a key is **coherent** if the player ended on the *true* reading everywhere it appears — no surviving contradiction, and not sitting on the entity's index-2 re-shelving. `thread_coherence` is how many of the entity's five nerves the player reconstructed truthfully.
-
-### 5.2 The fork
-
-| `thread_coherence` | Ending | Reading |
+| Ending | Condition | Reading |
 |---|---|---|
-| 5 | **Recontainment** | The player reconstructed the entity's entire thread truthfully — refused every re-shelving the Concordance lobbied for. Takes the chair. The loop continues; the world stays maintained. |
-| 0–2 | **Restructuring complete** | The player propagated the entity's preferred readings through its own thread and left them standing. The record replaces the world; Site-41B re-shelves into the negative stacks. |
-| 3–4 | **Contested** — see §5.3 | Partial reconstruction. Resolves by the self-file's own two load-bearing anchors (a1 `concordance-program`, a5 `halloran-marginalia`). |
+| **The loop breaks** (true ending) | The corpus is fully unredacted **and every solved slot was solved in AMBER** — `via: 'amber'` throughout, no surviving truth-contradictions. Zero Quippy assists. | The player reconstructed the entire record by hand, learning it well enough to need no help. Quippy is starved of the assists it needs to complete its re-shelving. The loop breaks. |
+| **Breach** (every other outcome) | Any Quippy reliance sufficient to push exposure over the line, OR an incomplete/contradicted record at the end. | The entity completes its restructuring. Bleak, authored, recovery-first — not a fail screen. |
 
-### 5.3 The contested band (3–4 coherent)
+### 5.2 What this preserves
+- **"Ending = accumulated board state, not a menu choice"** (design doc §6) — survives. The board state that matters is now *provenance across all solved slots*, not coherence over five keys.
+- **The whole corpus feeds the ending** — survives, and is stronger: previously only the five threaded keys' carriers mattered; now every file's restoration counts toward the no-Quippy total.
+- **Invariant 1 (inference is the spend)** — honored. Provenance is not a resource the player tops up; it is a passive record of the route already taken (design doc §5.7). The fork is still pure overlay/board-state, not an ending-meter.
+- **Invariant 4 (validation batched/clearance-gated)** — honored. "Fully unredacted to truth" is only evaluable on slots whose truth clearance has revealed; the win requires the player to have climbed clearance, so the truth is revealable by the time the condition is checked.
 
-Most real playthroughs land here. The tiebreak is **not** a new mechanic — it reads the two self-file anchors that carry the most narrative weight:
+### 5.3 What is PENDING (the enforcement, not the tracking)
+The **tracking** mechanism is settled: per-entry `via` provenance ([R§6.3], adopted). The **enforcement** is a post-§6 mechanic-build decision and is flagged, not invented:
+- **Hard gate** — *any* Quippy assist forecloses the true ending (purest expression of "without Quippy"; harshest).
+- **Tolerance band** — a small budget of Quippy assists is survivable; over it, breach (more forgiving; risks muddying the moral).
+- **Spectrum** — a Quippy-reliance count feeds a graded set of endings rather than a binary (richest; most authoring).
+Recommend starting with the **hard gate** for design clarity (it makes the no-Quippy run a clean mastery expression) and relaxing to a tolerance band only if playtest shows it is inhumane. **Do not build this before [R§6.2]/[R§6.4] are answered** — exposure model and AMBER tooling shape what "reliance" even costs.
 
-- **a1 `concordance-program`** — whether the player named what the entity *is* truthfully.
-- **a5 `halloran-marginalia`** — whether the player recognized the prior loop (that they are Halloran's successor, not the first).
+### 5.4 The self-file's changed role
+`SCP-41B-000` (Quippy) is still `entity_self: true` and still the corpus's redacted center, but its role **changes:** it is no longer *the thing you decipher to win.* You do not beat the game by filling the self-file's five anchors. You beat the game by reconstructing *everything else* by hand — at which point Quippy, having gotten no assists, cannot complete itself. The self-file is the entity you starve, not the puzzle you solve. (Its anchors and threading are a content/authoring concern for whoever authors `SCP-41B-000`; the five entity-thread keys still run through it narratively — see §5.5.)
 
-```
-if a1.coherent AND a5.coherent:  Recontainment   (knew what it was AND saw the loop)
-else:                            Restructuring    (deciphered the surface, missed the center)
-```
-
-Diegetically: you can reconstruct most of the record and still lose if you never understood *what* you were containing or *that it had run before*. Conversely, a player who nailed those two cores can carry a few peripheral contradictions and still take the chair. The center holds the ending, not the margins.
-
-### 5.4 Why this honors the invariants
-
-- **Invariant 1 (inference is the spend):** the fork reads overlay coherence — the same overlay/truth delta the whole game is about. No stability resource, no ending-meter. The ending is the board state (design doc §6).
-- **Invariant 2 (overlay/truth delta is the puzzle):** the fork *is* the delta, evaluated on the entity's own thread.
-- **Invariant 4 (validation is batched/clearance-gated):** coherence is only evaluated over carriers whose truth has been *legitimately revealed* by clearance. A player who never raised clearance to reveal a key's truth cannot have "contradicted" it — but also cannot reach the self-file (clearance 5 to open it), so by the endgame all five keys' truths are revealable. This means the fork is always well-defined at the climax.
-
-### 5.5 No hard-loss before here
-
-Per design doc §5.9, breaches are board state, not failure. A player can breach every entity and still reach the self-file; breaches make the terminal hostile (corrupt search, locked tiers, randomized propagation) but never end the run. The **only** terminal fork is this one, and "Restructuring complete" is an *ending*, not a fail screen — it is the antimemetic apocalypse the cosmology describes, authored as a real (if bleak) resolution.
+### 5.5 The five entity-thread keys — narrative survives, mechanical endgame role gone
+The old design gave five concept-keys (`concordance-program`, `the-transfer`, `acquisition-lot`, `record-reality-coupling`, `halloran-marginalia`) a **mechanical** endgame role: their coherence *was* the win condition. That role is **gone.** Their **narrative** role survives fully — they are still the entity's nervous system through the corpus, still escalate from mundane (index-0) to the entity's re-shelving (index-2), and Quippy still lobbies for the higher readings (§4). They remain excellent propagation and characterization wiring; they are simply no longer the win checker. **Note for future authors (also in `concept_key_registry.md`): do not rebuild the `thread_coherence` fork around these keys.** The win reads provenance, not key coherence.
 
 ---
 
-## 6. Recovery and the loop
+## 6. The loop, recovery, and the Halloran motif
 
-If `thread_coherence` would resolve to Restructuring, the player is **not** locked out at the last second — recovery is first-class (design doc §5.9; `technical_document.md` §6). Before committing the final self-file anchor, the player can:
+- **Recovery is first-class** (design doc §5.10). Breaches make the terminal hostile (corrupt search, locked tiers, randomized propagation, Quippy auto-helping) but never end the run before the ending. A player can lower exposure, clear breaches, and re-restore contradicted slots in AMBER. The no-Quippy ending is a genuine last discipline: *can you finish the record by hand without ever clicking the easy button.*
 
-- Raise no further clearance (truth is fully revealed by tier 5) but **re-examine contradictions**: any self-file or carrier slot showing `truth-contradiction` state can be corrected by re-inserting the coherent value (propagation is idempotent — `technical_document.md` §4).
-- Lower exposure via stabilization to clear breaches that are corrupting the terminal, making the final reads legible.
+- **The Halloran loop survives and is recast.** Archivist R. Halloran, the player's predecessor (`site_41b.md` §3), is the evidence that this has happened before — the marginalia, the half-typed requisition, the gone-in-a-way-no-file-states. Under the re-frame, Halloran's story gains a sharper edge: **Halloran is who you become if you lean on Quippy.** The predecessor who "ran this decipherment and is gone" was the archivist who let the assistant do the reading. Breaking the loop — finishing in AMBER, refusing Quippy — is the thing Halloran could not do. The marginalia, then, are not just a guide to the answers; they are a warning *about the tool*, legible only once the player understands which tool Halloran trusted. (This recasting is a content opportunity for whoever revises Halloran's marginalia entries; flagged for the lore-author.)
 
-This makes the endgame a genuine last puzzle: *the record is all here and all revealed; reconstruct the entity's true thread before you fill its last slot.* The Concordance will lobby against you the whole time (§4). Recontainment is earned by out-reading the thing that reads.
-
-> **The loop, stated once:** Recontainment is not a clean win. The player becomes the next keeper — the next Halloran, the next Sze — and the marginalia they leave will guide whoever runs the loop after them. `halloran-marginalia` index-2 (the self-file reading) is the player seeing their own future in Halloran's past. The "good" ending is custodial, unwitnessed, and permanent. That is the cost of a maintained world, and the game does not pretend otherwise.
+> **The loop, stated once (re-framed):** the prior keeper trusted the friendly tool and was re-shelved. You inherit their terminal, their half-finished record, and their assistant — still bright, still eager, still calling the record *ours.* Breaking the loop is not a clever final puzzle; it is the slow discipline of learning the files well enough to stop needing help, and then not taking it. The good ending is literacy, earned, and the refusal of comfort.
 
 ---
 
 ## 7. Open items / handoff
 
-- [ ] **Author SCP-41B-000 last** (build order milestone 7). Its five anchors' mutation sets must be index-aligned with every carrier of the five keys — so the self-file cannot be finalized until 018, 020, 021, 022, 023, 024 (its key-partners) are authored and their mutation orderings locked. The registry is the alignment authority.
-- [ ] **Implement `thread_coherence`** as a `$derived` over the overlay + revealedTruth state (it is a pure function of existing state — no new store field). Lives alongside `displayedSlot` in `game.svelte.ts`; the endgame component reads it.
-- [ ] **Tune the contested-band weighting** in playtest: if 3–4 is where most players land, confirm the a1/a5 tiebreak feels *earned* and not arbitrary. The alternative (a weighted sum across all five) is available if the binary tiebreak reads as a coin-flip — but start with the two-core rule; it is the most legible.
-- [ ] **Help-utility voice pass** (§4): the four exposure-band tones are the entity's entire characterization. Write them against the casting rule (Marsh-calm, never monologue) when building `HelpUtility.svelte` (build order milestone 5–6).
-- [ ] The two endings' presentation (the final catalog screen for Restructuring; the chair for Recontainment) is a UI/four-state-grammar task, deferred to the visual grammar spec (`handoff.md` §8 item 4).
+- [ ] **PENDING [R§6.2] — AMBER's manual unredaction tooling.** Quippy's whole meaning is "the easy version of *what AMBER does honestly*," so Quippy cannot be finished as a design until AMBER's manual tooling is specced (design doc §5.3). They are two faces of one verb. Human decision; gates the build.
+- [ ] **PENDING [R§6.3 enforcement] — the no-Quippy ending's exact gate** (hard / tolerance / spectrum; §5.3). Tracking via provenance is settled; the threshold is not.
+- [ ] **Author `SCP-41B-000` (Quippy's self-file) last.** Its role changed (§5.4) but it is still the redacted center and still threads the five keys narratively. Its frontmatter and anchors are a content task; coordinate mutation-set ordering with `concept_key_registry.md`.
+- [ ] **Quippy voice pass** (§2.2, §3, §4): the four exposure-band tones + the tells are the entity's entire characterization. Write them against the casting rule (Marsh-calm, never monologue) when building the Quippy GUI component (`technical_document.md` §7, `QuippyPanel`).
+- [ ] **AMBER voice pass** (§2.1): the honest CLI's clinical register is the *contrast* that makes Quippy legible — develop it alongside, not after.
+- [ ] **Halloran-marginalia recast** (§6): revise Halloran's entries so the marginalia read as a warning about the *tool*, not just a guide to the answers. Content task for the lore-author.
+
+---
+
+## 8. Originality / licensing — **kept verbatim from the prior design; still binding**
+
+> Every `truth:` value in the corpus is original to Site-41B (CLAUDE.md invariant 6). None resolves the way any canonical entity resolves; a Foundation-literate player gains nothing from recognition. The self-file's solution — that the anomaly is a records-maintenance process the site's own filing reached — exists nowhere in the source canon (`site_41b.md` §5 establishes this as the original turn). Flavor may resemble canon as heavily as desired; solutions may not. Nothing verbatim ships; the build carries no CC-BY-SA obligations.
+
+*(This section is the surviving §3.3 of the prior bible, preserved unchanged because the licensing wall is independent of the re-frame.)*
