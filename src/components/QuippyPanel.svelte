@@ -29,15 +29,23 @@
   const band = $derived((void exposure.value, quippyBand()));
   const suggestions = $derived(ref && fillable ? quippySuggestions(ref) : []);
 
-  // The greeting: the one-time first-contact introduction on Quippy's uninvited
-  // entrance (§3.3); the band greeting on every later summon. Even on first contact
-  // a breach band overrides (cosmetic edge — first contact can't actually fire post-
-  // breach in the teaching pair, but the act-drop should win if it ever did).
-  const greeting = $derived(
-    ui.quippyReason === 'first-contact' && band === 'low'
-      ? QUIPPY_FIRST_CONTACT
-      : QUIPPY_GREETING[band],
-  );
+  // First contact is a PACED INTRODUCTION (§3.3): on its uninvited entrance Quippy
+  // walks through QUIPPY_FIRST_CONTACT one beat at a time, and the fill offer is
+  // withheld until it finishes its pitch. `introStep` indexes the line shown; it
+  // only applies on the 'first-contact' open at the low band (a breach band drops
+  // the act and skips the intro). Every later summon shows the single band greeting.
+  const inIntro = $derived(ui.quippyReason === 'first-contact' && band === 'low');
+  let introStep = $state(0);
+  const introLine = $derived(QUIPPY_FIRST_CONTACT[introStep]);
+  const introDone = $derived(introStep >= QUIPPY_FIRST_CONTACT.length - 1);
+  // While the intro is mid-pitch, hold back the fill UI; reveal it on the last beat.
+  const offering = $derived(!inIntro || introDone);
+
+  const greeting = $derived(inIntro ? introLine : QUIPPY_GREETING[band]);
+
+  function advanceIntro() {
+    if (!introDone) introStep += 1;
+  }
 
   // Quippy's last spoken line after a fill (so the player hears it curdle).
   let lastLine = $state<string | null>(null);
@@ -73,7 +81,16 @@
 
       <p class="q-greeting">{greeting}</p>
 
-      {#if ref && fillable}
+      {#if inIntro && !introDone}
+        <!-- Paced introduction: the player advances Quippy's pitch one beat at a
+             time; the fill offer is withheld until the last line (§3.3). -->
+        <div class="q-intro-nav">
+          <span class="q-intro-dots" aria-hidden="true">
+            {#each QUIPPY_FIRST_CONTACT as _, i (i)}<span class="dot {i <= introStep ? 'on' : ''}"></span>{/each}
+          </span>
+          <button type="button" class="q-continue" onclick={advanceIntro}>continue ▸</button>
+        </div>
+      {:else if offering && ref && fillable}
         <div class="q-target">
           <span class="lbl">field</span>
           <span class="val">{spanLabel(ref)}</span>
@@ -93,9 +110,9 @@
           {/each}
         </div>
         {#if lastLine}<p class="q-fillline {band}">{lastLine}</p>{/if}
-      {:else if ref}
+      {:else if offering && ref}
         <p class="q-settled">That one's settled already. Nothing there for me — find me a blank.</p>
-      {:else}
+      {:else if offering}
         <p class="q-settled">Open a record and point me at a blank. I'll see to the rest.</p>
       {/if}
 
@@ -169,6 +186,28 @@
   .q-greeting { margin: 0 0 0.85rem; line-height: 1.5; color: #c8bade; font-size: 0.92rem; }
   .quippy-card.high .q-greeting { color: #d0b0d0; }
   .quippy-card.post-breach .q-greeting { color: #e0bac4; }
+
+  /* The paced first-contact intro: progress dots + a continue affordance. */
+  .q-intro-nav { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.2rem; }
+  .q-intro-dots { display: flex; gap: 0.32rem; }
+  .q-intro-dots .dot {
+    width: 0.4rem; height: 0.4rem; border-radius: 50%;
+    background: #2e2440; transition: background 0.2s;
+  }
+  .q-intro-dots .dot.on { background: #9d6bd6; }
+  .q-continue {
+    margin-left: auto;
+    background: #1a1330;
+    border: 1px solid #4a3a66;
+    color: #c9a8ec;
+    border-radius: 6px;
+    padding: 0.34rem 0.8rem;
+    font: inherit;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: border-color 0.12s, color 0.12s;
+  }
+  .q-continue:hover { border-color: #6a4a86; color: #e0c8f8; }
 
   .q-target { display: flex; gap: 0.5rem; align-items: baseline; margin-bottom: 0.55rem; }
   .q-target .lbl { color: #7a6a92; text-transform: uppercase; font-size: 0.66rem; letter-spacing: 0.08em; }

@@ -71,16 +71,32 @@ export function summonQuippy(): void {
  * Quippy's uninvited first contact (reset_amber_v2.md §3.3 — the motivated
  * entrance, decided trigger: opening the second file via the link). AMBER never
  * summons Quippy; Quippy intrudes. It surfaces the moment the player has shown the
- * honest verb works — they followed 001's xref into a file they were not handed at
- * boot — which is exactly when Quippy makes its case to be unnecessary by being
+ * honest verb works — they followed a slot's xref into a file they were not handed
+ * at boot — which is exactly when Quippy makes its case to be unnecessary by being
  * easy. Fires at most once per run (`session.quippyMet`); after that, summoning is
  * the player's own choice. Refusal is one keystroke either way (Esc).
+ *
+ * The target it pitches (user decision): NOT a slot in the just-opened file — the
+ * player hasn't read that file yet, and offering its answer is incoherent. Quippy
+ * instead **routes the cursor back to the slot the player was working on** when they
+ * followed the link (`priorSpan`) and offers to fill *that* — the blank the link was
+ * going to help them cite. ("You don't need to be over here; I already know what
+ * goes back there.") For the teaching pair that is 001's slot; it generalizes to any
+ * file. `ui.activeFile` is moved back to that slot's file so the pane behind the
+ * overlay shows the record Quippy is offering to fill, not the unread one.
+ *
+ * @param priorSpan the anchor_ref the cursor was on before this open (may be null).
  */
-function maybeFirstContact(item: string): void {
+function maybeFirstContact(item: string, priorSpan: string | null): void {
   if (session.quippyMet) return;
   if (seedReachable.has(item)) return; // the opening file(s) — not a followed link
   session.quippyMet = true;
   ui.quippyReason = 'first-contact';
+  // Route back to the slot the player left to follow the link, if it's still blank.
+  if (priorSpan && resolveSlot(priorSpan).state === 'redacted') {
+    ui.activeFile = splitRef(priorSpan).item;
+    ui.activeSpan = priorSpan;
+  }
   ui.mode = 'quippy';
 }
 
@@ -99,12 +115,14 @@ export function openFile(item: string): boolean {
     log(`open: no such file ${item}`, 'reject');
     return false;
   }
+  const priorSpan = ui.activeSpan; // the slot the player leaves to follow the link
   ui.activeFile = item;
   ui.activeSpan = firstRedactedSpan(item) ?? null;
   log(`open ${item}`, 'echo');
   // Quippy's uninvited entrance rides on the player following a link to a non-seed
-  // file (§3.3). Checked after the open so 002's pane is already behind the overlay.
-  maybeFirstContact(item);
+  // file (§3.3). It routes the cursor back to `priorSpan` (the blank they left), so
+  // it never pitches the answer to the file the player hasn't read yet.
+  maybeFirstContact(item, priorSpan);
   return true;
 }
 

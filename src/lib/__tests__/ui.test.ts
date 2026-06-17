@@ -67,11 +67,22 @@ describe("Quippy's uninvited first contact (§3.3)", () => {
   });
 
   it('intrudes once, marked first-contact, the first time a non-seed (linked) file opens', () => {
-    openFile('SCP-41B-002'); // followed the link off 001
+    openFile('SCP-41B-002'); // followed the link off 001 (no prior blank to route to)
     expect(ui.mode).toBe('quippy');
     expect(ui.quippyReason).toBe('first-contact');
     expect(session.quippyMet).toBe(true);
-    expect(ui.activeFile).toBe('SCP-41B-002'); // the pane is still set behind the overlay
+  });
+
+  it('routes the cursor BACK to the blank the player left, not the unread file', () => {
+    // The realistic path: working a blank on 001, follow its link into 002.
+    openFile('SCP-41B-001');
+    const blank = redactedSpansOf('SCP-41B-001')[0];
+    expect(ui.activeSpan).toBe(blank); // cursor on 001's blank
+    openFile('SCP-41B-002'); // follow the link — first contact fires
+    expect(ui.mode).toBe('quippy');
+    // Quippy pitches the slot the player LEFT (on 001), not 002's unread blank.
+    expect(ui.activeFile).toBe('SCP-41B-001');
+    expect(ui.activeSpan).toBe(blank);
   });
 
   it('does not re-fire on later opens — first contact is once per run', () => {
@@ -87,6 +98,12 @@ describe("Quippy's uninvited first contact (§3.3)", () => {
 });
 
 describe('file traversal', () => {
+  // These exercise navigation, not Quippy — disarm the first-contact trigger so
+  // opening a linked file doesn't route the cursor away mid-traversal.
+  beforeEach(() => {
+    session.quippyMet = true;
+  });
+
   it('open sets the active file and lands on its first redacted span', () => {
     expect(openFile('SCP-41B-002')).toBe(true);
     expect(ui.activeFile).toBe('SCP-41B-002');
@@ -112,6 +129,10 @@ describe('file traversal', () => {
 });
 
 describe('redacted-span jumping', () => {
+  beforeEach(() => {
+    session.quippyMet = true; // navigation tests — disarm first contact
+  });
+
   it('spansOf lists every slot in body order; redactedSpansOf only the unsolved', () => {
     expect(spansOf('SCP-41B-002')).toEqual([
       makeRef('SCP-41B-002', 'a1'),

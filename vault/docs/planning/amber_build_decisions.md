@@ -217,6 +217,30 @@ not the onboarding reset).
   greeting was reworded off "came back." Tests: `ui.test.ts` "Quippy's uninvited first
   contact (§3.3)".
 
+### Phase 2 first-contact refinements (user feedback, 2026-06-17)
+Three changes after first review of the entrance:
+- **Paced intro.** `QUIPPY_FIRST_CONTACT` went from one block to a 5-beat SEQUENCE the
+  player advances through (notice → introduce → name the honest work → reframe it as
+  needless → offer). The panel withholds the fill offer until the last beat
+  (`QuippyPanel` `inIntro`/`introStep`/`offering`). Slower, more dialogue.
+- **Route-back target (user).** First contact no longer pitches a slot in the just-opened
+  (unread) file — it routes the cursor BACK to the blank the player left to follow the
+  link (`ui.openFile` captures `priorSpan`; `maybeFirstContact` restores it if still
+  redacted) and offers THAT. "You don't need to be over here; I already know what goes
+  back there." Generalizes to any file via the prior-span capture. Test:
+  `ui.test.ts` "routes the cursor BACK to the blank the player left".
+
 **Deferred to Phase 3 (unchanged):** the 80s aesthetic, the real CLI, document-as-paperwork
 rendering, and the forged-citation UI (`design_note_forged_citations.md`). **E/F still open**
 (arc list / first-batch size; exact Quippy-fill distinctness).
+
+### New mechanic spec'd, build deferred — Quippy reference-corruption (user, 2026-06-17)
+User: "Quippy's replacements AREN'T the grounded word — and when the archivist uses Quippy
+to unredact, the references of that text become corrupted and change. Keep it in mind as a
+mechanic." Spec'd as **`design_note_quippy_corruption.md`** and slotted as **roadmap Phase 6**
+(after the citation verb exists — it needs mutable per-run truth-facing prose, the largest
+engine change). Not built now per the user's "later" framing. It is the mechanical teeth
+behind §1.5/§6-F and the dark mirror of forged citations: the player forges TRUE citations
+from real spans; Quippy fabricates FALSE ones and edits the spans so the corpus agrees with
+the lie. Leans recorded in the note (permanent corruption; winnability forfeit on destroyed
+grounding, consistent with no-redemption).
