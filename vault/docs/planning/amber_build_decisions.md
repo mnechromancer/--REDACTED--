@@ -183,3 +183,40 @@ fresh run. `endState.quippyAssists` now reads this set's size (monotonic), not l
 `via`. An AMBER re-solve still drops *exposure* to zero (exposure reads live `via`), but
 the win-taint stands. **Supersedes watch item 1** above (redemption) — that earlier
 decision is void. Tests: `game.test.ts` "NO REDEMPTION", "LAUNDER GUARD".
+
+## Phase 2 — the opening (built 2026-06-17)
+
+`reset_amber_v2.md` §3 / `handoff_reset_build.md` §5 Phase 2: the playable opening,
+on the proven teaching pair. Built and green (`check` clean, tests 120→123). Scope was
+the **onboarding flow** — NOT the citation-UI rebuild (`design_note_forged_citations.md`
+is Phase 2/3 citation-verb work, still pending; it rides with the aesthetic/CLI rebuild,
+not the onboarding reset).
+
+- **Scripted onboarding removed.** `progression.svelte.ts` (the `SCRIPT`
+  boot→restore→audit→link→open→free staging, the file-unlock gating, `advanceProgression`)
+  is **deleted**. It taught the retired clearance/raise loop, front-loaded an
+  unactionable mechanic, and — the §0.2 violation — **named Quippy in AMBER's own voice**.
+  The unlock gating was already dead under decision D (pure-graph reachability); only the
+  boot screen still consumed it.
+- **New `session.svelte.ts`** — the minimal survivor: two booleans, `booting` (on the
+  bootup screen vs. in session) and `quippyMet` (has Quippy made first contact). No file
+  gating, no truth/overlay touch. `resetSession()` re-arms both for a fresh run; App calls
+  it beside `loadCorpus`/`seedReach`.
+- **Bootup states the source-less premise** (§1.4, §3.1) in AMBER's clinical voice and
+  **never names Quippy** (§0.2): the originals were lost in the Transfer, the only route
+  back is triangulation across surviving cross-references; follow the reference, find the
+  word in the clear, cite it. The teaching verb is then learned by *doing* it on 001,
+  whose body already narrates it — no tutorial overlay.
+- **Quippy's uninvited first contact** (§3.3) — trigger **locked (user): on opening the
+  second file via the link.** Generalized faithfully as "the first `openFile` of a
+  non-seed (reachable-via-xref) file," since that is the only way a linked file becomes
+  openable. Fires once per run; `ui.quippyReason: 'first-contact' | 'summon'` distinguishes
+  the entrance from later summons. A new **`QUIPPY_FIRST_CONTACT`** line replaces the old
+  low-band "you came back" greeting (the §0.3 confusion) — a real introduction: it caught
+  the player doing the honest work and offers to spare them it. The recurring low-band
+  greeting was reworded off "came back." Tests: `ui.test.ts` "Quippy's uninvited first
+  contact (§3.3)".
+
+**Deferred to Phase 3 (unchanged):** the 80s aesthetic, the real CLI, document-as-paperwork
+rendering, and the forged-citation UI (`design_note_forged_citations.md`). **E/F still open**
+(arc list / first-batch size; exact Quippy-fill distinctness).

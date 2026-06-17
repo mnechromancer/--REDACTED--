@@ -7,15 +7,15 @@
   // visibly sits over AMBER (the App overlay), reinforcing that it is a costume
   // over the real tool. One keystroke (Esc / back) returns to AMBER — refusal is
   // always available, which is the whole thesis.
-  import { anchorOf, resolveSlot, exposure } from '../lib/game.svelte.ts';
+  import { anchorOf, resolveSlot, exposure, isReachable } from '../lib/game.svelte.ts';
   import { insert } from '../lib/game.svelte.ts';
   import { ui, dismissQuippy, spanLabel } from '../lib/ui.svelte.ts';
   import { logPropagation } from '../lib/ripples.svelte.ts';
-  import { progression, unlockedFiles } from '../lib/progression.svelte.ts';
   import {
     quippyBand,
     quippySuggestions,
     QUIPPY_GREETING,
+    QUIPPY_FIRST_CONTACT,
     quippyFillLine,
   } from '../lib/quippy.svelte.ts';
 
@@ -29,13 +29,24 @@
   const band = $derived((void exposure.value, quippyBand()));
   const suggestions = $derived(ref && fillable ? quippySuggestions(ref) : []);
 
+  // The greeting: the one-time first-contact introduction on Quippy's uninvited
+  // entrance (§3.3); the band greeting on every later summon. Even on first contact
+  // a breach band overrides (cosmetic edge — first contact can't actually fire post-
+  // breach in the teaching pair, but the act-drop should win if it ever did).
+  const greeting = $derived(
+    ui.quippyReason === 'first-contact' && band === 'low'
+      ? QUIPPY_FIRST_CONTACT
+      : QUIPPY_GREETING[band],
+  );
+
   // Quippy's last spoken line after a fill (so the player hears it curdle).
   let lastLine = $state<string | null>(null);
 
   function fill(value: string) {
     if (!ref) return;
-    const unlocked = unlockedFiles(progression.step);
-    const propagated = insert(ref, value, 'quippy', (item) => unlocked.has(item));
+    // Honest gate is reachability (decision D): a Quippy ripple may only land on a
+    // file the player could already reach. The old onboarding-unlock gate is retired.
+    const propagated = insert(ref, value, 'quippy', (item) => isReachable(item));
     if (propagated.length) logPropagation(ref, propagated);
     lastLine = quippyFillLine(quippyBand());
   }
@@ -60,7 +71,7 @@
         </button>
       </div>
 
-      <p class="q-greeting">{QUIPPY_GREETING[band]}</p>
+      <p class="q-greeting">{greeting}</p>
 
       {#if ref && fillable}
         <div class="q-target">

@@ -27,6 +27,7 @@ import {
   terminal,
   clearLog,
 } from '../ui.svelte.ts';
+import { session, resetSession } from '../session.svelte.ts';
 import { makeCorpus } from './fixtures.ts';
 
 const ORDER = ['SCP-41B-001', 'SCP-41B-002', 'SCP-41B-003'] as const;
@@ -39,8 +40,11 @@ beforeEach(() => {
   exposure.value = 0;
   seedReach('SCP-41B-001');
   ui.mode = 'amber';
+  ui.quippyReason = 'summon';
   ui.activeFile = null;
   ui.activeSpan = null;
+  resetSession(); // booting=true, quippyMet=false — first contact armed for each test
+  session.booting = false; // these tests run in-session, past the bootup screen
   clearLog();
 });
 
@@ -49,8 +53,36 @@ describe('mode switching — refusable Quippy', () => {
     expect(ui.mode).toBe('amber');
     summonQuippy();
     expect(ui.mode).toBe('quippy');
+    expect(ui.quippyReason).toBe('summon');
     dismissQuippy();
     expect(ui.mode).toBe('amber');
+  });
+});
+
+describe("Quippy's uninvited first contact (§3.3)", () => {
+  it('does NOT intrude when the player opens a SEED file', () => {
+    openFile('SCP-41B-001'); // the opening file the player was handed
+    expect(ui.mode).toBe('amber');
+    expect(session.quippyMet).toBe(false);
+  });
+
+  it('intrudes once, marked first-contact, the first time a non-seed (linked) file opens', () => {
+    openFile('SCP-41B-002'); // followed the link off 001
+    expect(ui.mode).toBe('quippy');
+    expect(ui.quippyReason).toBe('first-contact');
+    expect(session.quippyMet).toBe(true);
+    expect(ui.activeFile).toBe('SCP-41B-002'); // the pane is still set behind the overlay
+  });
+
+  it('does not re-fire on later opens — first contact is once per run', () => {
+    openFile('SCP-41B-002'); // first contact
+    dismissQuippy();
+    expect(ui.mode).toBe('amber');
+    openFile('SCP-41B-003'); // another linked file — Quippy stays gone
+    expect(ui.mode).toBe('amber');
+    // a later player-initiated summon is a 'summon', not first-contact
+    summonQuippy();
+    expect(ui.quippyReason).toBe('summon');
   });
 });
 

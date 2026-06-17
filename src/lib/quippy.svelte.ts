@@ -60,10 +60,23 @@ export function quippySuggestions(ref: string): QuippySuggestion[] {
 // first-person and *wants*; keep it calm even at its most proprietary. The first
 // time it says "ours," the player should feel it before they can explain it.
 
+// First contact (reset_amber_v2.md §3.3, §0.3): the ONE-TIME line Quippy speaks
+// when it intrudes uninvited, the moment the player has followed the link into the
+// second record. It must be a real introduction — the player has never met it, so
+// "you came back" (the old confusion) is wrong. The beat the trigger earns: it
+// caught the player doing the honest work (following the link to read the word), and
+// it offers to spare them that from now on. Calm, ingratiating, names itself, no
+// "we" yet — the proprietary register is for the bands, after reliance accrues.
+export const QUIPPY_FIRST_CONTACT =
+  "There you are. I'm Quippy — I sit over the old machine and make this part easy. " +
+  "You went and found that word the long way round, didn't you: followed the link, read the other file, all of it. " +
+  "You don't have to. Point me at a blank and I'll just fill it. No links, no citing, no arguing with AMBER. Shall I?";
+
 export const QUIPPY_GREETING: Record<QuippyBand, string> = {
   // Low: bright, clerical, helpful. The pitch is convenience — it offers to spare
-  // you the citation chase. No "we" yet; just an eager utility.
-  low: "Oh, good — you came back. Point me at a blank. One click and it's filled; no chasing citations, no arguing with the old machine.",
+  // you the citation chase. No "we" yet; just an eager utility. (Recurring greeting,
+  // shown on RE-summon after first contact — first contact uses QUIPPY_FIRST_CONTACT.)
+  low: "Back again. Point me at a blank — one click and it's filled; no chasing citations, no arguing with the old machine.",
   // Mid: subtly editorial. The first "we" lands here, quietly, mid-sentence, where
   // the player feels it before they can name it. It "suggests," it "tidies."
   mid: "I tidied the order while you were reading. The fuller one fits the file better — I'd take that one. We'll get through this faster together, I think.",

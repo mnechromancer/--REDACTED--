@@ -13,18 +13,32 @@
     reachableFiles,
   } from './lib/game.svelte.ts';
   import { ui, dismissQuippy } from './lib/ui.svelte.ts';
-  import { progression, SCRIPT, beginSession } from './lib/progression.svelte.ts';
+  import { session, beginSession, resetSession } from './lib/session.svelte.ts';
   import AmberTerminal from './components/AmberTerminal.svelte';
   import QuippyPanel from './components/QuippyPanel.svelte';
   import EndState from './components/EndState.svelte';
   import corpusData from '../static/corpus.json';
 
   loadCorpus(corpusData as Corpus);
+  resetSession(); // fresh run: back to the bootup screen, Quippy not yet met
 
   // v2 reset (decision D): no clearance. The citation graph is the only gate —
   // seed the opening file; reachability opens the rest by following its xrefs.
   // The teaching pair: seed 001 (the intake hub); 001 → 002 via xref.
   seedReach('SCP-41B-001');
+
+  // The bootup exposition (Phase 2, reset_amber_v2.md §3.1) — AMBER's own clinical,
+  // institutional voice, stating the SOURCE-LESS PREMISE as the job: the originals
+  // are gone; the only route back is triangulation across what cross-references
+  // survive. AMBER NEVER names Quippy here (§0.2 — it behaves as if it keeps
+  // forgetting Quippy exists; Quippy's arrival is uninvited, §3.3). No tutorial
+  // overlay — the verb is learned by doing it on the first record, which narrates it.
+  const bootLines = [
+    'AMBER — Archive Management & Batch Entry Resource. Records annex Site-41B, deep archive. Cold storage. Terminal active.',
+    'Archivist post, low clearance. You hold the cross-reference catalogue. You do not hold the records it indexes — those originals were lost in the Transfer and were never recovered. What survives is the web of references the catalogue threaded between them while they still existed.',
+    'A withheld field reads as a redaction bar. There is no original to fetch it from. AMBER reconstructs a struck word the only way left: by triangulation — the same matter is named, in the clear, on some other record that cross-references this one. Follow the reference, find the word where it still stands, and cite it. AMBER checks the citation and commits. An uncited or unsupported value is refused.',
+    'Most fields cannot be reached yet — the references that would ground them run through records you have not opened. Each word you recover opens the references that depend on it, and the next field becomes reachable. The catalogue is reconstructed one citation at a time, in the order the surviving references allow.',
+  ];
 
   // Visible files = the reachable set (decision D). The old onboarding-unlock gate
   // is retired here: it was circular under the citation graph — 002 only unlocked
@@ -39,8 +53,6 @@
   });
   const visibleOrder = $derived(visibleFiles.map((f) => f.item));
 
-  const script = $derived(SCRIPT[progression.step]);
-
   // Esc always dismisses Quippy — refusal is one keystroke away (§7.3).
   function onWindowKey(e: KeyboardEvent) {
     if (e.key === 'Escape' && ui.mode === 'quippy') {
@@ -52,12 +64,12 @@
 
 <svelte:window onkeydown={onWindowKey} />
 
-{#if progression.step === 'boot'}
+{#if session.booting}
   <main class="boot">
     <div class="boot-frame">
       <div class="boot-head">AMBER · ARCHIVE MANAGEMENT &amp; BATCH ENTRY RESOURCE</div>
       <div class="boot-body">
-        {#each script.exposition as line, i (i)}
+        {#each bootLines as line, i (i)}
           <p class="boot-line" style="--i: {i}">{line}</p>
         {/each}
       </div>
@@ -69,7 +81,9 @@
     <AmberTerminal files={visibleFiles} order={visibleOrder} />
   </main>
 
-  <!-- Quippy overlay: visible only in mode 'quippy', sitting over AMBER. -->
+  <!-- Quippy overlay: visible only in mode 'quippy', sitting over AMBER. The
+       first-contact introduction (vs the recurring greeting) is chosen inside the
+       panel from ui.quippyReason, set on its uninvited entrance (§3.3). -->
   <QuippyPanel files={visibleFiles} />
 
   <!-- The ending, read from provenance: loop-broken (true) or breach. -->
