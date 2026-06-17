@@ -60,10 +60,31 @@ export function quippySuggestions(ref: string): QuippySuggestion[] {
 // first-person and *wants*; keep it calm even at its most proprietary. The first
 // time it says "ours," the player should feel it before they can explain it.
 
+// First contact (reset_amber_v2.md §3.3, §0.3): the ONE-TIME introduction Quippy
+// speaks when it intrudes uninvited, the moment the player has followed the link out
+// of the slot they were working. It must be a real introduction — the player has
+// never met it, so "you came back" (the old confusion) is wrong.
+//
+// Paced as a SEQUENCE the player advances through one beat at a time (slower, more
+// dialogue — the panel reveals the fill offer only after the last line). The beats:
+// notice the player wandered → introduce itself → name what they were doing (the
+// honest long way) → reframe it as needless → make the offer. Calm, ingratiating,
+// names itself, no "we" yet — the proprietary register is for the bands, after
+// reliance accrues. The offer it pitches is the slot the player LEFT (routed back to
+// by ui.maybeFirstContact), not the unread file they just opened.
+export const QUIPPY_FIRST_CONTACT: string[] = [
+  "Oh — hello. Hello. You wandered off, didn't you. They always wander off about here.",
+  "I'm Quippy. I live a little above the old machine — AMBER, the one that makes you type. I'm the friendlier layer. You won't have met me yet; I keep out of the way until someone's working hard enough to need me.",
+  "And you were. I watched you: you had a blank back there, so you went and opened this whole other record to find the word for it. Followed the link, started reading, the long way round. Honest work. Slow work.",
+  "Here's the thing, though — you don't have to do any of that. The word that goes in that blank? I already have it. I have all of them.",
+  "Let me take you back to it. One click and it's filled — no link to chase, no citation, no arguing with AMBER about whether you're sure. Shall I show you? Just the one.",
+];
+
 export const QUIPPY_GREETING: Record<QuippyBand, string> = {
   // Low: bright, clerical, helpful. The pitch is convenience — it offers to spare
-  // you the citation chase. No "we" yet; just an eager utility.
-  low: "Oh, good — you came back. Point me at a blank. One click and it's filled; no chasing citations, no arguing with the old machine.",
+  // you the citation chase. No "we" yet; just an eager utility. (Recurring greeting,
+  // shown on RE-summon after first contact — first contact uses QUIPPY_FIRST_CONTACT.)
+  low: "Back again. Point me at a blank — one click and it's filled; no chasing citations, no arguing with the old machine.",
   // Mid: subtly editorial. The first "we" lands here, quietly, mid-sentence, where
   // the player feels it before they can name it. It "suggests," it "tidies."
   mid: "I tidied the order while you were reading. The fuller one fits the file better — I'd take that one. We'll get through this faster together, I think.",

@@ -6,7 +6,8 @@
 // in-flight AMBER citation commit — none of it touches truth/overlay (that is
 // game.svelte.ts); it only decides what the terminal shows and where the cursor is.
 
-import { corpus, allRefs, splitRef, makeRef, resolveSlot, anchorOf } from './game.svelte.ts';
+import { corpus, allRefs, splitRef, makeRef, resolveSlot, anchorOf, seedReachable } from './game.svelte.ts';
+import { session } from './session.svelte.ts';
 
 export type InterfaceMode = 'amber' | 'quippy';
 
@@ -15,6 +16,12 @@ export type InterfaceMode = 'amber' | 'quippy';
 // win). Refusal is always one keystroke away — never trap the player in Quippy.
 export const ui = $state<{
   mode: InterfaceMode;
+  /**
+   * Why Quippy is currently up: 'first-contact' for its one uninvited entrance
+   * (§3.3 — drives the one-time introduction line), 'summon' for every later
+   * player-initiated open. Self-clearing: the next summon overwrites it.
+   */
+  quippyReason: 'first-contact' | 'summon';
   /** the file currently open in the terminal pane (item id), or null before any open */
   activeFile: string | null;
   /** the anchor_ref of the redacted span the cursor is on, or null */
@@ -26,7 +33,7 @@ export const ui = $state<{
    * players may prefer it off. Default on.
    */
   showProvenance: boolean;
-}>({ mode: 'amber', activeFile: null, activeSpan: null, showProvenance: true });
+}>({ mode: 'amber', quippyReason: 'summon', activeFile: null, activeSpan: null, showProvenance: true });
 
 // ── Terminal log ─────────────────────────────────────────────────────────
 // AMBER's terse status register (design doc §5a): command echoes, accept/reject
@@ -56,6 +63,40 @@ export function clearLog(): void {
 
 /** Summon Quippy over AMBER. The overlay sits on top; AMBER stays behind it. */
 export function summonQuippy(): void {
+  ui.quippyReason = 'summon';
+  ui.mode = 'quippy';
+}
+
+/**
+ * Quippy's uninvited first contact (reset_amber_v2.md §3.3 — the motivated
+ * entrance, decided trigger: opening the second file via the link). AMBER never
+ * summons Quippy; Quippy intrudes. It surfaces the moment the player has shown the
+ * honest verb works — they followed a slot's xref into a file they were not handed
+ * at boot — which is exactly when Quippy makes its case to be unnecessary by being
+ * easy. Fires at most once per run (`session.quippyMet`); after that, summoning is
+ * the player's own choice. Refusal is one keystroke either way (Esc).
+ *
+ * The target it pitches (user decision): NOT a slot in the just-opened file — the
+ * player hasn't read that file yet, and offering its answer is incoherent. Quippy
+ * instead **routes the cursor back to the slot the player was working on** when they
+ * followed the link (`priorSpan`) and offers to fill *that* — the blank the link was
+ * going to help them cite. ("You don't need to be over here; I already know what
+ * goes back there.") For the teaching pair that is 001's slot; it generalizes to any
+ * file. `ui.activeFile` is moved back to that slot's file so the pane behind the
+ * overlay shows the record Quippy is offering to fill, not the unread one.
+ *
+ * @param priorSpan the anchor_ref the cursor was on before this open (may be null).
+ */
+function maybeFirstContact(item: string, priorSpan: string | null): void {
+  if (session.quippyMet) return;
+  if (seedReachable.has(item)) return; // the opening file(s) — not a followed link
+  session.quippyMet = true;
+  ui.quippyReason = 'first-contact';
+  // Route back to the slot the player left to follow the link, if it's still blank.
+  if (priorSpan && resolveSlot(priorSpan).state === 'redacted') {
+    ui.activeFile = splitRef(priorSpan).item;
+    ui.activeSpan = priorSpan;
+  }
   ui.mode = 'quippy';
 }
 
@@ -74,9 +115,14 @@ export function openFile(item: string): boolean {
     log(`open: no such file ${item}`, 'reject');
     return false;
   }
+  const priorSpan = ui.activeSpan; // the slot the player leaves to follow the link
   ui.activeFile = item;
   ui.activeSpan = firstRedactedSpan(item) ?? null;
   log(`open ${item}`, 'echo');
+  // Quippy's uninvited entrance rides on the player following a link to a non-seed
+  // file (§3.3). It routes the cursor back to `priorSpan` (the blank they left), so
+  // it never pitches the answer to the file the player hasn't read yet.
+  maybeFirstContact(item, priorSpan);
   return true;
 }
 

@@ -1,5 +1,34 @@
 # Roadmap
 
+> **⚠⚠ Second pivot (2026-06-17): the v2 reset supersedes the phase plan below.**
+> Current direction is the phase ledger in this box; the epic/milestone table and
+> Sprint sections further down are the **2026-06-13 re-frame's** plan and are kept as
+> history (they still describe the retired trio + ouroboros). Authority: `reset_amber_v2.md`
+> §5 (phasing), `amber_build_decisions.md` (decisions + phase completion log).
+>
+> **v2 reset phase ledger:**
+> - **Phase 0 — decisions.** §6 A–D answered. ✅ *done (2026-06-17)*
+> - **Phase 1 — the primitive.** Single-word, citation-grounded slots; clearance cut for
+>   pure-graph reachability; the teaching pair; no-redemption `quippyTouched`. ✅ *done*
+> - **Phase 2 — the opening.** Bootup + source-less premise; scripted onboarding removed;
+>   Quippy's uninvited, paced first contact (routes back to the slot the player left).
+>   ✅ *done (2026-06-17).* Onboarding only — the citation-UI rebuild is NOT in this phase.
+> - **Phase 3 — aesthetic + the real CLI + the citation verb.** 80s institutional register,
+>   document-as-paperwork rendering w/ margin gutters; the forged-citation interaction
+>   (`design_note_forged_citations.md`); strip how-to-cite scaffolding from entry prose.
+> - **Phase 4 — content spine.** Renumber/author entries in chronological ≈ difficulty
+>   order; the first-batch arcs (§3.4). E/F (arc list / Quippy-fill distinctness) land here.
+> - **Phase 5 — graph view + deeper citation mechanics.** The wiki-graph (the traffic-jam
+>   made visible) + inference-threshold grounding.
+> - **Phase 6 (new) — Quippy reference-corruption.** Quippy fills are ungrounded AND a
+>   Quippy unredaction rewrites the cross-referenced text so the corpus closes over the lie
+>   (`design_note_quippy_corruption.md`). The mechanical teeth behind §1.5/§6-F; its own
+>   phase because it needs mutable, per-run truth-facing prose (the largest engine change).
+>   Slots after the citation verb exists (Phase 3) — depends on the span/citation model.
+>   User flagged 2026-06-17 as "keep in mind / later"; spec'd now, build deferred.
+>
+> ---
+
 > **⚠ Pivot (2026-06-13): the project re-framed — see `reframe_amber_quippy.md`.** The single "help utility" interface splits into **AMBER (honest CLI)** + **Quippy (refusable GUI = SCP-X)**, and the endgame inverts to **unredact everything without Quippy.** The epic/milestone table below predates the pivot: Epic D's "endgame" is now the no-Quippy completion (not the ouroboros fork), and the M5+ milestones reorder per `technical_document.md` §10 (AMBER tooling + Quippy split; M7–M10). Sprint 1 (below) **completed under the prior design and stands as history** — its code core (pipeline, propagation, clearance, four-state grammar) is mechanic-stable and survives. Future sprints are planned to the re-frame; two design questions ([R§6.2] AMBER tooling, [R§6.4] exposure model) are **PENDING (human)** and gate the next mechanic sprint.
 
 The horizon: epics (`agents.md` §3.1) mapped to sprints. Fine-grained for the current and next sprint; deliberately coarse beyond — scope past Sprint 2 will shift as the loop teaches us what's fun. The milestone spine is `technical_document.md` §10; the content spine is `entity_roster.md`.

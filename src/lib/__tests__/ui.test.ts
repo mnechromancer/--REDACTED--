@@ -27,6 +27,7 @@ import {
   terminal,
   clearLog,
 } from '../ui.svelte.ts';
+import { session, resetSession } from '../session.svelte.ts';
 import { makeCorpus } from './fixtures.ts';
 
 const ORDER = ['SCP-41B-001', 'SCP-41B-002', 'SCP-41B-003'] as const;
@@ -39,8 +40,11 @@ beforeEach(() => {
   exposure.value = 0;
   seedReach('SCP-41B-001');
   ui.mode = 'amber';
+  ui.quippyReason = 'summon';
   ui.activeFile = null;
   ui.activeSpan = null;
+  resetSession(); // booting=true, quippyMet=false — first contact armed for each test
+  session.booting = false; // these tests run in-session, past the bootup screen
   clearLog();
 });
 
@@ -49,12 +53,57 @@ describe('mode switching — refusable Quippy', () => {
     expect(ui.mode).toBe('amber');
     summonQuippy();
     expect(ui.mode).toBe('quippy');
+    expect(ui.quippyReason).toBe('summon');
     dismissQuippy();
     expect(ui.mode).toBe('amber');
   });
 });
 
+describe("Quippy's uninvited first contact (§3.3)", () => {
+  it('does NOT intrude when the player opens a SEED file', () => {
+    openFile('SCP-41B-001'); // the opening file the player was handed
+    expect(ui.mode).toBe('amber');
+    expect(session.quippyMet).toBe(false);
+  });
+
+  it('intrudes once, marked first-contact, the first time a non-seed (linked) file opens', () => {
+    openFile('SCP-41B-002'); // followed the link off 001 (no prior blank to route to)
+    expect(ui.mode).toBe('quippy');
+    expect(ui.quippyReason).toBe('first-contact');
+    expect(session.quippyMet).toBe(true);
+  });
+
+  it('routes the cursor BACK to the blank the player left, not the unread file', () => {
+    // The realistic path: working a blank on 001, follow its link into 002.
+    openFile('SCP-41B-001');
+    const blank = redactedSpansOf('SCP-41B-001')[0];
+    expect(ui.activeSpan).toBe(blank); // cursor on 001's blank
+    openFile('SCP-41B-002'); // follow the link — first contact fires
+    expect(ui.mode).toBe('quippy');
+    // Quippy pitches the slot the player LEFT (on 001), not 002's unread blank.
+    expect(ui.activeFile).toBe('SCP-41B-001');
+    expect(ui.activeSpan).toBe(blank);
+  });
+
+  it('does not re-fire on later opens — first contact is once per run', () => {
+    openFile('SCP-41B-002'); // first contact
+    dismissQuippy();
+    expect(ui.mode).toBe('amber');
+    openFile('SCP-41B-003'); // another linked file — Quippy stays gone
+    expect(ui.mode).toBe('amber');
+    // a later player-initiated summon is a 'summon', not first-contact
+    summonQuippy();
+    expect(ui.quippyReason).toBe('summon');
+  });
+});
+
 describe('file traversal', () => {
+  // These exercise navigation, not Quippy — disarm the first-contact trigger so
+  // opening a linked file doesn't route the cursor away mid-traversal.
+  beforeEach(() => {
+    session.quippyMet = true;
+  });
+
   it('open sets the active file and lands on its first redacted span', () => {
     expect(openFile('SCP-41B-002')).toBe(true);
     expect(ui.activeFile).toBe('SCP-41B-002');
@@ -80,6 +129,10 @@ describe('file traversal', () => {
 });
 
 describe('redacted-span jumping', () => {
+  beforeEach(() => {
+    session.quippyMet = true; // navigation tests — disarm first contact
+  });
+
   it('spansOf lists every slot in body order; redactedSpansOf only the unsolved', () => {
     expect(spansOf('SCP-41B-002')).toEqual([
       makeRef('SCP-41B-002', 'a1'),
