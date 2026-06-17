@@ -27,9 +27,13 @@ import { boardState } from './game.svelte.ts';
 
 export type Step = 'boot' | 'restore' | 'audit' | 'link' | 'open' | 'free';
 
-// The file unlock order. 001 first (hub, L1), then 002 (shares two keys with 001
-// → propagation), then 003 (shares the-quiet-exchange with 001 → completes web).
-export const UNLOCK_ORDER = ['SCP-41B-001', 'SCP-41B-002', 'SCP-41B-003'] as const;
+// The file unlock order. v2 reset (decision C): the trio is retired; the teaching
+// pair is 001 (intake, the hub) then 002 (the Concordance primer it links to). NOTE:
+// this whole onboarding module — SCRIPT, clearance-audit steps, the unlock gating —
+// is slated for REMOVAL in Phase 2 (handoff_reset_build.md §5); it is kept compiling
+// here, with the unlock order pointed at the surviving pair, only so the Phase-1 app
+// runs. Do not extend it; the real bootup/onboarding replaces it.
+export const UNLOCK_ORDER = ['SCP-41B-001', 'SCP-41B-002'] as const;
 
 export const progression = $state<{ step: Step }>({ step: 'boot' });
 

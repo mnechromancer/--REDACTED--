@@ -6,7 +6,7 @@
   // honest tool. Quippy is a distinct overlay summoned over this (Step 5); the
   // switch is always one keystroke (the refusable thesis).
   import type { ScpFile } from '../lib/corpus.ts';
-  import { corpus, clearance, boardState } from '../lib/game.svelte.ts';
+  import { corpus, boardState } from '../lib/game.svelte.ts';
   import {
     ui,
     terminal,
@@ -22,21 +22,15 @@
   import FilePane from './FilePane.svelte';
   import AmberLookup from './AmberLookup.svelte';
 
-  // The caller supplies the files currently on screen (App gates by onboarding +
-  // clearance), plus the canonical open order for traversal, and the raise/search
-  // actions that need App's audit + corpus context.
+  // The caller supplies the files currently on screen (App gates by onboarding),
+  // plus the canonical open order for traversal. v2 reset: no clearance/raise —
+  // the citation graph is the only gate (decision D).
   let {
     files,
     order,
-    onRaise,
-    canRaise,
-    nextTier,
   }: {
     files: ScpFile[];
     order: readonly string[];
-    onRaise: () => void;
-    canRaise: boolean;
-    nextTier: number;
   } = $props();
 
   const activeFile = $derived(ui.activeFile ? corpus[ui.activeFile] : null);
@@ -78,11 +72,6 @@
       case 'n':
         nextRedacted();
         break;
-      case 'raise':
-      case 'r':
-        if (canRaise) onRaise();
-        else log('RAISE DENIED — at top clearance, or no held copy to unseal.', 'reject');
-        break;
       case 'search':
       case 's':
         runSearch(arg);
@@ -97,7 +86,7 @@
         break;
       case 'help':
       case '?':
-        log('COMMANDS — open <file> · next · raise · search <term> · quippy · prov · help', 'system');
+        log('COMMANDS — open <file> · next · search <term> · quippy · prov · help', 'system');
         log('KEYS — j/k step field · [ / ] step record · n next redaction · Tab summon Quippy', 'system');
         log('AMBER restores by citation at zero exposure. Quippy fills on demand and charges it.', 'system');
         break;
@@ -143,8 +132,7 @@
 <section class="amber">
   <header class="amber-bar">
     <span class="sys">AMBER · ARCHIVE MANAGEMENT &amp; BATCH ENTRY RESOURCE</span>
-    <span class="clr">L{clearance.tier}</span>
-    <span class="prog">{progress.solved + progress.revealed}/{progress.total} restored · {progress.redacted} redacted</span>
+    <span class="prog">{progress.solved}/{progress.total} restored · {progress.redacted} redacted{progress.struck ? ` · ${progress.struck} struck` : ''}</span>
     <span class="via" class:tainted={board.viaQuippy > 0} title="fields filled by Quippy (the no-Quippy win needs zero)">
       Quippy {board.viaQuippy}
     </span>
@@ -187,9 +175,6 @@
       </div>
 
       <div class="actions">
-        <button type="button" class="act" disabled={!canRaise} onclick={onRaise}>
-          {canRaise ? `▶ RAISE CLEARANCE → L${nextTier}` : `CLEARANCE L${clearance.tier}`}
-        </button>
         <span class="hint">cursor: {ui.activeSpan ? spanLabel(ui.activeSpan) : '—'}</span>
       </div>
 
@@ -221,12 +206,6 @@
     letter-spacing: 0.05em;
   }
   .amber-bar .sys { color: #5d6a62; }
-  .amber-bar .clr {
-    color: var(--slot-inserted-fg, #e8a33d);
-    border: 1px solid #5a4a22;
-    padding: 0 0.4ch;
-    border-radius: 1px;
-  }
   .amber-bar .prog { margin-left: auto; color: #5b636e; }
   .amber-bar .via {
     color: #5d6a62;

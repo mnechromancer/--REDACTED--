@@ -1,15 +1,18 @@
-// Fixtures for C2t: a valid baseline (markdown + parsed pair) and helpers to
-// derive deliberately-broken variants. Each validation rule gets a passing case
-// (the baseline) and a failing case (a mutation of it).
+// Fixtures for the build-time validators (v2 reset): a valid baseline (markdown +
+// parsed pair) and helpers to derive deliberately-broken variants. Each validation
+// rule gets a passing case (the baseline) and a failing case (a mutation of it).
+//
+// The pair mutually teaching-grounds: 003#a1 'switchboard' appears in the clear in
+// 001's body; 001#a1 'ledger' appears in 003's body. So each slot's word is really
+// citeable in the file it points to — the checkGroundingCiteable invariant passes.
 
 import type { ScpFile } from '../../../src/lib/corpus.ts';
 
-/** A minimal, valid two-file corpus as raw markdown, sharing one concept key. */
+/** A minimal, valid two-file corpus as raw markdown, mutually teaching-grounded. */
 export const VALID_003 = `---
 item: "SCP-41B-003"
 object_class: "Euclid"
 site: "Site-41B"
-clearance: 2
 entity_self: false
 xrefs: ["SCP-41B-001"]
 breach_effect:
@@ -17,26 +20,23 @@ breach_effect:
 anchors:
   - id: "a1"
     slot_type: "object"
-    truth: "a brass switchboard with no external wiring"
-    redaction_level: 3
+    truth: "switchboard"
+    grounding:
+      kind: "teaching"
+      citeIn: ["SCP-41B-001"]
     concept: "the-quiet-exchange"
-    mutations:
-      - "a brass switchboard with no external wiring"
-      - "a rotary handset sealed in resin"
-      - "a punch-card reader missing its feed tray"
     exposure_weight: 2
 ---
 
 # Item #: SCP-41B-003
 
-SCP-41B-003 manifests as ⟦a1⟧, cross-referenced with [[SCP-41B-001]].
+SCP-41B-003 manifests as ⟦a1⟧; the ledger is cross-referenced with [[SCP-41B-001]].
 `;
 
 export const VALID_001 = `---
 item: "SCP-41B-001"
 object_class: "Euclid"
 site: "Site-41B"
-clearance: 1
 entity_self: true
 xrefs: ["SCP-41B-003"]
 breach_effect:
@@ -44,19 +44,17 @@ breach_effect:
 anchors:
   - id: "a1"
     slot_type: "object"
-    truth: "a numbered intake ledger"
-    redaction_level: 2
+    truth: "ledger"
+    grounding:
+      kind: "teaching"
+      citeIn: ["SCP-41B-003"]
     concept: "the-quiet-exchange"
-    mutations:
-      - "a numbered intake ledger"
-      - "a sealed correspondence file"
-      - "a redacted call manifest"
     exposure_weight: 1
 ---
 
 # Item #: SCP-41B-001
 
-SCP-41B-001 is catalogued as ⟦a1⟧, sharing provenance with [[SCP-41B-003]].
+SCP-41B-001 is catalogued as ⟦a1⟧; the switchboard shares provenance with [[SCP-41B-003]].
 `;
 
 /** Parsed equivalents for testing the pure cross-file validators directly. */
@@ -66,7 +64,6 @@ export function validFiles(): ScpFile[] {
       item: 'SCP-41B-003',
       object_class: 'Euclid',
       site: 'Site-41B',
-      clearance: 2,
       entity_self: false,
       xrefs: ['SCP-41B-001'],
       breach_effect: { kind: 'corrupt_search' },
@@ -74,20 +71,18 @@ export function validFiles(): ScpFile[] {
         {
           id: 'a1',
           slot_type: 'object',
-          truth: 'a brass switchboard with no external wiring',
-          redaction_level: 3,
+          truth: 'switchboard',
+          grounding: { kind: 'teaching', citeIn: ['SCP-41B-001'] },
           concept: 'the-quiet-exchange',
-          mutations: ['one', 'two', 'three'],
           exposure_weight: 2,
         },
       ],
-      body: 'manifests as ⟦a1⟧, see [[SCP-41B-001]].',
+      body: 'manifests as ⟦a1⟧; the ledger, see [[SCP-41B-001]].',
     },
     {
       item: 'SCP-41B-001',
       object_class: 'Euclid',
       site: 'Site-41B',
-      clearance: 1,
       entity_self: true,
       xrefs: ['SCP-41B-003'],
       breach_effect: { kind: 'inject_xrefs' },
@@ -95,14 +90,13 @@ export function validFiles(): ScpFile[] {
         {
           id: 'a1',
           slot_type: 'object',
-          truth: 'a numbered intake ledger',
-          redaction_level: 2,
+          truth: 'ledger',
+          grounding: { kind: 'teaching', citeIn: ['SCP-41B-003'] },
           concept: 'the-quiet-exchange',
-          mutations: ['one', 'two', 'three'],
           exposure_weight: 1,
         },
       ],
-      body: 'catalogued as ⟦a1⟧, see [[SCP-41B-003]].',
+      body: 'catalogued as ⟦a1⟧; the switchboard, see [[SCP-41B-003]].',
     },
   ];
 }

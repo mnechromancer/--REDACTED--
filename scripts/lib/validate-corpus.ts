@@ -58,7 +58,7 @@ export function validateCorpus(files: ScpFile[], opts: ValidateOptions = {}): Va
 
   errors.push(...checkEntitySelf(files, opts.allowIncomplete));
   errors.push(...checkXrefs(files, byItem));
-  errors.push(...checkConceptAlignment(files));
+  errors.push(...checkGroundingCiteable(files, byItem));
 
   return errors;
 }
@@ -118,39 +118,74 @@ export function checkXrefs(files: ScpFile[], byItem: Map<string, ScpFile>): Vali
 }
 
 /**
- * Rule 2 (the propagation backbone): anchors sharing a `concept` key must have
- * equal-length, index-aligned mutation sets. Equal length is the build-time
- * guarantee that makes index-aligned propagation (candidate k → candidate k in
- * every carrier) well-defined. This is the invariant the concept_key_registry.md
- * exists to coordinate.
+ * Does `body` contain `word` as plain prose — i.e. literally present, outside any
+ * `⟦anchor⟧` redaction token (a slot showing its own redacted word doesn't count as
+ * grounding it). Case-insensitive; the comparison both sides see is the same one the
+ * runtime citation gate mirrors, so "citeable at build" == "citeable at play". Body
+ * is already comment-free (stripComments at parse time).
  */
-export function checkConceptAlignment(files: ScpFile[]): ValidationError[] {
+export function bodyContainsWord(body: string, word: string): boolean {
+  const plain = body.replace(ANCHOR_TOKEN, ' '); // a slot's own bar never grounds the word
+  return plain.toLowerCase().includes(word.toLowerCase());
+}
+
+/**
+ * The v2 grounding invariant (replaces the old mutation-set-alignment check). For a
+ * **teaching** slot, every file it says to cite (`grounding.citeIn`) must (a) exist
+ * and (b) actually hold the slot's truth word as plain text — so "the word is really
+ * citeable there" is a build error, not a runtime surprise (handoff_reset_build.md §3.3).
+ * We also require each cited file to be a declared xref of the carrying file: the
+ * teaching verb is "follow the link, find the word, cite it," so the link must exist.
+ *
+ * **inference** slots ground by parallel context, not literal co-occurrence; they
+ * carry no citeIn and are not checked here (their threshold is validated for shape at
+ * parse time).
+ */
+export function checkGroundingCiteable(
+  files: ScpFile[],
+  byItem: Map<string, ScpFile>,
+): ValidationError[] {
   const errors: ValidationError[] = [];
-
-  // concept -> list of { ref, length }
-  const groups = new Map<string, { ref: string; length: number }[]>();
   for (const f of files) {
+    const xrefs = new Set(f.xrefs);
     for (const a of f.anchors) {
-      if (!a.concept) continue;
+      if (a.grounding.kind !== 'teaching') continue;
       const ref = `${f.item}#${a.id}`;
-      const list = groups.get(a.concept) ?? [];
-      list.push({ ref, length: a.mutations.length });
-      groups.set(a.concept, list);
+      for (const target of a.grounding.citeIn) {
+        const cited = byItem.get(target);
+        if (!cited) {
+          errors.push({
+            rule: 'grounding-citeable',
+            message: `${ref} grounding.citeIn names "${target}", which resolves to no existing item`,
+            file: f.item,
+          });
+          continue;
+        }
+        if (target === f.item) {
+          errors.push({
+            rule: 'grounding-citeable',
+            message: `${ref} grounding.citeIn names its own file "${target}" (a slot cannot ground itself)`,
+            file: f.item,
+          });
+          continue;
+        }
+        if (!xrefs.has(target)) {
+          errors.push({
+            rule: 'grounding-citeable',
+            message: `${ref} grounding.citeIn names "${target}", which is not a declared xref (the cite link must exist)`,
+            file: f.item,
+          });
+        }
+        if (!bodyContainsWord(cited.body, a.truth)) {
+          errors.push({
+            rule: 'grounding-citeable',
+            message: `${ref} truth "${a.truth}" does not appear in the clear in cited file "${target}"`,
+            file: f.item,
+          });
+        }
+      }
     }
   }
-
-  for (const [concept, carriers] of groups) {
-    const len = carriers[0].length;
-    const mismatched = carriers.filter((c) => c.length !== len);
-    if (mismatched.length > 0) {
-      const detail = carriers.map((c) => `${c.ref}=${c.length}`).join(', ');
-      errors.push({
-        rule: 'concept-alignment',
-        message: `concept "${concept}" has misaligned mutation-set lengths: ${detail}`,
-      });
-    }
-  }
-
   return errors;
 }
 

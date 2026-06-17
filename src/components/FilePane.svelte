@@ -1,18 +1,32 @@
 <script lang="ts">
   // Renders one ScpFile in AMBER's terminal pane (re-frame §7.2): monochrome,
   // no GUI window chrome — a file listing under a clinical terminal, scaling to
-  // long multi-section dossiers. Clearance-gated (a file below the player's tier
-  // will not open). Slots render via SlotSpan; the in-flight citation commit lives
-  // in AmberLookup, summoned by the terminal, not embedded per-slot.
+  // long multi-section dossiers. v2 reset (decision D): no clearance gate — a file
+  // is shown iff it is reachable in the citation graph (App passes only reachable
+  // files). Slots render via SlotSpan; the in-flight citation commit lives in
+  // AmberLookup, summoned by the terminal, not embedded per-slot.
   import type { ScpFile } from '../lib/corpus.ts';
-  import { clearance, makeRef, overlay } from '../lib/game.svelte.ts';
+  import { isReachable, makeRef, overlay } from '../lib/game.svelte.ts';
+  import { openFile, log } from '../lib/ui.svelte.ts';
   import { parseBody } from '../lib/parseBody.ts';
   import { bodyBlocks } from '../lib/bodyBlocks.ts';
   import SlotSpan from './SlotSpan.svelte';
 
   let { file }: { file: ScpFile } = $props();
 
-  const accessible = $derived(clearance.tier >= file.clearance);
+  // A wikilink is the traversal verb: clicking a cross-reference opens that record
+  // (if it's reachable in the citation graph). This is "follow the link, find the
+  // word" made clickable — and it pairs with the forged-citation mechanic
+  // (design_note_forged_citations.md): click through, read, cite back.
+  function followLink(target: string) {
+    if (!isReachable(target)) {
+      log(`${target}: no citation path to this record yet.`, 'reject');
+      return;
+    }
+    openFile(target);
+  }
+
+  const accessible = $derived(isReachable(file.item));
 
   // Cross-file propagation pulse: flash when a slot here changes because a linked
   // slot elsewhere was edited, so the ripple is visible where it lands.
@@ -38,14 +52,14 @@
 <section class="file-pane" class:locked={!accessible} class:pulsing>
   <div class="pane-head">
     <span class="prompt">amber:/records/</span><span class="item">{file.item}</span>
-    <span class="meta">{file.object_class} · L{file.clearance}{#if file.entity_self} · SELF{/if}</span>
+    <span class="meta">{file.object_class}{#if file.entity_self} · SELF{/if}</span>
     {#if pulsing}<span class="ripple-tag" aria-hidden="true">◂ XREF UPDATED</span>{/if}
   </div>
 
   {#if !accessible}
     <div class="lockout">
-      <p>&gt; ACCESS DENIED</p>
-      <p class="detail">clearance L{file.clearance} required — you hold L{clearance.tier}.</p>
+      <p>&gt; NOT YET REACHABLE</p>
+      <p class="detail">no citation path to this record yet — follow the cross-references.</p>
     </div>
   {:else}
     <article class="body">
@@ -59,8 +73,11 @@
         {:else}
           <p>{#each block.inlines as inl, j (j)}{#if inl.kind === 'anchor'}<SlotSpan
                 ref={makeRef(file.item, inl.id)}
-              />{:else if inl.kind === 'wikilink'}<a class="wikilink" href={'#' + inl.target}
-                >{inl.target}</a
+              />{:else if inl.kind === 'wikilink'}<button
+                type="button"
+                class="wikilink"
+                onclick={() => followLink(inl.target)}
+                >{inl.target}</button
               >{:else}{#each inl.runs as r (r)}{#if r.bold}<strong>{r.text}</strong>{:else}{r.text}{/if}{/each}{/if}{/each}</p>
         {/if}
       {/each}
@@ -132,15 +149,20 @@
   .body p { margin: 0 0 0.65rem; }
   .body p.object-class { color: #828b96; font-size: 0.82rem; margin-bottom: 0.9rem; }
 
-  /* Cross-references as bracketed see-also tokens, terminal idiom. */
+  /* Cross-references as bracketed see-also tokens, terminal idiom. Clickable:
+     following one opens that record (the traversal verb). */
   .wikilink {
+    font: inherit;
+    background: none;
+    border: none;
+    padding: 0;
     color: #8fb3d4;
-    text-decoration: none;
     border-bottom: 1px dotted #2f4a5e;
+    cursor: pointer;
   }
   .wikilink::before { content: '['; color: #4a5e72; }
   .wikilink::after { content: ']'; color: #4a5e72; }
-  .wikilink:hover { color: #b6d2ec; }
+  .wikilink:hover { color: #b6d2ec; border-bottom-color: #5a8bb0; }
 
   .lockout { padding: 1.1rem 0.9rem; color: #c96a6a; }
   .lockout p { margin: 0.15rem 0; letter-spacing: 0.04em; }

@@ -108,3 +108,78 @@ re-coin them as escalating keys if the divergence is intended. A build-time
 truth-index-alignment validator was *considered but not added*, because it would
 falsely flag the intentionally-escalating keys; the right check is per-key (aligned
 vs escalating), which needs the registry's per-key intent encoded first.
+
+**Superseded by the v2 reset (2026-06-17):** this finding is moot under the new
+primitive. The `mutations[]`/truth-index model that produced the misalignment is
+being replaced by single-word + citation-grounding; the trio is **retired** (see the
+§6 decisions below). No content fix is owed; the regression-guard *intent* (AMBER-only
+solve → loop-broken at exposure 0) carries forward, its assertions rewritten in Phase 1.
+
+---
+
+## v2 reset — §6 decisions (user, 2026-06-17)
+
+`reset_amber_v2.md` §6 posed four blocking questions (A–D) that gate Phase 1 of the
+single-word/traffic-jam reset. All four answered by the user; each landed on the doc
+author's recorded lean. These are the schema-and-scope decisions Phase 1 builds on.
+
+### A. Grounding legibility — **TRANSPARENT METER**
+Deep (inference) slots show a numeric/▮▮▯ grounding meter that fills as the player
+adds citations and commits at a **visible threshold**. Easier to learn and tune;
+the opaque accept/reject register is reserved as a **later difficulty dial**, not the
+prototype default. *Schema impact:* the citeability/grounding model must carry a
+per-slot threshold and expose accumulated grounding as a readable quantity (not just
+a boolean accept/reject). Drives `AmberLookup`'s render and the engine's commit return.
+
+### B. Renumbering — **FREE HAND**
+The corpus may be renumbered/reordered so file numbers ≈ chronology ≈ difficulty
+(teaching pair takes the lowest numbers). The registry, roster, and the self-file's
+`entity_self` wiring are all rewritten accordingly. No numbering constraint to
+preserve. *Scope impact:* Phase 1's teaching pair are net-new files at the low
+numbers; the self-file (`SCP-41B-000`) keeps its designation as the entity but is
+re-authored.
+
+### C. The trio + self-file — **RETIRE, MINE THE LORE**
+The current 4 entries are retired as playable content. The audit-drift and
+Halloran-degradation arcs are **mined into fresh chronological entries**; the
+self-file's *concept* survives, re-authored. *Scope impact:* Phase 1 builds on a
+**clean teaching pair**, not a conversion of the old trio. The old-primitive fixtures
+and the trio-specific tests are rewritten with the schema (the winnable-regression
+guard's intent survives; assertions change).
+
+### D. Clearance — **CUT ENTIRELY (PURE-GRAPH)**
+Clearance is removed as both the per-slot reveal gate **and** the coarse flow-lock.
+The citation graph is the only gate: a file is reachable iff its inbound citations are
+reachable. No `clearance`/`redaction_level` reveal mechanism, no flow-lock safety
+valve. *Schema impact (largest of the four):*
+- `ScpFile.clearance` and `Anchor.redaction_level` are **removed** from the schema.
+- `revealedTruth` / `raiseClearance` / `ClearancePanel` are **removed** — clearance
+  no longer reveals truth, so the "spec reveal, scoped to open files" bootstrap
+  (decisions record above) no longer applies. The citation gate bootstraps instead
+  from **teaching-depth co-occurrence** (the word appears plainly in a reachable
+  file), which is the non-circular evidence that replaces clearance-revealed truth.
+- The orphan-slot "clearance-reveal fallback" (watch item 3) is **gone**; orphan
+  handling under pure-graph is an open Phase-1 sub-question — see `handoff_reset_build.md`.
+
+**E and F (non-blocking)** — arc list / first-batch size, and exact Quippy-fill
+distinctness — deliberately left open per the handoff; content/polish calls that trail
+Phase 1, not gates on it.
+
+## Redemption REVERSED — no redemption; Quippy taint is permanent (user, 2026-06-17)
+
+Phase-1 playtest surfaced a win-logic hole: the player used Quippy to *learn* a word,
+then AMBER-cited the same slot, and reached `loop-broken`. The old watch-item-1
+redemption (an AMBER re-solve clears Quippy taint) couldn't distinguish honest re-work
+from **laundering** — using Quippy to read the file, then citing in AMBER to wash it.
+
+**Decision (user): any Quippy touch ever permanently forecloses the true win. No
+redemption.** Chosen over "redeem only by independent re-derivation" and "keep current"
+as the strongest, least-gameable expression of the no-Quippy thesis — and the most
+thematically honest (you cannot launder the entity's help; the help already happened).
+
+**Implements as** a permanent `quippyTouched` set (`game.svelte.ts`): any slot ever
+filled OR rippled via Quippy is recorded and never cleared; `loadCorpus` resets it for a
+fresh run. `endState.quippyAssists` now reads this set's size (monotonic), not live
+`via`. An AMBER re-solve still drops *exposure* to zero (exposure reads live `via`), but
+the win-taint stands. **Supersedes watch item 1** above (redemption) — that earlier
+decision is void. Tests: `game.test.ts` "NO REDEMPTION", "LAUNDER GUARD".

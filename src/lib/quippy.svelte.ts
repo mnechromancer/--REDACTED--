@@ -29,50 +29,30 @@ export function quippyBand(): QuippyBand {
   return 'low';
 }
 
-// ── The candidate-ordering tell (§3, §4) ───────────────────────────────────
-// Many concept-keys are authored so index-0 is the boring truth and higher indices
-// are the entity's re-shelving (concept_key_registry.md). Quippy's tell: as
-// exposure rises it surfaces the escalatory (higher-index) reading first, and at
-// the high band it down-ranks the index-0 (true) candidate. The tool that helps
-// you read is lobbying for its own preferred reading.
+// ── Quippy's offer (v2 reset §1.5) ──────────────────────────────────────────
+// Under the single-word primitive there is no candidate set to reorder — there is
+// one truth word, and Quippy's pitch is to FILL it for you, one click, no citation.
+// That is the whole temptation: it skips the traffic jam. The fill is tagged
+// via:'quippy', bypasses the citation gate, and raises exposure.
 //
-// Returns the anchor's candidates reordered for display, each tagged so the panel
-// can render Quippy's framing. The underlying values are unchanged (still the same
-// bounded set, no free text) — only the ORDER and framing differ.
+// (Open F, deferred past Phase 1: Quippy filling a WRONG/escalatory word it invents,
+// for the contradiction tell. For now it offers the word; the distinctness is that
+// it offers it un-grounded, at cost. The framing label survives for the panel.)
 
 export interface QuippySuggestion {
   value: string;
-  /** original index in the anchor's mutation set (0 = the boring truth, typically) */
-  index: number;
-  /** Quippy's framing label for this candidate at the current band */
+  /** Quippy's framing label at the current band — its pitch on this fill. */
   framing: 'recommended' | 'plain' | 'dull';
 }
 
 export function quippySuggestions(ref: string): QuippySuggestion[] {
-  const muts = anchorOf(ref).mutations;
+  const word = anchorOf(ref).truth;
   const band = quippyBand();
-  const tagged: QuippySuggestion[] = muts.map((value, index) => ({
-    value,
-    index,
-    framing: 'plain' as const,
-  }));
-
-  if (band === 'low') {
-    // Honest order; index-0 offered but framed as the dull one.
-    return tagged.map((s) => (s.index === 0 ? { ...s, framing: 'dull' } : s));
-  }
-
-  // Mid / High / Post-breach: prefer the highest-index (most escalatory) reading.
-  // Sort escalatory-first; recommend the top; at high+ bands, push index-0 last
-  // and mark it dull (down-ranked / nearly omitted).
-  const escalatoryFirst = [...tagged].sort((a, b) => b.index - a.index);
-  return escalatoryFirst.map((s, pos) => {
-    if (pos === 0) return { ...s, framing: 'recommended' };
-    if ((band === 'high' || band === 'post-breach') && s.index === 0) {
-      return { ...s, framing: 'dull' };
-    }
-    return s;
-  });
+  // The one offer, framed brighter as Quippy curdles — it pushes harder the more
+  // it's been leaned on. (When the wrong-word tell lands in Phase 2 this is where
+  // an escalatory alternate would be surfaced ahead of the truth.)
+  const framing = band === 'low' ? 'plain' : 'recommended';
+  return [{ value: word, framing }];
 }
 
 // ── Voice (§2.2, §4) — Marsh-calm, rationed, never monologue ────────────────

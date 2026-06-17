@@ -1,103 +1,92 @@
 <script lang="ts">
-  // AMBER's manual-unredaction tooling — the citation-cost gate as UI (re-frame
-  // §7.5, the honest half of the old HelpUtility). For the active span it shows:
-  //   1. the Concordance: every co-carrier of the slot's concept, with its current
-  //      reading, each selectable as a CITATION;
-  //   2. the bounded candidate set, selectable;
-  //   3. a COMMIT action that calls commitWithCitations(candidate, citations).
-  // AMBER adjudicates: a corroborated commit prints accept (via=amber, +0 exposure);
-  // an uncorroborated one prints a terse reject and writes nothing. This is the
-  // whole evidentiary verb. Quippy's one-click panel bypasses all of it (Step 5).
+  // AMBER's manual-unredaction tooling — the citation-cost gate as UI, v2 reset.
+  // Single-word primitive: a slot has ONE truth word, recovered by CITING where the
+  // corpus grounds it (not by picking from a candidate set). For the active span:
+  //   1. the grounding clues — for a teaching slot, the reachable file(s) holding
+  //      the word in the clear; for an inference slot, the solved co-carriers — each
+  //      selectable as a CITATION;
+  //   2. a word input (the player types the word they recovered by reading);
+  //   3. a COMMIT action calling commitWithCitations(word, citations).
+  // AMBER adjudicates: a grounded commit prints accept (via=amber, +0 exposure); an
+  // ungrounded/wrong one prints a terse reject and writes nothing. Quippy's one-click
+  // panel bypasses all of it.
   import {
     anchorOf,
-    conceptClues,
     resolveSlot,
-    isOrphanSlot,
+    groundingClues,
+    isUngroundable,
     commitWithCitations,
-    corroborates,
-    revealedTruth,
     type CommitReason,
+    type GroundingClue,
   } from '../lib/game.svelte.ts';
-  import { ui, log, spanLabel } from '../lib/ui.svelte.ts';
+  import { log, spanLabel } from '../lib/ui.svelte.ts';
+  import { ui } from '../lib/ui.svelte.ts';
   import { logPropagation } from '../lib/ripples.svelte.ts';
-  import { progression, unlockedFiles } from '../lib/progression.svelte.ts';
 
-  // Per-span working state: which candidate is chosen, which co-carriers are cited.
-  let candidate = $state<string | null>(null);
+  // Per-span working state: the typed word, and which grounding sources are cited.
+  let word = $state('');
   let cited = $state<Set<string>>(new Set());
 
   const ref = $derived(ui.activeSpan);
   const anchor = $derived(ref ? anchorOf(ref) : null);
   const slot = $derived(ref ? resolveSlot(ref) : null);
-  const clues = $derived(ref ? conceptClues(ref) : []);
-  const orphan = $derived(ref ? isOrphanSlot(ref) : false);
+  const clues = $derived<GroundingClue[]>(ref ? groundingClues(ref) : []);
+  const ungroundable = $derived(ref ? isUngroundable(ref) : false);
+  const isInference = $derived(anchor?.grounding.kind === 'inference');
+  const threshold = $derived(anchor?.grounding.kind === 'inference' ? anchor.grounding.threshold : 0);
   const fillable = $derived(
-    slot?.state === 'redacted' || slot?.state === 'inserted' || slot?.state === 'propagated',
+    slot?.state === 'redacted' || slot?.state === 'inserted' ||
+    slot?.state === 'propagated' || slot?.state === 'truth-contradiction',
   );
+
+  // Live grounding count for the inference meter (decision A — transparent).
+  const groundedNow = $derived([...cited].filter((c) => clues.find((cl) => cl.item === c)?.corroborates).length);
 
   // Reset the working selection whenever the active span changes.
   let lastRef = $state<string | null>(null);
   $effect(() => {
     if (ref !== lastRef) {
       lastRef = ref;
-      candidate = null;
+      word = '';
       cited = new Set();
     }
   });
 
-  // The candidate's index — corroboration is index-aligned, so a citation supports
-  // the chosen candidate only at this index.
-  const k = $derived(candidate && anchor ? anchor.mutations.indexOf(candidate) : -1);
-
-  // Live preview: does each clue currently corroborate the chosen candidate's index?
-  // (Used to tint cited clues so the player sees their argument hold or not.)
-  function clueCorroborates(clueRef: string): boolean {
-    return ref !== null && k >= 0 && corroborates(clueRef, ref, k);
-  }
-
-  function toggleCite(clueRef: string) {
+  function toggleCite(item: string) {
     const next = new Set(cited);
-    if (next.has(clueRef)) next.delete(clueRef);
-    else next.add(clueRef);
+    if (next.has(item)) next.delete(item);
+    else next.add(item);
     cited = next;
   }
 
-  // AMBER refuses in error-code register — it states the fault, names nothing it
-  // will not do, offers no encouragement. The coldness is the contrast that makes
-  // Quippy's warmth legible (scp_x_bible.md §2.1).
+  // AMBER refuses in error-code register — states the fault, offers no consolation.
   const REASON_LINE: Record<CommitReason, string> = {
-    'not-a-candidate': 'E10 REJECT — value not in admitted candidate set. commit aborted.',
-    uncorroborated:
-      'E21 REJECT — citation does not corroborate value. no co-reference on file carries this reading. commit aborted.',
-    'orphan-unrevealed':
-      'E30 REJECT — local field, no co-reference to cite. unsealed only by clearance at its filing tier. commit aborted.',
+    'wrong-word': 'E11 REJECT — value does not match the held word. commit aborted.',
+    uncited:
+      'E21 REJECT — no cited record carries this word in the clear. follow a cross-reference and cite it. commit aborted.',
+    insufficient:
+      'E22 REJECT — grounding below threshold. assemble more corroborating context. commit aborted.',
+    ungroundable:
+      'E30 REJECT — no reachable grounding for this field yet. open the records it cross-references. commit aborted.',
   };
 
   function commit() {
-    if (!ref || !candidate) return;
-    const unlocked = unlockedFiles(progression.step);
-    const r = commitWithCitations(ref, candidate, [...cited], (item) => unlocked.has(item));
+    if (!ref || !word.trim()) return;
+    const r = commitWithCitations(ref, word.trim(), [...cited]);
     if (r.ok) {
-      const how = orphan ? 'clearance-confirmed' : `corroborated, ${r.citedBy?.length ?? 0} cite`;
-      log(`COMMIT OK — ${spanLabel(ref)} := "${candidate}" [${how}; via AMBER; exposure +0]`, 'ok');
+      const how = isInference
+        ? `grounded ${r.grounded}/${r.threshold}`
+        : `cited ${r.citedBy?.length ?? 0}`;
+      log(`COMMIT OK — ${spanLabel(ref)} := "${word.trim()}" [${how}; via AMBER; exposure +0]`, 'ok');
       if (r.propagatedTo && r.propagatedTo.length) logPropagation(ref, r.propagatedTo);
-      candidate = null;
+      word = '';
       cited = new Set();
     } else {
-      log(`${REASON_LINE[r.reason ?? 'uncorroborated']}`, 'reject');
+      log(REASON_LINE[r.reason ?? 'uncited'], 'reject');
     }
   }
 
-  // Enable commit only when there's a candidate and (for multi-carrier slots) at
-  // least one citation selected; the engine still adjudicates, but this stops a
-  // pointless rejected commit. Orphan slots commit with no citation.
-  const canCommit = $derived(
-    !!candidate && (orphan ? revealedTruth.has(ref ?? '') : cited.size > 0),
-  );
-
-  function truncate(s: string, n = 40): string {
-    return s.length > n ? s.slice(0, n - 1) + '…' : s;
-  }
+  const canCommit = $derived(!!word.trim() && cited.size > 0);
 </script>
 
 {#if ref && anchor && fillable}
@@ -107,26 +96,30 @@
       <span class="target">{spanLabel(ref)}</span>
     </div>
 
-    {#if orphan}
+    {#if ungroundable}
       <p class="note orphan">
-        LOCAL FIELD. No co-reference carries this concept; no citation is possible.
-        Commit admitted only when clearance unseals the held value at its filing tier.
+        NO REACHABLE GROUNDING. This field cites records you have not opened yet.
+        Follow its cross-references until the word is legible somewhere, then cite it.
       </p>
     {:else if clues.length > 0}
       <div class="clues">
         <p class="note">
-          CO-REFERENCES ON FILE. Select the citation(s) whose legible reading
-          supports your candidate. AMBER adjudicates the citation before commit.
+          {#if isInference}
+            CORROBORATING CONTEXT. Cite the solved co-references; AMBER commits once
+            grounding reaches threshold.
+          {:else}
+            CO-REFERENCE ON FILE. Cite the record that carries this word in the clear.
+            AMBER adjudicates the citation before commit.
+          {/if}
         </p>
+        {#if isInference}
+          <p class="meter">GROUNDING {groundedNow}/{threshold} {'▮'.repeat(groundedNow)}{'▯'.repeat(Math.max(0, threshold - groundedNow))}</p>
+        {/if}
         <ul>
-          {#each clues as c (c.ref)}
-            <li
-              class="clue {c.state}"
-              class:cited={cited.has(c.ref)}
-              class:supports={cited.has(c.ref) && clueCorroborates(c.ref)}
-            >
-              <button type="button" class="cite-btn" onclick={() => toggleCite(c.ref)}>
-                <span class="box">{cited.has(c.ref) ? '☑' : '☐'}</span>
+          {#each clues as c (c.item)}
+            <li class="clue" class:cited={cited.has(c.item)} class:supports={cited.has(c.item) && c.corroborates}>
+              <button type="button" class="cite-btn" onclick={() => toggleCite(c.item)}>
+                <span class="box">{cited.has(c.item) ? '☑' : '☐'}</span>
                 <span class="src">{c.item}</span>
                 <span class="quote">{c.sentence}</span>
               </button>
@@ -135,40 +128,31 @@
         </ul>
       </div>
     {:else}
-      <p class="note">NO LEGIBLE CO-REFERENCE. Raise clearance, or commit a co-carrier first.</p>
+      <p class="note">NO LEGIBLE CO-REFERENCE YET. Read the records this one links to.</p>
     {/if}
 
-    <div class="candidates">
-      <span class="lbl">CANDIDATE</span>
-      <div class="cand-list">
-        {#each anchor.mutations as cand (cand)}
-          <button
-            type="button"
-            class="cand"
-            class:chosen={candidate === cand}
-            onclick={() => (candidate = cand)}
-          >
-            {cand}
-          </button>
-        {/each}
-      </div>
+    <div class="entry">
+      <span class="lbl">WORD</span>
+      <input
+        type="text"
+        spellcheck="false"
+        autocomplete="off"
+        placeholder="type the recovered word"
+        bind:value={word}
+        onkeydown={(e) => {
+          if (e.key === 'Enter') commit();
+        }}
+      />
     </div>
 
     <button type="button" class="commit" disabled={!canCommit} onclick={commit}>
-      ▶ COMMIT{candidate ? ` "${truncate(candidate)}"` : ''}
-      {#if !orphan && candidate}· {cited.size} citation{cited.size === 1 ? '' : 's'}{/if}
+      ▶ COMMIT{word.trim() ? ` "${word.trim()}"` : ''} · {cited.size} citation{cited.size === 1 ? '' : 's'}
     </button>
   </div>
 {:else if ref && slot}
   <div class="lookup settled">
     <div class="lk-head"><span class="lbl">CONCORDANCE</span><span class="target">{spanLabel(ref)}</span></div>
-    <p class="note">
-      {#if slot.state === 'truth-contradiction'}
-        ENTRY STRUCK — held copy disagrees (shown red). Field locked to ground truth.
-      {:else}
-        CONFIRMED against held copy. Field closed.
-      {/if}
-    </p>
+    <p class="note">FIELD CLOSED.</p>
   </div>
 {:else}
   <div class="lookup empty">
@@ -203,6 +187,7 @@
   .target { color: var(--slot-inserted-fg, #e8a33d); letter-spacing: 0.04em; }
   .note { margin: 0 0 0.55rem; color: #6b7480; line-height: 1.45; font-size: 0.72rem; }
   .note.orphan { color: #8a7f5a; }
+  .meter { margin: 0 0 0.5rem; color: var(--slot-revealed-fg, #8ad0a0); letter-spacing: 0.1em; font-size: 0.72rem; }
 
   .clues ul { list-style: none; margin: 0 0 0.6rem; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
   .cite-btn {
@@ -234,27 +219,21 @@
     padding: 0 0.3ch;
   }
   .quote { color: #9aa9b6; font-style: italic; overflow-wrap: anywhere; }
-  .clue.inserted .quote, .clue.propagated .quote { color: #c4cad1; font-style: normal; }
-  .clue.revealed .quote { color: var(--slot-revealed-fg, #8ad0a0); font-style: normal; }
 
-  .candidates { margin-bottom: 0.6rem; }
-  .cand-list { display: flex; flex-direction: column; gap: 0.25rem; margin-top: 0.3rem; }
-  .cand {
+  .entry { margin-bottom: 0.6rem; display: flex; flex-direction: column; gap: 0.3rem; }
+  .entry input {
     width: 100%;
-    text-align: left;
     background: #0c0f12;
     border: 1px solid #1c2228;
     border-radius: 2px;
-    padding: 0.3rem 0.45rem;
+    padding: 0.35rem 0.45rem;
     color: var(--slot-inserted-fg, #e8a33d);
     font: inherit;
-    font-size: 0.73rem;
-    line-height: 1.3;
-    cursor: pointer;
-    overflow-wrap: anywhere;
+    font-size: 0.8rem;
+    outline: none;
   }
-  .cand:hover { border-color: #4a5160; }
-  .cand.chosen { border-color: var(--slot-inserted-fg, #e8a33d); background: #1c1608; }
+  .entry input:focus { border-color: var(--slot-inserted-fg, #e8a33d); }
+  .entry input::placeholder { color: #3f4751; }
 
   .commit {
     width: 100%;

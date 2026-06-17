@@ -7,13 +7,13 @@
   // Interaction is keybound, not hover-driven (the old GUI model): clicking or
   // focusing a span makes it the terminal's active span, which is what AmberLookup
   // targets. The active span is outlined so the keyboard cursor is always visible.
-  import { resolveSlot, anchorOf, overlay } from '../lib/game.svelte.ts';
+  import { resolveSlot, overlay } from '../lib/game.svelte.ts';
   import { ui } from '../lib/ui.svelte.ts';
 
   let { ref }: { ref: string } = $props();
 
   // The four-state ladder lives in resolveSlot; wrap it in $derived so this span
-  // recomputes only when its slot's inputs (overlay/revealedTruth) change.
+  // recomputes only when its slot's inputs (overlay) change.
   const slot = $derived(resolveSlot(ref));
   // Provenance is read straight off the overlay entry (orthogonal to display
   // state). The tell renders only when the provenance-visibility toggle is on.
@@ -21,10 +21,10 @@
   const quippyTainted = $derived(via === 'quippy' && ui.showProvenance);
   const active = $derived(ui.activeSpan === ref);
 
-  // Redaction-bar width: hint length without leaking the value (longest candidate).
-  const barWidth = $derived(
-    Math.min(24, Math.max(...anchorOf(ref).mutations.map((m) => m.length))),
-  );
+  // Redaction-bar width: a fixed span that does NOT telegraph the hidden word's
+  // length (single-word primitive — the length would itself be a clue). A short
+  // proper-noun and a long phrase render the same bar until solved.
+  const barWidth = 8;
 
   function select() {
     ui.activeSpan = ref;

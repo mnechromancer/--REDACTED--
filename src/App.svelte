@@ -8,22 +8,12 @@
   import type { Corpus } from './lib/corpus.ts';
   import {
     corpus,
-    clearance,
     loadCorpus,
-    raiseClearance,
-    auditSummary,
-    boardState,
+    seedReach,
+    reachableFiles,
   } from './lib/game.svelte.ts';
-  import { ui, dismissQuippy, log } from './lib/ui.svelte.ts';
-  import {
-    progression,
-    SCRIPT,
-    UNLOCK_ORDER,
-    unlockedFiles,
-    beginSession,
-    advanceProgression,
-  } from './lib/progression.svelte.ts';
-  import { logAudit } from './lib/ripples.svelte.ts';
+  import { ui, dismissQuippy } from './lib/ui.svelte.ts';
+  import { progression, SCRIPT, beginSession } from './lib/progression.svelte.ts';
   import AmberTerminal from './components/AmberTerminal.svelte';
   import QuippyPanel from './components/QuippyPanel.svelte';
   import EndState from './components/EndState.svelte';
@@ -31,45 +21,23 @@
 
   loadCorpus(corpusData as Corpus);
 
-  // Start at L2: every file opens, and every guessable trio slot sits at
-  // redaction_level ≥ 3, so nothing is auto-revealed at the starting tier.
-  raiseClearance(2);
+  // v2 reset (decision D): no clearance. The citation graph is the only gate —
+  // seed the opening file; reachability opens the rest by following its xrefs.
+  // The teaching pair: seed 001 (the intake hub); 001 → 002 via xref.
+  seedReach('SCP-41B-001');
 
-  const board = $derived(boardState());
-
-  // Only the files the onboarding has unlocked are shown, in unlock order.
+  // Visible files = the reachable set (decision D). The old onboarding-unlock gate
+  // is retired here: it was circular under the citation graph — 002 only unlocked
+  // after a confirmed solve, but solving 001 REQUIRES citing 002 (which was hidden).
+  // Reachability is the correct gate; the scripted onboarding is removed in Phase 2.
   const visibleFiles = $derived.by(() => {
-    const ok = unlockedFiles(progression.step);
-    return UNLOCK_ORDER.filter((id) => ok.has(id) && corpus[id]).map((id) => corpus[id]);
+    const reached = reachableFiles();
+    // stable order: seed first, then the rest by id.
+    return Object.values(corpus)
+      .filter((f) => reached.has(f.item))
+      .sort((a, b) => (a.item === 'SCP-41B-001' ? -1 : b.item === 'SCP-41B-001' ? 1 : a.item.localeCompare(b.item)));
   });
   const visibleOrder = $derived(visibleFiles.map((f) => f.item));
-
-  // Advance the onboarding whenever the board changes (insert, audit, propagation).
-  $effect(() => {
-    void board.filled;
-    void board.reconciled;
-    void board.propagated;
-    advanceProgression();
-  });
-
-  const MAX_TIER = 5;
-  const nextTier = $derived(Math.min(MAX_TIER, clearance.tier + 1) as 1 | 2 | 3 | 4 | 5);
-  const canAudit = $derived(clearance.tier < MAX_TIER && progression.step !== 'boot');
-
-  function runAudit() {
-    if (!canAudit) return;
-    const batch = raiseClearance(nextTier);
-    const s = auditSummary(batch);
-    logAudit(clearance.tier, s.discrepancies.length, s.confirmed.length);
-    const parts: string[] = [];
-    if (s.discrepancies.length) parts.push(`${s.discrepancies.length} struck`);
-    if (s.confirmed.length) parts.push(`${s.confirmed.length} confirmed`);
-    if (s.blanks.length) parts.push(`${s.blanks.length} unfilled`);
-    log(
-      `audit → L${clearance.tier}${parts.length ? ': ' + parts.join(', ') : ': nothing to reconcile'}`,
-      s.discrepancies.length ? 'reject' : 'ok',
-    );
-  }
 
   const script = $derived(SCRIPT[progression.step]);
 
@@ -98,13 +66,7 @@
   </main>
 {:else}
   <main>
-    <AmberTerminal
-      files={visibleFiles}
-      order={visibleOrder}
-      onRaise={runAudit}
-      canRaise={canAudit}
-      {nextTier}
-    />
+    <AmberTerminal files={visibleFiles} order={visibleOrder} />
   </main>
 
   <!-- Quippy overlay: visible only in mode 'quippy', sitting over AMBER. -->

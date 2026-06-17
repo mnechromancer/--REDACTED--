@@ -6,6 +6,7 @@ import { load as parseYaml } from 'js-yaml';
 import type {
   Anchor,
   BreachEffect,
+  Grounding,
   ScpFile,
   SlotType,
 } from '../../src/lib/corpus.ts';
@@ -72,11 +73,35 @@ function asString(v: unknown, field: string): string {
   return v;
 }
 
-function asTier(v: unknown, field: string): 1 | 2 | 3 | 4 | 5 {
-  if (typeof v !== 'number' || !Number.isInteger(v) || v < 1 || v > 5) {
-    throw new EntryParseError(`field "${field}" must be an integer 1–5 (got ${JSON.stringify(v)})`);
+/**
+ * Parse an anchor's `grounding` descriptor (v2 reset). A tagged union keyed by
+ * `kind`: teaching (cite where the word appears in the clear) or inference (assemble
+ * grounding to a threshold). Cross-file checks (do the `citeIn` files actually hold
+ * the word?) live in validate-corpus.ts; this only validates shape.
+ */
+function parseGrounding(v: unknown, anchorId: string): Grounding {
+  if (typeof v !== 'object' || v === null) {
+    throw new EntryParseError(`anchor "${anchorId}".grounding must be a mapping`);
   }
-  return v as 1 | 2 | 3 | 4 | 5;
+  const o = v as Record<string, unknown>;
+  const kind = asString(o.kind, `anchor "${anchorId}".grounding.kind`);
+  if (kind === 'teaching') {
+    const citeIn = o.citeIn;
+    if (!Array.isArray(citeIn) || citeIn.some((c) => typeof c !== 'string')) {
+      throw new EntryParseError(`anchor "${anchorId}".grounding.citeIn must be an array of item ids`);
+    }
+    if (citeIn.length === 0) {
+      throw new EntryParseError(`anchor "${anchorId}".grounding.citeIn must name at least one file`);
+    }
+    return { kind: 'teaching', citeIn: citeIn as string[] };
+  }
+  if (kind === 'inference') {
+    if (typeof o.threshold !== 'number' || o.threshold <= 0) {
+      throw new EntryParseError(`anchor "${anchorId}".grounding.inference requires a positive numeric "threshold"`);
+    }
+    return { kind: 'inference', threshold: o.threshold };
+  }
+  throw new EntryParseError(`anchor "${anchorId}".grounding.kind "${kind}" is not teaching|inference`);
 }
 
 function parseBreachEffect(v: unknown): BreachEffect {
@@ -117,13 +142,13 @@ function parseAnchor(v: unknown, idx: number): Anchor {
     throw new EntryParseError(`anchor "${id}".slot_type "${slot_type}" is not object|agent|location|outcome`);
   }
 
-  const mutations = o.mutations;
-  if (!Array.isArray(mutations) || mutations.some((m) => typeof m !== 'string')) {
-    throw new EntryParseError(`anchor "${id}".mutations must be an array of strings`);
+  // v2 reset: a single immutable truth word (was the MadLib `mutations[]` set).
+  const truth = asString(o.truth, `anchor "${id}".truth`);
+  if (truth.trim() === '') {
+    throw new EntryParseError(`anchor "${id}".truth must not be empty`);
   }
-  if (mutations.length === 0) {
-    throw new EntryParseError(`anchor "${id}".mutations must not be empty`);
-  }
+
+  const grounding = parseGrounding(o.grounding, id);
 
   if (typeof o.exposure_weight !== 'number') {
     throw new EntryParseError(`anchor "${id}".exposure_weight must be a number`);
@@ -139,10 +164,9 @@ function parseAnchor(v: unknown, idx: number): Anchor {
   return {
     id,
     slot_type: slot_type as SlotType,
-    truth: asString(o.truth, `anchor "${id}".truth`),
-    redaction_level: asTier(o.redaction_level, `anchor "${id}".redaction_level`),
+    truth,
+    grounding,
     ...(concept ? { concept } : {}),
-    mutations: mutations as string[],
     exposure_weight: o.exposure_weight,
   };
 }
@@ -193,7 +217,6 @@ export function parseEntry(raw: string): ScpFile {
     item: asString(o.item, 'item'),
     object_class: asString(o.object_class, 'object_class'),
     site: asString(o.site, 'site'),
-    clearance: asTier(o.clearance, 'clearance'),
     anchors,
     xrefs: rawXrefs as string[],
     breach_effect: parseBreachEffect(o.breach_effect),

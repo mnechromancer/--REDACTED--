@@ -1,120 +1,90 @@
-// Lore-track regression guard: the REAL authored corpus (static/corpus.json, built
-// from vault/entries/*.md) must be fully AMBER-winnable with ZERO Quippy assists,
-// reaching the 'loop-broken' ending at exposure 0. The engine-only proof lives in
-// endgame-integration.test.ts on a synthetic aligned corpus; THIS test closes the
-// gap that handoff_lore_after_amber_build.md flagged as the BLOCKER — that the
-// authored entries themselves are index-aligned, not just the engine.
+// Lore-track regression guard (v2 reset): the REAL authored corpus (static/corpus.json,
+// built from vault/entries/*.md) must be fully AMBER-winnable with ZERO Quippy assists,
+// reaching 'loop-broken' at exposure 0. This closes the gap between the engine proof
+// (endgame-integration.test.ts, synthetic corpus) and the actual authored teaching pair.
 //
 // Two assertions, both load-bearing:
-//  1. A static audit: every concept key whose carriers sit at the SAME tier must
-//     have all its carriers' truths at the SAME mutation index. (Same-tier carriers
-//     are corroborated against each other by the citation gate, which only matches
-//     when both truths share an index — concept_key_registry.md, index 0 = mundane.)
-//  2. An end-to-end solve: drive the real corpus through clearance-reveal → cite →
-//     commit for every non-self slot and assert the true ending.
+//  1. Grounding soundness: every non-self TEACHING slot's word actually appears in the
+//     clear in each file it says to cite, and those files are reachable from the seed.
+//     (The build enforces this too; here it's the runtime mirror.)
+//  2. End-to-end solve: drive the real corpus through teaching-cite → commit for every
+//     non-self slot and assert the true ending.
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   loadCorpus,
   overlay,
   exposure,
-  revealedTruth,
-  clearance,
   breaches,
+  seedReachable,
+  seedReach,
+  reachableFiles,
+  bodyContainsWord,
   corpus,
   makeRef,
+  anchorOf,
   commitWithCitations,
-  raiseClearance,
   crossMentions,
   endState,
 } from '../game.svelte.ts';
 import type { Corpus } from '../corpus.ts';
-// The built artifact, imported the same way the app loads it (App.svelte) — no
-// node:fs, so this stays inside the svelte-check tsconfig's type scope.
 import corpusData from '../../../static/corpus.json';
 
 const REAL = corpusData as unknown as Corpus;
 
+// The seed the app uses (App.svelte): the intake hub. Its xrefs open the rest.
+const SEED = 'SCP-41B-001';
+
 beforeEach(() => {
   loadCorpus(REAL);
   for (const k of Object.keys(overlay)) delete overlay[k];
-  revealedTruth.clear();
+  seedReachable.clear();
   breaches.clear();
   exposure.value = 0;
-  clearance.tier = 1;
+  seedReach(SEED);
 });
 
-describe('the real authored corpus is index-aligned for the citation gate', () => {
-  it('every same-tier concept key has all carriers truthed at one shared index', () => {
-    // group carriers by concept
-    const byConcept = new Map<string, { ref: string; tier: number; truthIdx: number; len: number }[]>();
+describe('the real authored corpus is soundly grounded for the citation gate', () => {
+  it('every non-self teaching slot is grounded by a reachable file holding its word', () => {
+    const reached = reachableFiles();
     for (const file of Object.values(REAL)) {
+      if (file.entity_self) continue;
       for (const a of file.anchors) {
-        if (!a.concept) continue; // local-only slots don't participate
-        const truthIdx = a.mutations.indexOf(a.truth);
-        const list = byConcept.get(a.concept) ?? [];
-        list.push({ ref: makeRef(file.item, a.id), tier: a.redaction_level, truthIdx, len: a.mutations.length });
-        byConcept.set(a.concept, list);
-      }
-    }
-
-    for (const [concept, carriers] of byConcept) {
-      // every carrier's truth must actually be in its own mutation set
-      for (const c of carriers) {
-        expect(c.truthIdx, `${c.ref} (${concept}) truth not in mutations`).toBeGreaterThanOrEqual(0);
-      }
-      // mutation sets must be equal length across carriers (build-corpus enforces too)
-      const lengths = new Set(carriers.map((c) => c.len));
-      expect(lengths.size, `${concept}: mutation sets differ in length`).toBe(1);
-
-      // carriers sharing a tier must share a truth index (the citation-gate rule)
-      const byTier = new Map<number, number[]>();
-      for (const c of carriers) {
-        const idxs = byTier.get(c.tier) ?? [];
-        idxs.push(c.truthIdx);
-        byTier.set(c.tier, idxs);
-      }
-      for (const [tier, idxs] of byTier) {
-        const distinct = new Set(idxs);
-        expect(
-          distinct.size,
-          `${concept}: same-tier (rl=${tier}) carriers at different truth indices ${[...distinct]} — high carrier becomes AMBER-unsolvable`,
-        ).toBe(1);
+        if (a.grounding.kind !== 'teaching') continue;
+        const ref = makeRef(file.item, a.id);
+        // at least one cited file is reachable AND holds the word in the clear.
+        const grounded = a.grounding.citeIn.some(
+          (c) => reached.has(c) && REAL[c] && bodyContainsWord(REAL[c].body, a.truth),
+        );
+        expect(grounded, `${ref} ("${a.truth}") has no reachable file holding its word`).toBe(true);
       }
     }
   });
 });
 
-describe('the real authored trio solves to the true ending via AMBER alone', () => {
-  it('clearance-reveal → cite → commit every non-self slot → loop-broken at exposure 0', () => {
-    // Raise to the top tier the trio uses (003#a2 is rl=4). Reaching each tier
-    // reveals in-tier truth for slots in open files — seeding the citation gate.
-    raiseClearance(2);
-    raiseClearance(3);
-    raiseClearance(4);
-
-    // Solve every non-self slot to its truth via AMBER. We iterate to a fixed point:
-    // a slot is committable once enough of its co-carriers are corroborating
-    // (clearance-revealed or already player-solved), so repeated passes let the
-    // chain bootstrap. Orphans commit via the clearance-reveal fallback (no citation).
+describe('the real authored pair solves to the true ending via AMBER alone', () => {
+  it('teaching-cite → commit every non-self slot → loop-broken at exposure 0', () => {
     const targets: string[] = [];
     for (const file of Object.values(corpus)) {
       if (file.entity_self) continue;
       for (const a of file.anchors) targets.push(makeRef(file.item, a.id));
     }
 
+    // Iterate to a fixed point: teaching slots are immediately committable (their
+    // grounding is a reachable file's plain text); inference slots become committable
+    // as their co-carriers get solved. Repeated passes let the chain bootstrap.
     let progressed = true;
     let guard = 0;
     while (progressed && guard++ < 20) {
       progressed = false;
       for (const ref of targets) {
         const o = overlay[ref];
-        const truth = corpus[ref.slice(0, ref.indexOf('#'))].anchors.find(
-          (a) => makeRef(ref.slice(0, ref.indexOf('#')), a.id) === ref,
-        )!.truth;
+        const truth = anchorOf(ref).truth;
         if (o && o.value === truth) continue; // already solved
-        // cite every co-carrier; corroborates() filters to the ones that actually support index k
-        const citations = crossMentions(ref);
+        const anchor = anchorOf(ref);
+        // teaching → cite the citeIn files; inference → cite the solved co-carriers.
+        const citations =
+          anchor.grounding.kind === 'teaching' ? anchor.grounding.citeIn : crossMentions(ref);
         const r = commitWithCitations(ref, truth, citations);
         if (r.ok) progressed = true;
       }

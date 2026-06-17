@@ -154,23 +154,23 @@ export function nextRedacted(): string | null {
 export interface AmberProgress {
   total: number;
   redacted: number; // still unsolved
-  solved: number; // inserted or propagated (any route)
-  revealed: number; // truth shown
+  solved: number; // inserted or propagated to the correct word (any route)
+  struck: number; // a wrong word sitting in the slot (a Quippy mistake to redeem)
 }
 
 export function amberProgress(): AmberProgress {
   let total = 0;
   let redacted = 0;
   let solved = 0;
-  let revealed = 0;
+  let struck = 0;
   for (const ref of allRefs()) {
     total++;
     const s = resolveSlot(ref).state;
     if (s === 'redacted') redacted++;
-    else if (s === 'revealed' || s === 'truth-contradiction') revealed++;
+    else if (s === 'truth-contradiction') struck++;
     else solved++;
   }
-  return { total, redacted, solved, revealed };
+  return { total, redacted, solved, struck };
 }
 
 // ── Span label helpers (for the terminal/lookup) ───────────────────────────

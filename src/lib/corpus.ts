@@ -5,20 +5,45 @@
 
 export type SlotType = 'object' | 'agent' | 'location' | 'outcome';
 
+/**
+ * How a redacted word is grounded — the v2 reset primitive (reset_amber_v2.md §1.3).
+ * A slot is recoverable in AMBER because the corpus *grounds* its word, by depth:
+ *
+ *  - **teaching** (direct co-occurrence): the word appears PLAINLY, unredacted, in
+ *    the body of another reachable file. The player follows the xref, sees the word,
+ *    cites that file; AMBER commits. The bootstrap route — needs no prior solve and
+ *    no clearance (clearance is cut, decision D). `citeIn` lists the file ids whose
+ *    bodies hold the word in the clear (a build-time invariant checks they actually do).
+ *  - **inference** (parallel-context): NO file states the word outright. The player
+ *    assembles grounding across carriers until a visible grounding score clears
+ *    `threshold` (decision A — the meter is transparent). The Truth mechanic; the
+ *    surface Quippy later shortcuts.
+ */
+export type Grounding =
+  | { kind: 'teaching'; citeIn: string[] }
+  | { kind: 'inference'; threshold: number };
+
 /** A redacted slot in a file's prose. One `⟦id⟧` token per anchor. */
 export interface Anchor {
   /** unique within the file, e.g. "a1" */
   id: string;
   slot_type: SlotType;
-  /** immutable correct value; never shown until clearance >= redaction_level */
+  /**
+   * The redacted word (or tight proper-noun phrase) the player must produce —
+   * immutable, never shown until solved (reset_amber_v2.md §1.1). The v2 primitive:
+   * "produce the exact word," not "pick which rewrite is true." Replaces the old
+   * `mutations[]` MadLib candidate set.
+   */
   truth: string;
-  /** clearance required to legitimately reveal */
-  redaction_level: 1 | 2 | 3 | 4 | 5;
-  /** shared key; anchors with the same concept propagate together (omitted/"" = local only) */
+  /** how this slot's word is grounded for AMBER's cited commit (see Grounding). */
+  grounding: Grounding;
+  /**
+   * shared key; anchors with the same concept are co-carriers — they propagate
+   * together AND can contribute to each other's inference grounding (registry =
+   * the grounding graph). Omitted/"" = local-only (no co-carriers).
+   */
   concept?: string;
-  /** bounded, hand-authored MadLib candidate set (keep small: 3–5) */
-  mutations: string[];
-  /** added to global exposure on insertion/mutation */
+  /** added to global exposure when a Quippy fill lands here (AMBER commits cost 0) */
   exposure_weight: number;
 }
 
@@ -36,8 +61,6 @@ export interface ScpFile {
   /** Safe | Euclid | Keter | ... */
   object_class: string;
   site: string;
-  /** baseline tier to open the file at all */
-  clearance: 1 | 2 | 3 | 4 | 5;
   anchors: Anchor[];
   /** explicit narrative cross-references (item ids) */
   xrefs: string[];
@@ -73,7 +96,12 @@ export interface OverlayEntry {
   via?: Via;
   /** anchor_ref of the edit that propagated here (provenance) */
   caused_by?: string;
-  /** set true once truth for this slot is revealed and differs */
+  /**
+   * set true when this overlay value is known to diverge from the slot's truth
+   * word. Clearance-reveal is cut (decision D), so the trigger is now a Quippy fill
+   * of the wrong/ungrounded word (reset_amber_v2.md §1.5/§2.2) rather than a tier
+   * audit. The four-state grammar's contradiction state survives; its cause changed.
+   */
   contradicts_truth?: boolean;
 }
 
