@@ -12,6 +12,7 @@ import {
   seedReach,
   makeRef,
   insert,
+  commitWithCitations,
 } from '../game.svelte.ts';
 import {
   ui,
@@ -26,6 +27,13 @@ import {
   amberProgress,
   terminal,
   clearLog,
+  captureSelection,
+  currentSelection,
+  forgeCitation,
+  citationsFor,
+  removeCitation,
+  clearBuffer,
+  clearAllBuffers,
 } from '../ui.svelte.ts';
 import { session, resetSession } from '../session.svelte.ts';
 import { makeCorpus } from './fixtures.ts';
@@ -46,6 +54,8 @@ beforeEach(() => {
   resetSession(); // booting=true, quippyMet=false — first contact armed for each test
   session.booting = false; // these tests run in-session, past the bootup screen
   clearLog();
+  captureSelection('', ''); // no pane selection between tests
+  clearAllBuffers(); // no forged citations carried between tests
 });
 
 describe('mode switching — refusable Quippy', () => {
@@ -181,5 +191,66 @@ describe('amberProgress — route-aware corpus readout', () => {
     insert(makeRef('SCP-41B-001', 'a1'), 'WRONG', 'quippy');
     const p = amberProgress();
     expect(p.struck).toBe(1);
+  });
+});
+
+describe('the forged-citation buffer (Phase 3 — the verb plumbing)', () => {
+  const F1_A1 = makeRef('SCP-41B-001', 'a1'); // 'alpha' — grounded by a span in F2
+  beforeEach(() => {
+    session.quippyMet = true; // disarm first contact for these
+    ui.activeSpan = F1_A1; // the slot the player is solving
+  });
+
+  it('captureSelection records a pane selection; currentSelection reads it (trimmed)', () => {
+    captureSelection('SCP-41B-002', '  the holding alpha names  ');
+    expect(currentSelection()).toEqual({ item: 'SCP-41B-002', text: 'the holding alpha names' });
+  });
+
+  it('an empty/whitespace selection reads as no selection', () => {
+    captureSelection('SCP-41B-002', '   ');
+    expect(currentSelection()).toBeNull();
+  });
+
+  it('forgeCitation stakes the live selection onto the active slot, and persists it', () => {
+    captureSelection('SCP-41B-002', 'the holding alpha names');
+    const forged = forgeCitation();
+    expect(forged).toEqual({ item: 'SCP-41B-002', text: 'the holding alpha names' });
+    expect(citationsFor(F1_A1)).toEqual([{ item: 'SCP-41B-002', text: 'the holding alpha names' }]);
+  });
+
+  it('forging the SAME span twice de-dupes (one entry in the buffer)', () => {
+    captureSelection('SCP-41B-002', 'holding alpha');
+    forgeCitation();
+    forgeCitation();
+    expect(citationsFor(F1_A1).length).toBe(1);
+  });
+
+  it('forge is a no-op with no selection or no active slot', () => {
+    captureSelection('', '');
+    expect(forgeCitation()).toBeNull();
+    expect(citationsFor(F1_A1)).toEqual([]);
+    ui.activeSpan = null;
+    captureSelection('SCP-41B-002', 'holding alpha');
+    expect(forgeCitation()).toBeNull();
+  });
+
+  it('removeCitation drops one; clearBuffer drops all for the slot', () => {
+    captureSelection('SCP-41B-002', 'alpha one');
+    forgeCitation();
+    captureSelection('SCP-41B-002', 'alpha two');
+    forgeCitation();
+    expect(citationsFor(F1_A1).length).toBe(2);
+    removeCitation(F1_A1, 0);
+    expect(citationsFor(F1_A1)).toEqual([{ item: 'SCP-41B-002', text: 'alpha two' }]);
+    clearBuffer(F1_A1);
+    expect(citationsFor(F1_A1)).toEqual([]);
+  });
+
+  it('the buffer feeds a real commit: forge a grounding span → commitWithCitations accepts', () => {
+    captureSelection('SCP-41B-002', 'the holding alpha names'); // carries "alpha"
+    forgeCitation();
+    const r = commitWithCitations(F1_A1, 'alpha', citationsFor(F1_A1));
+    expect(r.ok).toBe(true);
+    expect(overlay[F1_A1]).toMatchObject({ value: 'alpha', via: 'amber' });
   });
 });

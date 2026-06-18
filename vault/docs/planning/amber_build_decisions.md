@@ -234,6 +234,68 @@ Three changes after first review of the entrance:
 rendering, and the forged-citation UI (`design_note_forged_citations.md`). **E/F still open**
 (arc list / first-batch size; exact Quippy-fill distinctness).
 
+## Phase 3 — the forged-citation verb + the 80s aesthetic (built 2026-06-17)
+
+`reset_amber_v2.md` §2 (aesthetic) + `design_note_forged_citations.md` (the verb), per
+`handoff_phase3.md`. Built in one pass (user decision); `check` 0/0, tests 124→133, corpus
++ prod build clean. **Verb before paint** (the handoff hazard) — the engine landed and went
+green before any restyle.
+
+**The verb — forged citations.** AMBER no longer SURFACES where a word lives; the player
+FINDS it. To restore a field: type the recovered word, then SELECT the span in a reachable
+record where the word stands and FORGE a citation from it; COMMIT judges. Decisions actually
+taken at the build (the note left them "to the build"):
+- **Citation unit = `(file, span-text)`** — `ForgedCitation { item; text }` (`corpus.ts`).
+  The commit check is `spanContainsWord(span, truth)` (`game.svelte.ts`), span-scoped,
+  replacing the old whole-file/citeIn gate. `corroborates` now takes a `ForgedCitation`; the
+  teaching/inference split collapses at PLAY time (both just forge spans), the threshold still
+  gates inference (distinct grounding spans counted, de-duped by (item, lowercased text)).
+- **"Any span links, commit judges"** (the note's load-bearing rule) — the link always draws;
+  no validation on forge. A wrong/partial case is staked and the COMMIT rejects it
+  (`E2x — no forged citation carries this word`), which is the teaching signal.
+- **`citeIn` DEMOTED to a build-time winnability guarantee** — `validate-corpus.ts`
+  `checkGroundingCiteable` is unchanged in logic but its role moved (gate → guarantee): it
+  proves at least one reachable grounding exists per teaching slot, keeping the no-Quippy win
+  reachable. Play accepts ANY reachable span carrying the word, not only `citeIn` files.
+- **Selection model = native DOM selection** scoped to a file pane (`FilePane` reads
+  `window.getSelection()` on `selectionchange`, claims it only if anchored in its own body) →
+  `captureSelection` → a per-slot **citation buffer** (`ui.svelte.ts`, a `SvelteMap`) that
+  **persists** on the slot (the note's lean — the player sees the case they built). No
+  per-word tokenization needed; the redaction bar renders `█████`, so a drag across a slot
+  picks up no letters of the hidden word (the honesty rule holds structurally — a propagated
+  value lives behind a bar, never in selectable prose, so it can't be staked).
+- **`groundingClues` REMOVED** (`game.svelte.ts`) — that was the hand-holding surface. The
+  `c`/`cite`/`forge` command + `c` hotkey forge the live selection; `AmberLookup` is rebuilt
+  as the forge panel (typed word + the buffer + the inference meter + commit; no clue list).
+- **Inference NOTE:** the only inference slots today are on the SELF-FILE (excluded from the
+  restoration target, never reached — you STARVE it). So the inference path is structurally
+  present but not exercised by any winnable slot; the per-span check is uniform
+  (`spanContainsWord` against truth) and will be refined when authored inference content lands.
+
+**Entry prose stripped** — `SCP-41B-001`/`002` no longer narrate how to cite ("follow the
+link, find the word, cite it" / "Cite that note and the cover sheet fills itself"). The
+records read as paperwork that merely CONTAINS the grounding word; the method belongs to AMBER
+(`help`), not the record (`design_note_forged_citations.md` §"Companion principle"). The
+grounding words (`Concordance`, `Halloran`) remain in the clear (validator-enforced). Halloran's
+marginalia converted to a `> ` blockquote → renders in the new margin GUTTER.
+
+**Aesthetic.** AMBER repainted in an 80s institutional register (`tokens.css` `--amber-*`
+amber-phosphor palette + a `.crt-scan` scanline): the command line made primary, boxed status
+regions, dossier-style record headers, and **margin notes in an actual gutter** (`bodyBlocks`
+gained a `margin` block kind; `FilePane` renders a two-column document). Quippy untouched —
+still the violet GUI intruder, deliberately un-AMBER.
+
+**Watch items honored:** corruption (Phase 6) NOT built — but the grounding prose is rendered
+from the (immutable) body each frame, so nothing here blocks a future mutable per-run truth-
+facing prose layer. Winnable-regression guard kept in intent, assertions rewritten to forge a
+real span (`real-corpus-winnable.test.ts`, `endgame-integration.test.ts`,
+`citation-gate.test.ts`); new `ui.test.ts` block covers the buffer plumbing.
+
+**Still open (trail Phase 4):** E (arc list / first-batch size), F (exact Quippy-fill render
+distinctness). The forged-citation note's own sub-questions (span granularity = containment,
+chosen; persist the buffer, chosen) are resolved; inference per-span grounding is the one
+deferred to when authored inference content exists.
+
 ### New mechanic spec'd, build deferred — Quippy reference-corruption (user, 2026-06-17)
 User: "Quippy's replacements AREN'T the grounded word — and when the archivist uses Quippy
 to unredact, the references of that text become corrupted and change. Keep it in mind as a

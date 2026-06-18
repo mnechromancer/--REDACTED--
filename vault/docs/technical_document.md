@@ -167,6 +167,21 @@ Stabilization play (reducing exposure via reconstructing coherent reads) can cle
 
 ## 7. UI architecture — AMBER CLI + Quippy overlay  *(rewritten for the re-frame)*
 
+> **⚠ §7 reconciliation pending (v2 reset, Phase 3).** This section was written for the
+> 2026-06-13 re-frame's candidate-picking citation gate and is now **stale in its
+> mechanic specifics** — `conceptClues`, picking-a-candidate, `revealedTruth`, and
+> `mapMutation` are RETIRED. The **AUTHORITATIVE** description of the shipped UI/verb is
+> `planning/amber_build_decisions.md` §"Phase 3" + `design_note_forged_citations.md`, with
+> the code in `src/components/AmberLookup.svelte` / `AmberTerminal.svelte` / `FilePane.svelte`
+> and `src/lib/ui.svelte.ts`. What actually shipped (Phase 3): the player TYPES the word,
+> SELECTS the span where it stands in a reachable record, FORGES a citation, and AMBER judges
+> at COMMIT (`commitWithCitations(ref, word, ForgedCitation[])`); `groundingClues`/clue-
+> surfacing is GONE (the player FINDS the word); `citeIn` is a build-time winnability
+> guarantee, not the play gate; AMBER is the 80s amber-phosphor register with document-as-
+> paperwork + a margin gutter. The component-tree/§7.5 prose below is kept as history; a full
+> §7 rewrite is owed in the dedicated docs pass. Read it for the structural split (AMBER vs
+> Quippy, mode switching, provenance tell), not the citation-gate specifics.
+
 The single windowed desktop is **replaced** by two interface modes the player switches between ([R§1]): **AMBER**, a clinical command-line terminal (the honest, hard tool), and **Quippy**, a refusable GUI overlay (the SCP-X entity, the easy/costly tool). The switch between them is a felt, meaningful act ([R§3]; design doc §5a, the aesthetic clash) — it is content, not chrome.
 
 ### 7.1 Mode model

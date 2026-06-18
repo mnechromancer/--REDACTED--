@@ -12,7 +12,7 @@
     seedReach,
     reachableFiles,
   } from './lib/game.svelte.ts';
-  import { ui, dismissQuippy } from './lib/ui.svelte.ts';
+  import { ui, dismissQuippy, clearAllBuffers } from './lib/ui.svelte.ts';
   import { session, beginSession, resetSession } from './lib/session.svelte.ts';
   import AmberTerminal from './components/AmberTerminal.svelte';
   import QuippyPanel from './components/QuippyPanel.svelte';
@@ -21,6 +21,7 @@
 
   loadCorpus(corpusData as Corpus);
   resetSession(); // fresh run: back to the bootup screen, Quippy not yet met
+  clearAllBuffers(); // fresh run: no forged citations carried over
 
   // v2 reset (decision D): no clearance. The citation graph is the only gate —
   // seed the opening file; reachability opens the rest by following its xrefs.
@@ -93,39 +94,40 @@
 <style>
   :global(body) {
     margin: 0;
-    background: #060708;
-    color: #c8ccd2;
-    font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+    background: #040302;
+    color: var(--amber-fg-dim, #8a6a2c);
+    font-family: var(--amber-font, ui-monospace), "SFMono-Regular", Menlo, monospace;
   }
   main {
-    max-width: 70rem;
+    max-width: 72rem;
     margin: 0 auto;
     padding: 1.2rem 1rem 4rem;
   }
 
-  /* Boot/exposition screen. */
-  main.boot { max-width: 40rem; min-height: 70vh; display: flex; align-items: center; }
+  /* Boot/exposition screen — a cold AMBER POST in the institutional register. */
+  main.boot { max-width: 42rem; min-height: 70vh; display: flex; align-items: center; }
   .boot-frame {
     width: 100%;
-    background: #07090b;
-    border: 1px solid #161b20;
-    border-radius: 4px;
+    background: var(--amber-bg, #0a0805);
+    border: 1px solid var(--amber-edge, #3a2c12);
+    border-left: 2px solid var(--amber-edge-bright, #6a5220);
     padding: 1.5rem 1.6rem;
-    box-shadow: 0 0 0 1px #0c1014, 0 8px 40px rgba(0, 0, 0, 0.5);
+    box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.5), 0 0 0 1px #000, 0 8px 40px rgba(0, 0, 0, 0.6);
   }
   .boot-head {
     font-size: 0.68rem;
-    letter-spacing: 0.12em;
-    color: #4d5a52;
-    border-bottom: 1px solid #161b20;
+    letter-spacing: 0.14em;
+    color: var(--amber-fg, #e8b24d);
+    border-bottom: 1px solid var(--amber-edge, #3a2c12);
     padding-bottom: 0.7rem;
     margin-bottom: 1.1rem;
+    text-transform: uppercase;
   }
   .boot-body { display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 1.5rem; }
   .boot-line {
     margin: 0;
-    line-height: 1.55;
-    color: #aeb6bf;
+    line-height: 1.6;
+    color: var(--amber-fg, #e8b24d);
     font-size: 0.86rem;
     opacity: 0;
     animation: line-in 0.5s ease-out forwards;
@@ -133,19 +135,19 @@
   }
   .boot-begin {
     padding: 0.55rem 1.1rem;
-    background: linear-gradient(#1a1410, #120e0a);
-    color: #d8c08a;
-    border: 1px solid #5a4a22;
-    border-radius: 3px;
+    background: var(--amber-bg-raised, #100b06);
+    color: var(--amber-fg, #e8b24d);
+    border: 1px solid var(--amber-edge-bright, #6a5220);
     font: inherit;
     font-size: 0.85rem;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.1em;
     cursor: pointer;
+    text-transform: uppercase;
     opacity: 0;
     animation: line-in 0.5s ease-out forwards;
     animation-delay: 2.8s;
   }
-  .boot-begin:hover { border-color: #8a7234; color: #f0d89a; }
+  .boot-begin:hover { border-color: var(--amber-fg, #e8b24d); color: #ffd27a; }
   @keyframes line-in {
     0% { opacity: 0; transform: translateY(4px); }
     100% { opacity: 1; transform: translateY(0); }

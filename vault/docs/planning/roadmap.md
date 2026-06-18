@@ -16,6 +16,10 @@
 > - **Phase 3 — aesthetic + the real CLI + the citation verb.** 80s institutional register,
 >   document-as-paperwork rendering w/ margin gutters; the forged-citation interaction
 >   (`design_note_forged_citations.md`); strip how-to-cite scaffolding from entry prose.
+>   ✅ *done (2026-06-17).* The player FORGES citations from selected spans (type the word,
+>   select the span where it stands, forge, commit-judges); `citeIn` demoted to a build-time
+>   winnability guarantee; AMBER no longer surfaces the clue. AMBER repainted in the amber-
+>   phosphor 80s register w/ document-as-paperwork + margin gutter. 133 tests green.
 > - **Phase 4 — content spine.** Renumber/author entries in chronological ≈ difficulty
 >   order; the first-batch arcs (§3.4). E/F (arc list / Quippy-fill distinctness) land here.
 > - **Phase 5 — graph view + deeper citation mechanics.** The wiki-graph (the traffic-jam

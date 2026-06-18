@@ -10,10 +10,13 @@ export type SlotType = 'object' | 'agent' | 'location' | 'outcome';
  * A slot is recoverable in AMBER because the corpus *grounds* its word, by depth:
  *
  *  - **teaching** (direct co-occurrence): the word appears PLAINLY, unredacted, in
- *    the body of another reachable file. The player follows the xref, sees the word,
- *    cites that file; AMBER commits. The bootstrap route — needs no prior solve and
- *    no clearance (clearance is cut, decision D). `citeIn` lists the file ids whose
- *    bodies hold the word in the clear (a build-time invariant checks they actually do).
+ *    the body of another reachable file. The player follows the xref, finds the word,
+ *    and forges a citation from the span where it sits (Phase 3 — the player FINDS it;
+ *    AMBER no longer surfaces where it lives). The bootstrap route — needs no prior
+ *    solve and no clearance (clearance is cut, decision D). `citeIn` lists the file
+ *    ids whose bodies hold the word in the clear — now a BUILD-TIME WINNABILITY
+ *    GUARANTEE (the validator proves a reachable grounding exists), NOT the play gate:
+ *    at play, any reachable span carrying the word grounds it (ForgedCitation).
  *  - **inference** (parallel-context): NO file states the word outright. The player
  *    assembles grounding across carriers until a visible grounding score clears
  *    `threshold` (decision A — the meter is transparent). The Truth mechanic; the
@@ -76,6 +79,23 @@ export interface ScpFile {
 
 /** How an unredaction was made: the honest AMBER route, or the costly Quippy one. */
 export type Via = 'amber' | 'quippy';
+
+/**
+ * A player-forged citation (Phase 3 — design_note_forged_citations.md). The citation
+ * unit under the forged-citation verb: NOT a sanctioned file ref, but a span of prose
+ * the player SELECTED in a reachable record and staked as grounding. `item` is the
+ * file the span was selected in; `text` is the exact selected substring. The link
+ * always draws (it is the player's assertion); AMBER judges at commit time — a forged
+ * citation grounds the word iff its file is reachable AND `text` contains the word
+ * (span-scoped, replacing the old whole-file/citeIn gate). `citeIn` survives only as a
+ * build-time winnability guarantee; play accepts any reachable span carrying the word.
+ */
+export interface ForgedCitation {
+  /** the reachable file the span was selected in */
+  item: string;
+  /** the exact prose the player selected and staked as grounding */
+  text: string;
+}
 
 /** A player-inserted or propagated value sitting over a slot. */
 export interface OverlayEntry {

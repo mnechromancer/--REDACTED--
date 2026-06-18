@@ -1,10 +1,18 @@
 # Re-frame — AMBER / Quippy split, CLI prototype, the no-Quippy ending
 
-**Status:** Direction set by the human (2026-06-13). This is the new north star. It **supersedes** parts of `design_document.md`, `scp_x_bible.md`, `technical_document.md §7/§9`, and `site_41b.md §5` — those docs are not yet rewritten; the two companion handoffs below carry the work of reconciling them.
+> **⚠ SUPERSEDED-IN-PART (2026-06-17): the v2 reset is the current north star.** Read
+> `reset_amber_v2.md` first. The AMBER/Quippy split, the no-Quippy ending, the refusable
+> thesis, and the exposure keystone below all SURVIVE the reset. What the reset REPLACED:
+> the redaction primitive (this doc's candidate-set/mutation model → single-word + forged
+> citation), clearance (cut for pure-graph reachability), and the candidate-picking citation
+> gate (→ the forged-citation verb, built Phase 3). The companion handoffs below are
+> COMPLETED and now live in `planning/archive/`. Kept readable as the prior north star.
 
-**Companion handoffs (read after this):**
-- `planning/handoff_janitor.md` — code-track: every source file flagged with the specific change the re-frame requires.
-- `planning/handoff_docs_reviser.md` — lore/spec-track: every `vault/docs/*` file flagged with what to rewrite.
+**Status:** Direction set by the human (2026-06-13). Was the north star until the 2026-06-17 v2 reset. It **supersedes** parts of `design_document.md`, `scp_x_bible.md`, `technical_document.md §7/§9`, and `site_41b.md §5` — those docs are not yet fully rewritten; the two companion handoffs (now archived) carried the first reconciliation.
+
+**Companion handoffs (archived — `planning/archive/`):**
+- `archive/handoff_janitor.md` — code-track: every source file flagged with the specific change the re-frame requires.
+- `archive/handoff_docs_reviser.md` — lore/spec-track: every `vault/docs/*` file flagged with what to rewrite.
 
 This doc is the *why* and the *target*. The two handoffs are the *what* and *where*. Every flagged change in them ties back to a section here.
 

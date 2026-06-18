@@ -81,7 +81,8 @@
   }
 
   /* 1. Redacted — a solid classified bar. user-select off so the value can't be
-        lifted from the DOM. */
+        lifted from the DOM (and so a forged-citation drag across a slot picks up no
+        letters of the hidden word). */
   .slot.redacted {
     padding: 0;
     margin: 0 0.18em;
@@ -92,7 +93,7 @@
     color: var(--slot-redacted-fg);
     background: var(--slot-redacted-bg);
     border-radius: 1px;
-    box-shadow: inset 0 0 0 1px #000, 0 0 0 1px #2a2f36;
+    box-shadow: inset 0 0 0 1px #000, 0 0 0 1px var(--amber-edge, #2a2f36);
     user-select: none;
     vertical-align: baseline;
   }
