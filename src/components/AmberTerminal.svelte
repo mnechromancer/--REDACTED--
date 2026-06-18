@@ -6,7 +6,7 @@
   // honest tool. Quippy is a distinct overlay summoned over this (Step 5); the
   // switch is always one keystroke (the refusable thesis).
   import type { ScpFile } from '../lib/corpus.ts';
-  import { corpus, boardState } from '../lib/game.svelte.ts';
+  import { corpus, boardState, exposure, breaches, BREACH_THRESHOLD } from '../lib/game.svelte.ts';
   import {
     ui,
     terminal,
@@ -38,6 +38,18 @@
   const activeFile = $derived(ui.activeFile ? corpus[ui.activeFile] : null);
   const progress = $derived(amberProgress());
   const board = $derived(boardState());
+
+  // ── Exposure-driven corruption (user 2026-06-17) ──────────────────────────
+  // Every concession to Quippy ROTS AMBER. Exposure (which rises ONLY from Quippy
+  // reliance) drives a visual-corruption intensity on the AMBER chrome — subtle at
+  // first, overwhelming near breach. Quippy itself stays clean and pleasing: it is
+  // the parasite wrapping AMBER's IO stream, so the rot belongs to AMBER, not to it.
+  // A clean no-Quippy run NEVER corrupts (exposure stays 0). `--corrupt` is a 0..1
+  // intensity the CSS reads; discrete bands gate the heavier effects.
+  const corrupt = $derived(Math.min(1, exposure.value / BREACH_THRESHOLD));
+  const corruptBand = $derived(
+    breaches.size > 0 ? 'breach' : corrupt >= 0.7 ? 'high' : corrupt >= 0.3 ? 'mid' : corrupt > 0 ? 'low' : 'none',
+  );
 
   // Auto-open the first file the first time any become visible, so the terminal is
   // never empty once the board opens.
@@ -152,7 +164,7 @@
 
 <svelte:window onkeydown={onKey} />
 
-<section class="amber crt-scan">
+<section class="amber crt-scan corrupt-{corruptBand}" style="--corrupt: {corrupt}">
   <header class="amber-bar">
     <span class="sys">▌AMBER · ARCHIVE MANAGEMENT &amp; BATCH ENTRY RESOURCE</span>
     <span class="prog">{progress.solved}/{progress.total} RESTORED · {progress.redacted} REDACTED{progress.struck ? ` · ${progress.struck} STRUCK` : ''}</span>
@@ -215,12 +227,83 @@
 
 <style>
   .amber {
+    position: relative;
     font-family: var(--amber-font);
+    /* VT323 runs small/tall — bump the AMBER scale so the whole terminal reads at a
+       comfortable terminal size; rem-based child sizes inherit the larger base. */
+    font-size: 1.15rem;
     color: var(--amber-fg-dim);
     background: var(--amber-bg);
     padding: 0.55rem;
     border: 1px solid var(--amber-edge);
     box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.5), 0 0 0 1px #000;
+  }
+
+  /* ── Exposure-driven corruption ───────────────────────────────────────────
+     The AMBER chrome ROTS as the player leans on Quippy. `--corrupt` (0..1) scales
+     the effect; the corrupt-{band} classes gate the heavier layers. A clean run
+     (exposure 0, corrupt-none) shows NONE of this. Quippy's overlay is outside
+     .amber, so it stays pristine — the rot is AMBER's alone. */
+
+  /* Low+: a faint chromatic bleed on all AMBER text (a phosphor going out of
+     convergence), intensity scaled by --corrupt. */
+  .amber.corrupt-low, .amber.corrupt-mid, .amber.corrupt-high, .amber.corrupt-breach {
+    text-shadow:
+      calc(var(--corrupt, 0) * 1.4px) 0 rgba(232, 90, 120, calc(var(--corrupt, 0) * 0.6)),
+      calc(var(--corrupt, 0) * -1.4px) 0 rgba(90, 170, 232, calc(var(--corrupt, 0) * 0.6));
+  }
+  /* Mid+: the scanline wash thickens and rolls; the whole field flickers faintly. */
+  .amber.corrupt-mid, .amber.corrupt-high, .amber.corrupt-breach {
+    animation: amber-flicker calc(6s - var(--corrupt, 0) * 4s) steps(1) infinite;
+  }
+  .amber.corrupt-mid::before, .amber.corrupt-high::before, .amber.corrupt-breach::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    background: repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(40, 20, 0, calc(var(--corrupt, 0) * 0.5)) 3px
+    );
+    animation: scan-roll calc(8s - var(--corrupt, 0) * 6s) linear infinite;
+  }
+  /* High+: skew/jitter the whole terminal periodically; a harder displacement. */
+  .amber.corrupt-high, .amber.corrupt-breach {
+    animation: amber-flicker calc(6s - var(--corrupt, 0) * 4s) steps(1) infinite,
+               amber-jitter calc(5s - var(--corrupt, 0) * 3s) steps(1) infinite;
+  }
+  /* Breach: the rot is overwhelming — constant chroma split, heavier roll. */
+  .amber.corrupt-breach {
+    text-shadow:
+      2.5px 0 rgba(232, 60, 90, 0.8),
+      -2.5px 0 rgba(60, 150, 232, 0.8),
+      0 0 6px rgba(232, 90, 90, 0.4);
+  }
+
+  @keyframes amber-flicker {
+    0%, 96%, 100% { opacity: 1; }
+    97% { opacity: calc(1 - var(--corrupt, 0) * 0.35); }
+    98% { opacity: 1; }
+    99% { opacity: calc(1 - var(--corrupt, 0) * 0.2); }
+  }
+  @keyframes scan-roll {
+    0% { background-position: 0 0; }
+    100% { background-position: 0 100vh; }
+  }
+  @keyframes amber-jitter {
+    0%, 92%, 100% { transform: translate(0, 0) skewX(0); }
+    93% { transform: translate(calc(var(--corrupt, 0) * 2px), 0) skewX(calc(var(--corrupt, 0) * -0.4deg)); }
+    94% { transform: translate(calc(var(--corrupt, 0) * -2px), 0) skewX(calc(var(--corrupt, 0) * 0.4deg)); }
+    95% { transform: translate(0, 0) skewX(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    /* Keep the static chroma bleed (the legible "this is corrupted" signal) but drop
+       all motion — no flicker, roll, or jitter. */
+    .amber.corrupt-mid, .amber.corrupt-high, .amber.corrupt-breach { animation: none; }
+    .amber.corrupt-mid::before, .amber.corrupt-high::before, .amber.corrupt-breach::before { animation: none; }
   }
   .amber-bar {
     display: flex;

@@ -34,12 +34,32 @@
   // survive. AMBER NEVER names Quippy here (§0.2 — it behaves as if it keeps
   // forgetting Quippy exists; Quippy's arrival is uninvited, §3.3). No tutorial
   // overlay — the verb is learned by doing it on the first record, which narrates it.
-  const bootLines = [
-    'AMBER — Archive Management & Batch Entry Resource. Records annex Site-41B, deep archive. Cold storage. Terminal active.',
-    'Archivist post, low clearance. You hold the cross-reference catalogue. You do not hold the records it indexes — those originals were lost in the Transfer and were never recovered. What survives is the web of references the catalogue threaded between them while they still existed.',
-    'A withheld field reads as a redaction bar. There is no original to fetch it from. AMBER reconstructs a struck word the only way left: by triangulation — the same matter is named, in the clear, on some other record that cross-references this one. Follow the reference, find the word where it still stands, and cite it. AMBER checks the citation and commits. An uncited or unsupported value is refused.',
-    'Most fields cannot be reached yet — the references that would ground them run through records you have not opened. Each word you recover opens the references that depend on it, and the next field becomes reachable. The catalogue is reconstructed one citation at a time, in the order the surviving references allow.',
+  // The bootup reads as a real terminal POST: short diagnostic lines scroll in one
+  // at a time (left-aligned, monospace, a boot LOG — not a centered card), then a
+  // terse operator briefing states the source-less premise. Each line is a {tone}:
+  //   'post'   — system diagnostic ([ OK ]-style), the machine talking to itself
+  //   'brief'  — the operator briefing, AMBER addressing the archivist
+  //   'prompt' — the final hand-over line before BEGIN
+  // Onboarding is kept SHORT (user: "slow introductions are good" — so the lines
+  // reveal slowly, but there are FEWER of them; the verb is learned by doing it on
+  // the first record). AMBER never names Quippy here (§0.2).
+  type BootTone = 'post' | 'warn' | 'brief' | 'prompt';
+  const bootLines: { tone: BootTone; text: string }[] = [
+    { tone: 'post', text: 'AMBER  ARCHIVE MANAGEMENT & BATCH ENTRY RESOURCE   rev 4.1' },
+    { tone: 'post', text: 'SITE-41B DEEP-RECORDS ANNEX · COLD STORAGE · CATALOGUE MAINFRAME' },
+    { tone: 'post', text: '[ OK ]  catalogue index ......... mounted' },
+    { tone: 'post', text: '[ OK ]  cross-reference graph ... threaded' },
+    { tone: 'warn', text: '[WARN]  source records ......... NOT FOUND (lost: Transfer)' },
+    { tone: 'post', text: '[ OK ]  archivist terminal ...... active   clearance LOW' },
+    { tone: 'brief', text: 'Operator. You hold the catalogue, not the records it indexed — those originals were lost in the Transfer and never recovered. What survives is the web of references between them.' },
+    { tone: 'brief', text: 'A struck field has no original to fetch. Reconstruct it by triangulation: the same matter is named, in the clear, on some other record that points here. Find the word, cite where it stands, commit. Uncited values are refused.' },
+    { tone: 'prompt', text: 'Most fields are out of reach until you open what grounds them. Recover one word and the next becomes reachable. Begin your shift.' },
   ];
+
+  // Per-line reveal cadence (seconds). POST lines tick fast (a machine booting);
+  // the briefing breathes (slow introductions). BEGIN appears after the last line.
+  const LINE_DELAY = 0.55;
+  const bootDuration = bootLines.length * LINE_DELAY;
 
   // Visible files = the reachable set (decision D). The old onboarding-unlock gate
   // is retired here: it was circular under the citation graph — 002 only unlocked
@@ -66,15 +86,17 @@
 <svelte:window onkeydown={onWindowKey} />
 
 {#if session.booting}
-  <main class="boot">
-    <div class="boot-frame">
-      <div class="boot-head">AMBER · ARCHIVE MANAGEMENT &amp; BATCH ENTRY RESOURCE</div>
+  <main class="boot crt-scan">
+    <div class="boot-screen">
       <div class="boot-body">
         {#each bootLines as line, i (i)}
-          <p class="boot-line" style="--i: {i}">{line}</p>
+          <p class="boot-line {line.tone}" style="--i: {i}; --d: {LINE_DELAY}s">{line.text}</p>
         {/each}
+        <p class="boot-cursor" style="--i: {bootLines.length}; --d: {LINE_DELAY}s">
+          <span class="caret">█</span>
+        </p>
       </div>
-      <button class="boot-begin" onclick={beginSession}>▶ BEGIN SHIFT</button>
+      <button class="boot-begin" style="--appear: {bootDuration}s" onclick={beginSession}>▶ BEGIN SHIFT</button>
     </div>
   </main>
 {:else}
@@ -104,55 +126,77 @@
     padding: 1.2rem 1rem 4rem;
   }
 
-  /* Boot/exposition screen — a cold AMBER POST in the institutional register. */
-  main.boot { max-width: 42rem; min-height: 70vh; display: flex; align-items: center; }
-  .boot-frame {
+  /* Boot/exposition screen — a left-aligned terminal POST sequence, not a centered
+     card. Lines scroll in one at a time like a machine booting; the briefing follows;
+     BEGIN appears only after. Full-bleed amber console field. */
+  main.boot {
+    max-width: 60rem;
+    min-height: 88vh;
+    margin: 0 auto;
+    padding: 1.4rem 1.2rem;
+    display: flex;
+    font-family: var(--amber-font, ui-monospace), monospace;
+  }
+  .boot-screen {
     width: 100%;
     background: var(--amber-bg, #0a0805);
     border: 1px solid var(--amber-edge, #3a2c12);
     border-left: 2px solid var(--amber-edge-bright, #6a5220);
-    padding: 1.5rem 1.6rem;
-    box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.5), 0 0 0 1px #000, 0 8px 40px rgba(0, 0, 0, 0.6);
+    padding: 1.4rem 1.5rem 1.2rem;
+    box-shadow: inset 0 0 80px rgba(0, 0, 0, 0.55), 0 0 0 1px #000, 0 8px 40px rgba(0, 0, 0, 0.6);
   }
-  .boot-head {
-    font-size: 0.68rem;
-    letter-spacing: 0.14em;
-    color: var(--amber-fg, #e8b24d);
-    border-bottom: 1px solid var(--amber-edge, #3a2c12);
-    padding-bottom: 0.7rem;
-    margin-bottom: 1.1rem;
-    text-transform: uppercase;
-  }
-  .boot-body { display: flex; flex-direction: column; gap: 0.85rem; margin-bottom: 1.5rem; }
+  .boot-body { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.4rem; }
   .boot-line {
     margin: 0;
-    line-height: 1.6;
+    line-height: 1.45;
     color: var(--amber-fg, #e8b24d);
-    font-size: 0.86rem;
+    /* VT323 runs small/tall — bump the boot text so it reads at terminal scale. */
+    font-size: 1.18rem;
+    letter-spacing: 0.01em;
     opacity: 0;
-    animation: line-in 0.5s ease-out forwards;
-    animation-delay: calc(var(--i, 0) * 0.7s);
+    animation: boot-in 0.18s steps(2) forwards; /* a hard, machine-ish reveal */
+    animation-delay: calc(var(--i, 0) * var(--d, 0.55s));
+  }
+  /* POST diagnostic lines read as system output; the briefing is brighter prose. */
+  .boot-line.post { color: var(--amber-fg-dim, #8a6a2c); }
+  .boot-line.warn { color: var(--amber-red, #e85d5d); }
+  .boot-line.brief { color: var(--amber-fg, #e8b24d); margin-top: 0.5rem; line-height: 1.5; }
+  .boot-line.prompt { color: #ffd27a; margin-top: 0.5rem; }
+  .boot-cursor {
+    margin: 0.2rem 0 0;
+    opacity: 0;
+    animation: boot-in 0.18s steps(2) forwards;
+    animation-delay: calc(var(--i, 0) * var(--d, 0.55s));
+  }
+  .boot-cursor .caret {
+    color: var(--amber-fg, #e8b24d);
+    animation: caret-blink 1s steps(1) infinite;
   }
   .boot-begin {
-    padding: 0.55rem 1.1rem;
+    padding: 0.5rem 1.1rem;
     background: var(--amber-bg-raised, #100b06);
     color: var(--amber-fg, #e8b24d);
     border: 1px solid var(--amber-edge-bright, #6a5220);
-    font: inherit;
-    font-size: 0.85rem;
-    letter-spacing: 0.1em;
+    font-family: inherit;
+    font-size: 1.15rem;
+    letter-spacing: 0.08em;
     cursor: pointer;
     text-transform: uppercase;
     opacity: 0;
-    animation: line-in 0.5s ease-out forwards;
-    animation-delay: 2.8s;
+    animation: boot-in 0.3s ease-out forwards;
+    animation-delay: var(--appear, 3s);
   }
-  .boot-begin:hover { border-color: var(--amber-fg, #e8b24d); color: #ffd27a; }
-  @keyframes line-in {
-    0% { opacity: 0; transform: translateY(4px); }
-    100% { opacity: 1; transform: translateY(0); }
+  .boot-begin:hover { border-color: var(--amber-fg, #e8b24d); color: #ffd27a; box-shadow: 0 0 14px var(--amber-glow, rgba(232,178,77,0.16)); }
+  @keyframes boot-in {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @keyframes caret-blink {
+    0%, 49% { opacity: 1; }
+    50%, 100% { opacity: 0; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .boot-line, .boot-begin { opacity: 1; animation: none; }
+    .boot-line, .boot-begin, .boot-cursor { opacity: 1; animation: none; }
+    .boot-cursor .caret { animation: none; }
   }
 </style>

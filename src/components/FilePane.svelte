@@ -158,13 +158,13 @@
     letter-spacing: 0.06em;
   }
 
-  /* The record body: a two-column document — prose in the main column, marginalia in
-     the right gutter, the way the paperwork reads. The grid keeps margin notes in flow
-     order beside the prose rather than inline. */
+  /* The record body: prose in the main column, marginalia running SIDEWAYS up a thin
+     gutter (a note written up the margin of the page, turned 90°). The narrow gutter
+     keeps the note out of the prose flow without a clunky card. */
   .body {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 13rem;
-    column-gap: 1.1rem;
+    grid-template-columns: minmax(0, 1fr) 2.4rem;
+    column-gap: 0.9rem;
     padding: 0.95rem 1.1rem 1.1rem;
     line-height: 1.7;
     color: var(--amber-fg);
@@ -173,6 +173,7 @@
   .col-main { grid-column: 1; }
   .col-gutter { grid-column: 2; }
   @media (max-width: 60rem) {
+    /* On narrow screens, fall back to an inline sidebar note (rotation needs width). */
     .body { grid-template-columns: 1fr; }
     .col-gutter { grid-column: 1; }
   }
@@ -199,27 +200,42 @@
   .body p { margin: 0 0 0.65rem; }
   .body p.object-class { color: var(--amber-fg-dim); font-size: 0.82rem; margin-bottom: 0.9rem; }
 
-  /* Marginalia: a note in the post's hand, pinned in the gutter beside the prose.
-     Reads as a torn slip, not part of the official record. */
+  /* Marginalia: a note in the post's hand, written SIDEWAYS up the margin (turned 90°,
+     reading bottom-to-top). A thin annotation against the gutter edge, not a card. */
   .margin-note {
     align-self: start;
-    margin: 0.1rem 0 0.7rem;
-    padding: 0.45rem 0.55rem;
-    background: var(--amber-bg-sunken);
-    border-left: 2px solid var(--amber-edge-bright);
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    margin: 0.2rem auto 0.7rem;
+    padding: 0.35rem 0.2rem;
+    border-right: 2px solid var(--amber-edge-bright);
     color: var(--amber-fg-dim);
-    font-size: 0.72rem;
-    line-height: 1.5;
+    font-size: 0.7rem;
+    line-height: 1.35;
     font-style: italic;
+    letter-spacing: 0.02em;
+    max-height: 22rem;
+    overflow: hidden;
+    white-space: nowrap;
   }
   .margin-note::before {
-    content: "✎ MARGIN";
-    display: block;
+    content: "✎";
     font-style: normal;
-    font-size: 0.56rem;
-    letter-spacing: 0.12em;
     color: var(--amber-fg-faint);
-    margin-bottom: 0.3rem;
+    margin-bottom: 0.4em;
+  }
+  /* Narrow screens: un-rotate to a readable inline slip (the gutter collapses). */
+  @media (max-width: 60rem) {
+    .margin-note {
+      writing-mode: horizontal-tb;
+      transform: none;
+      white-space: normal;
+      max-height: none;
+      border-right: none;
+      border-left: 2px solid var(--amber-edge-bright);
+      padding: 0.4rem 0.55rem;
+      margin: 0.1rem 0 0.7rem;
+    }
   }
 
   /* Cross-references as bracketed see-also tokens, terminal idiom. Clickable:
