@@ -5,11 +5,29 @@
 #  The body below is the human-readable Foundation page.
 #  build-corpus.ts parses both. Keep them consistent.
 #
+#  ⚠⚠ STALE — PENDING REWRITE (v2 reset, Phases 1–3). This template predates the
+#    v2 reset and still shows the RETIRED schema (clearance / redaction_level /
+#    mutations[]). The LIVE schema is single-word + grounding — see src/lib/corpus.ts
+#    (the authoritative contract) and a real authored pair, vault/entries/SCP-41B-001.md
+#    / 002.md. A full rewrite of this worked example is owed in the dedicated docs pass
+#    (reset §7). Until then, the load-bearing corrections:
+#      • NO `clearance`, NO `redaction_level` — cut (decision D, pure-graph reachability).
+#      • An anchor is `truth` (the single redacted WORD) + `grounding`
+#        ({kind:'teaching', citeIn:[...]} | {kind:'inference', threshold:N}), not mutations[].
+#      • `citeIn` is a BUILD-TIME WINNABILITY GUARANTEE, not the play gate (Phase 3,
+#        forged citations): at play the archivist forges a citation from ANY reachable
+#        span carrying the word. `citeIn` must list file(s) whose body holds the word in
+#        the clear AND that are declared xrefs (validate-corpus.ts enforces both).
+#      • The body must NOT narrate how to cite. The method belongs to AMBER (its `help`),
+#        never the record (design_note_forged_citations.md §"Companion principle"). The
+#        record is in-world paperwork that merely CONTAINS the grounding word.
+#      • A `> ` blockquote line renders as a MARGIN NOTE in the gutter (Phase 3) — use it
+#        for the post's marginalia, not inline.
+#
 #  ⚠ RE-FRAME (planning/reframe_amber_quippy.md §3): files should be LONG,
 #    multi-section, densely cross-referenced dossiers — places to spend time,
-#    not three-sentence stubs. This template now models that scale. The
-#    frontmatter CONTRACT is unchanged; the body GREW. See §"Longer files" below
-#    and planning/handoff_docs_reviser.md → "entry_template.md".
+#    not three-sentence stubs. The body-scale guidance survives; the frontmatter
+#    example below does NOT (see the STALE banner above).
 # ─────────────────────────────────────────────────────────────
 item: "SCP-41B-XXX"             # site-local accession; see entity_roster.md "Designation scheme"
 object_class: "Euclid"          # Safe | Euclid | Keter  (Series-I era; do NOT use ACS)

@@ -15,7 +15,7 @@
 // inference is the only spend — exposure rises on insertion, and there is no
 // separate stability resource. Truth never moves; the player edits only `overlay`.
 
-import type { Corpus, OverlayEntry, Anchor, Via } from './corpus.ts';
+import type { Corpus, OverlayEntry, Anchor, Via, ForgedCitation } from './corpus.ts';
 
 // ── State ──────────────────────────────────────────────────────────────
 // `corpus` is immutable after load; everything else is the mutable board state.
@@ -134,133 +134,81 @@ export function crossMentions(ref: string): string[] {
   return out;
 }
 
-// ── Grounding evidence (the deduction surface — v2 reset §1.3) ─────────
-// For a slot, the citeable evidence the player reads to recover its word, by depth:
-//
-//  - TEACHING: the reachable file(s) where the truth word appears IN THE CLEAR
-//    (grounding.citeIn). Each is a citation the player follows the link to read.
-//  - INFERENCE: the reachable co-carriers of the slot's concept, each contributing
-//    partial grounding once the player has solved it — the parallel context the
-//    grounding score is assembled from.
-
-/** Strip `⟦tokens⟧` and `[[wikilinks]]`, collapse whitespace — body as plain prose. */
-function plainBody(body: string): string {
-  return body
-    .replace(/⟦[^⟧]+⟧/g, ' ')
-    .replace(/\[\[([^\]]+)\]\]/g, '$1')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
+// ── Grounding by span (the forged-citation surface — Phase 3) ──────────
+// Under the forged-citation verb (design_note_forged_citations.md) AMBER no longer
+// SURFACES where a word lives — the player FINDS it by reading, selects the span, and
+// stakes the citation. So there is no clue-enumeration function anymore (the old
+// `groundingClues` was the hand-holding this phase removes). What survives is the
+// containment check the commit adjudicates against.
 
 /**
  * Does `body` hold `word` as plain prose (outside any `⟦anchor⟧` redaction bar)?
- * Mirrors validate-corpus.ts `bodyContainsWord` exactly, so "citeable at build" ==
- * "citeable at play" — the teaching gate accepts precisely what the build verified.
+ * Used by the BUILD-TIME winnability guarantee's runtime mirror; the play gate now
+ * checks the player's SELECTED span (spanContainsWord), not the whole body. Kept so
+ * "citeable at build" stays defined the same way both sides see it.
  */
 export function bodyContainsWord(body: string, word: string): boolean {
   return body.replace(/⟦[^⟧]+⟧/g, ' ').toLowerCase().includes(word.toLowerCase());
 }
 
-/** The sentence in `plain` prose containing `word`, for display as the cited quote. */
-function sentenceWith(plain: string, word: string): string | undefined {
-  const idx = plain.toLowerCase().indexOf(word.toLowerCase());
-  if (idx < 0) return undefined;
-  let start = 0;
-  for (let i = idx; i >= 0; i--) {
-    if ('.?!'.includes(plain[i]) && i < idx) { start = i + 1; break; }
-  }
-  let end = plain.length;
-  for (let i = idx + word.length; i < plain.length; i++) {
-    if ('.?!'.includes(plain[i])) { end = i + 1; break; }
-  }
-  return plain.slice(start, end).trim();
-}
-
-/** One piece of citeable grounding for a slot. */
-export interface GroundingClue {
-  /** the file id the player cites */
-  item: string;
-  /** the sentence in that file holding the word / the co-carrier reading */
-  sentence: string;
-  /** does this citation, alone, support a commit right now? */
-  corroborates: boolean;
-}
-
 /**
- * The grounding clues for a slot: what the player can cite to recover its word.
- * Teaching → the reachable citeIn files holding the word in the clear. Inference →
- * the reachable co-carriers the player has solved (each contributes to the score).
- * Only reachable, currently-corroborating sources are surfaced as "supports"; the
- * UI tints accordingly. This is the new evidentiary surface (was `conceptClues`).
+ * Does the player's SELECTED span carry the word? The forged-citation commit check
+ * (design_note_forged_citations.md §"any span links, commit judges"): a citation
+ * grounds the word iff its span literally contains it (case-insensitive, loose span
+ * fine — the test is containment, not exact-word selection). The redaction bar a slot
+ * renders is `█████`, so a selection dragged across a slot picks up no letters of the
+ * hidden word — a propagated/redacted value can never be selected as grounding, which
+ * is what keeps the gate honest without a special case (§7.5).
  */
-export function groundingClues(ref: string): GroundingClue[] {
-  const anchor = anchorOf(ref);
-  const reached = reachableFiles();
-  const out: GroundingClue[] = [];
-
-  if (anchor.grounding.kind === 'teaching') {
-    for (const target of anchor.grounding.citeIn) {
-      const file = corpus[target];
-      if (!file || !reached.has(target)) continue;
-      const plain = plainBody(file.body);
-      const sentence = sentenceWith(plain, anchor.truth) ?? `(${target} holds the word in the clear)`;
-      out.push({ item: target, sentence, corroborates: bodyContainsWord(file.body, anchor.truth) });
-    }
-    return out;
-  }
-
-  // inference: each solved reachable co-carrier is a contributing citation
-  for (const other of crossMentions(ref)) {
-    const { item, anchorId } = splitRef(other);
-    const file = corpus[item];
-    if (!file) continue;
-    const slot = resolveSlot(other);
-    const solved = slot.state === 'inserted';
-    out.push({
-      item,
-      sentence: solved ? `${item}#${anchorId} solved: 「${slot.text}」` : `${item}#${anchorId} (not yet solved)`,
-      corroborates: solved,
-    });
-  }
-  return out;
+export function spanContainsWord(spanText: string, word: string): boolean {
+  return spanText.toLowerCase().includes(word.toLowerCase());
 }
 
-// ── The citation-cost gate (AMBER's manual unredaction — v2 reset §1.3) ─
+// ── The citation-cost gate (AMBER's manual unredaction — forged citations) ─
 //
 // AMBER's honest verb under the single-word primitive: to commit a slot's word the
-// player CITES where the corpus grounds it. Two depths:
-//   TEACHING  — cite a reachable file that holds the word IN THE CLEAR. One such
-//               citation grounds it; AMBER commits. The bootstrap (no prior solve,
-//               no clearance — clearance is cut, decision D). This is the new
-//               non-circular seed that replaces clearance-reveal.
-//   INFERENCE — no file states the word; cite reachable co-carriers the player has
-//               solved. Each contributes grounding; AMBER commits once the
-//               accumulated grounding meets the slot's threshold (decision A: the
-//               total is returned so the UI can render a ▮▮▯ meter).
-// A good commit calls insert(ref, value, 'amber') (exposure +0); a short/missing one
-// is rejected with no write. This GUARDS insert(); Quippy bypasses it entirely by
+// player FORGES citations and CITES where the corpus grounds it. The player FINDS the
+// grounding (Phase 3 — AMBER no longer surfaces it): they read a reachable record,
+// SELECT the span where the word stands, and stake it. The link always draws; AMBER
+// judges only at commit. A forged citation grounds the word iff its file is reachable
+// AND its selected span literally carries the word (spanContainsWord). Two depths:
+//   TEACHING  — one such span grounds it; AMBER commits. The bootstrap (no prior
+//               solve, no clearance — decision D). citeIn no longer gates play (it is
+//               the build-time winnability guarantee); any reachable span carrying the
+//               word grounds. The non-circular seed that replaced clearance-reveal.
+//   INFERENCE — no single file states the word; the player forges several spans of
+//               partial context. Each distinct grounding span contributes; AMBER
+//               commits once the count meets the slot's threshold (decision A: the
+//               total is returned so the UI can render a ▮▮▯ meter). NOTE: the only
+//               inference slots in the current corpus are on the SELF-FILE, which is
+//               EXCLUDED from the restoration target and never reached (you STARVE it,
+//               you don't solve it). So the inference path is structurally present but
+//               not exercised by any winnable slot today; the per-span check (here, the
+//               same spanContainsWord as teaching) is uniform and will be refined when
+//               authored inference content lands (a later phase), not now.
+// A good commit calls insert(ref, value, 'amber') (exposure +0); a short/wrong one is
+// rejected with no write. This GUARDS insert(); Quippy bypasses it entirely by
 // calling insert(ref, value, 'quippy') directly.
 
 /**
- * Grounding contributed by one inference citation: 1 per reachable co-carrier the
- * player has independently SOLVED (an `inserted` overlay value). A propagated value
- * never grounds — it's the player's own unconfirmed ripple, not evidence. This is
- * the dial surface: per-citation weight could later vary by author intent; for the
- * prototype every solved co-carrier is worth 1 toward the threshold.
+ * Grounding contributed by one valid forged citation: 1 per distinct grounding span.
+ * For inference slots the threshold counts these. The dial surface: per-citation
+ * weight could later vary by author intent; for the prototype each grounding span is
+ * worth 1 toward the threshold.
  */
 export const GROUNDING_PER_CITE = 1;
 
 export type CommitReason =
   | 'wrong-word'      // value is not the slot's truth word (single-word primitive)
-  | 'uncited'         // teaching slot, but no cited file holds the word in the clear
-  | 'insufficient'    // inference slot, but cited grounding is below threshold
-  | 'ungroundable';   // no reachable grounding exists yet (read/solve more, or it's a content gap)
+  | 'uncited'         // no forged citation's span carries the word (teaching)
+  | 'insufficient'    // inference slot, but grounding spans are below threshold
+  | 'ungroundable';   // no reachable grounding exists yet (read more, or a content gap)
 
 export interface CommitResult {
   ok: boolean;
   reason?: CommitReason;
-  /** the citations that actually grounded the word (for AMBER's accept line) */
-  citedBy?: string[];
+  /** the forged citations whose spans actually grounded the word (AMBER's accept line) */
+  citedBy?: ForgedCitation[];
   /** accumulated grounding vs the slot's threshold (decision A — drives the meter) */
   grounded?: number;
   threshold?: number;
@@ -269,36 +217,28 @@ export interface CommitResult {
 }
 
 /**
- * Does `citationRef` ground the truth word at `ref` right now? Depth-aware:
- *  - TEACHING: `citationRef` is a reachable file id in the slot's `citeIn` whose
- *    body holds the word in the clear. (Here the citation is a FILE id, not an
- *    anchor ref — you cite where the word is written out.)
- *  - INFERENCE: `citationRef` is a reachable co-carrier the player has SOLVED.
- * Either way the evidence must be independently known, never something the player's
- * own propagation pushed there — that's what keeps the gate honest (§7.5).
+ * Does a forged `citation` ground the truth word at `ref` right now? The same check
+ * for both depths (the teaching/inference split collapses at PLAY time — the player
+ * just forges spans): the citation's file must be reachable AND its selected span
+ * must literally carry the word. The honesty rule holds structurally — a propagated
+ * or redacted value sits behind a `█████` bar, never in selectable prose, so it can
+ * never be staked as grounding (§7.5). citeIn is NOT consulted here (it is the
+ * build-time winnability guarantee, not the play gate).
  */
-export function corroborates(citationRef: string, ref: string): boolean {
+export function corroborates(citation: ForgedCitation, ref: string): boolean {
   const anchor = anchorOf(ref);
-  const reached = reachableFiles();
-
-  if (anchor.grounding.kind === 'teaching') {
-    if (!anchor.grounding.citeIn.includes(citationRef)) return false; // not a sanctioned source
-    const file = corpus[citationRef];
-    return !!file && reached.has(citationRef) && bodyContainsWord(file.body, anchor.truth);
-  }
-
-  // inference: a solved, reachable co-carrier of the same concept
-  if (citationRef === ref) return false;
-  if (!crossMentions(ref).includes(citationRef)) return false; // must be a reachable co-carrier
-  const o = overlay[citationRef];
-  return o?.source === 'inserted'; // a propagated value never grounds
+  if (!isReachable(citation.item)) return false; // can't cite a record you haven't reached
+  if (citation.item === splitRef(ref).item) return false; // a slot's own file can't ground it
+  return spanContainsWord(citation.text, anchor.truth);
 }
 
 /**
  * True if `ref` has no reachable grounding at all yet — a teaching slot whose
- * citeIn files aren't reachable, or an inference slot with no reachable co-carriers.
- * (A genuinely sourceless slot is a CONTENT error the build should catch, not an
- * engine fallback — clearance-reveal is gone, decision D.)
+ * citeIn files (the authored winnability sources) aren't reachable, or an inference
+ * slot with no reachable co-carriers. The player has nothing to read yet; reject with
+ * 'ungroundable' rather than 'uncited' so the message routes them to open more, not to
+ * forge a span that cannot exist. (A genuinely sourceless slot is a CONTENT error the
+ * build catches, not an engine fallback — clearance-reveal is gone, decision D.)
  */
 export function isUngroundable(ref: string): boolean {
   const anchor = anchorOf(ref);
@@ -311,19 +251,22 @@ export function isUngroundable(ref: string): boolean {
 
 /**
  * AMBER commit. The honest unredaction verb. Under the single-word primitive the
- * only admissible value is the slot's truth word; the player must GROUND it by
- * citation. Accepts → insert(ref, value, 'amber') (exposure +0) and propagate.
+ * only admissible value is the slot's truth word; the player must GROUND it with
+ * forged citations (spans they selected and staked). Accepts → insert(ref, value,
+ * 'amber') (exposure +0) and propagate.
  *
- *  - TEACHING: accept iff ≥1 cited file holds the word in the clear (a reachable
- *    citeIn source). Otherwise 'uncited'.
- *  - INFERENCE: accumulate GROUNDING_PER_CITE over each grounding citation; accept
- *    iff the total meets the slot's threshold. Otherwise 'insufficient' (with the
- *    running total returned for the meter).
+ *  - TEACHING: accept iff ≥1 forged span carries the word (from a reachable file).
+ *    Otherwise 'uncited' (go read and forge a real span).
+ *  - INFERENCE: count the distinct grounding spans; accept iff the total meets the
+ *    slot's threshold. Otherwise 'insufficient' (with the running total for the meter).
+ *
+ * Distinct grounding spans are de-duplicated by (item, lowercased text) so the same
+ * span staked twice can't inflate an inference meter.
  */
 export function commitWithCitations(
   ref: string,
   value: string,
-  citations: string[],
+  citations: ForgedCitation[],
   canPropagateTo?: (item: string) => boolean,
 ): CommitResult {
   const anchor = anchorOf(ref);
@@ -332,10 +275,20 @@ export function commitWithCitations(
 
   if (isUngroundable(ref)) return { ok: false, reason: 'ungroundable' };
 
-  const good = citations.filter((c) => corroborates(c, ref));
+  // Keep only citations whose span actually grounds the word, de-duplicated so a
+  // span staked twice counts once toward an inference threshold.
+  const seen = new Set<string>();
+  const good: ForgedCitation[] = [];
+  for (const c of citations) {
+    if (!corroborates(c, ref)) continue;
+    const key = `${c.item} ${c.text.toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    good.push(c);
+  }
 
   if (anchor.grounding.kind === 'teaching') {
-    if (good.length === 0) return { ok: false, reason: 'uncited' }; // go follow the link
+    if (good.length === 0) return { ok: false, reason: 'uncited' }; // go find and forge the span
     const propagatedTo = insert(ref, value, 'amber', canPropagateTo);
     return { ok: true, citedBy: good, propagatedTo };
   }

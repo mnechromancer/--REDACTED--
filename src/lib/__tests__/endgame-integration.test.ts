@@ -66,14 +66,15 @@ beforeEach(() => {
 });
 
 describe('THE TRUE ENDING via AMBER, end to end', () => {
-  it('teaching cite → commit → loop-broken at exposure 0', () => {
-    // C1 'aaa' is grounded by F2 (its body holds "aaa"); cite F2 and commit.
-    const r1 = commitWithCitations(C1, 'aaa', ['SCP-41B-002']);
+  it('forge a span → commit → loop-broken at exposure 0', () => {
+    // C1 'aaa' is grounded by F2 (its body holds "aaa"); the player reads F2, selects
+    // the span carrying "aaa", forges the citation, and commits.
+    const r1 = commitWithCitations(C1, 'aaa', [{ item: 'SCP-41B-002', text: 'holds aaa and names' }]);
     expect(r1.ok).toBe(true);
     expect(overlay[C1]).toMatchObject({ via: 'amber', source: 'inserted' });
 
-    // C2 'bbb' is grounded by F1 (its body holds "bbb"); cite F1 and commit.
-    const r2 = commitWithCitations(C2, 'bbb', ['SCP-41B-001']);
+    // C2 'bbb' is grounded by F1 (its body holds "bbb"); forge a span from F1 and commit.
+    const r2 = commitWithCitations(C2, 'bbb', [{ item: 'SCP-41B-001', text: 'holds bbb and names' }]);
     expect(r2.ok).toBe(true);
 
     const e = endState();
@@ -84,8 +85,8 @@ describe('THE TRUE ENDING via AMBER, end to end', () => {
     expect(breaches.size).toBe(0);
   });
 
-  it('the wrong word is refused even with a valid cite', () => {
-    const r = commitWithCitations(C1, 'not-aaa', ['SCP-41B-002']);
+  it('the wrong word is refused even with a valid forged span', () => {
+    const r = commitWithCitations(C1, 'not-aaa', [{ item: 'SCP-41B-002', text: 'holds aaa and names' }]);
     expect(r.ok).toBe(false);
     expect(r.reason).toBe('wrong-word');
   });

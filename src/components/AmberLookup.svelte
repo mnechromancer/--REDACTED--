@@ -1,36 +1,44 @@
 <script lang="ts">
-  // AMBER's manual-unredaction tooling — the citation-cost gate as UI, v2 reset.
-  // Single-word primitive: a slot has ONE truth word, recovered by CITING where the
-  // corpus grounds it (not by picking from a candidate set). For the active span:
-  //   1. the grounding clues — for a teaching slot, the reachable file(s) holding
-  //      the word in the clear; for an inference slot, the solved co-carriers — each
-  //      selectable as a CITATION;
-  //   2. a word input (the player types the word they recovered by reading);
-  //   3. a COMMIT action calling commitWithCitations(word, citations).
-  // AMBER adjudicates: a grounded commit prints accept (via=amber, +0 exposure); an
-  // ungrounded/wrong one prints a terse reject and writes nothing. Quippy's one-click
-  // panel bypasses all of it.
+  // AMBER's manual-unredaction tooling — the FORGED-CITATION verb as UI (Phase 3,
+  // design_note_forged_citations.md). AMBER no longer surfaces where the word lives;
+  // the player FINDS it. For the active slot:
+  //   1. type the recovered word (recall);
+  //   2. read a reachable record, SELECT the span where the word stands, and FORGE a
+  //      citation from it — the citation always draws (the player's assertion), staking
+  //      into a per-slot buffer that persists so the case is visible;
+  //   3. COMMIT — AMBER adjudicates only now: a forged span grounds iff its file is
+  //      reachable AND the span literally carries the word. A span lacking it is
+  //      rejected (the teaching signal). Inference slots count distinct grounding spans
+  //      to a visible threshold (decision A).
+  // A grounded commit prints accept (via=amber, +0 exposure); an ungrounded/wrong one
+  // prints a terse reject and writes nothing. Quippy's one-click panel bypasses all of it.
   import {
     anchorOf,
     resolveSlot,
-    groundingClues,
     isUngroundable,
+    corroborates,
     commitWithCitations,
     type CommitReason,
-    type GroundingClue,
   } from '../lib/game.svelte.ts';
-  import { log, spanLabel } from '../lib/ui.svelte.ts';
-  import { ui } from '../lib/ui.svelte.ts';
+  import {
+    ui,
+    log,
+    spanLabel,
+    currentSelection,
+    forgeCitation,
+    citationsFor,
+    removeCitation,
+    clearBuffer,
+  } from '../lib/ui.svelte.ts';
   import { logPropagation } from '../lib/ripples.svelte.ts';
 
-  // Per-span working state: the typed word, and which grounding sources are cited.
+  // Per-span working state: the typed word. The forged citations live in the shared
+  // per-slot buffer (ui.citationsFor) so they persist across span re-selection.
   let word = $state('');
-  let cited = $state<Set<string>>(new Set());
 
   const ref = $derived(ui.activeSpan);
   const anchor = $derived(ref ? anchorOf(ref) : null);
   const slot = $derived(ref ? resolveSlot(ref) : null);
-  const clues = $derived<GroundingClue[]>(ref ? groundingClues(ref) : []);
   const ungroundable = $derived(ref ? isUngroundable(ref) : false);
   const isInference = $derived(anchor?.grounding.kind === 'inference');
   const threshold = $derived(anchor?.grounding.kind === 'inference' ? anchor.grounding.threshold : 0);
@@ -39,54 +47,64 @@
     slot?.state === 'propagated' || slot?.state === 'truth-contradiction',
   );
 
-  // Live grounding count for the inference meter (decision A — transparent).
-  const groundedNow = $derived([...cited].filter((c) => clues.find((cl) => cl.item === c)?.corroborates).length);
+  // The forged citations staked on this slot, and the live pane selection (the raw
+  // material the FORGE button would stake).
+  const buffer = $derived(ref ? citationsFor(ref) : []);
+  const sel = $derived(currentSelection());
 
-  // Reset the working selection whenever the active span changes.
+  // How many staked spans actually carry the word right now — the inference meter and
+  // the commit-readiness hint (decision A: the grounding total is visible). We don't
+  // tell the player WHERE the word is, only how their own staked case scores.
+  const groundedNow = $derived(ref ? buffer.filter((c) => corroborates(c, ref)).length : 0);
+
+  // Reset the typed word whenever the active span changes (the buffer persists per slot).
   let lastRef = $state<string | null>(null);
   $effect(() => {
     if (ref !== lastRef) {
       lastRef = ref;
       word = '';
-      cited = new Set();
     }
   });
 
-  function toggleCite(item: string) {
-    const next = new Set(cited);
-    if (next.has(item)) next.delete(item);
-    else next.add(item);
-    cited = next;
+  function forge() {
+    if (!sel) return;
+    forgeCitation();
   }
 
   // AMBER refuses in error-code register — states the fault, offers no consolation.
   const REASON_LINE: Record<CommitReason, string> = {
     'wrong-word': 'E11 REJECT — value does not match the held word. commit aborted.',
     uncited:
-      'E21 REJECT — no cited record carries this word in the clear. follow a cross-reference and cite it. commit aborted.',
+      'E21 REJECT — no forged citation carries this word. select the span where it stands and forge it. commit aborted.',
     insufficient:
-      'E22 REJECT — grounding below threshold. assemble more corroborating context. commit aborted.',
+      'E22 REJECT — grounding below threshold. forge more corroborating spans. commit aborted.',
     ungroundable:
-      'E30 REJECT — no reachable grounding for this field yet. open the records it cross-references. commit aborted.',
+      'E30 REJECT — no reachable record grounds this field yet. open the records it cross-references. commit aborted.',
   };
 
   function commit() {
     if (!ref || !word.trim()) return;
-    const r = commitWithCitations(ref, word.trim(), [...cited]);
+    const r = commitWithCitations(ref, word.trim(), buffer);
     if (r.ok) {
       const how = isInference
         ? `grounded ${r.grounded}/${r.threshold}`
         : `cited ${r.citedBy?.length ?? 0}`;
       log(`COMMIT OK — ${spanLabel(ref)} := "${word.trim()}" [${how}; via AMBER; exposure +0]`, 'ok');
       if (r.propagatedTo && r.propagatedTo.length) logPropagation(ref, r.propagatedTo);
+      clearBuffer(ref);
       word = '';
-      cited = new Set();
     } else {
       log(REASON_LINE[r.reason ?? 'uncited'], 'reject');
     }
   }
 
-  const canCommit = $derived(!!word.trim() && cited.size > 0);
+  // Commit is offered whenever the player has typed something and staked at least one
+  // citation — the gate judges the rest. (You can stake a wrong case and learn from the
+  // reject; that's the verb.)
+  const canCommit = $derived(!!word.trim() && buffer.length > 0);
+  function truncate(s: string, n = 56): string {
+    return s.length > n ? s.slice(0, n - 1) + '…' : s;
+  }
 </script>
 
 {#if ref && anchor && fillable}
@@ -98,37 +116,49 @@
 
     {#if ungroundable}
       <p class="note orphan">
-        NO REACHABLE GROUNDING. This field cites records you have not opened yet.
-        Follow its cross-references until the word is legible somewhere, then cite it.
+        NO REACHABLE RECORD GROUNDS THIS FIELD. It depends on records you have not opened.
+        Follow its cross-references until the word stands somewhere, then forge a citation.
       </p>
-    {:else if clues.length > 0}
-      <div class="clues">
-        <p class="note">
-          {#if isInference}
-            CORROBORATING CONTEXT. Cite the solved co-references; AMBER commits once
-            grounding reaches threshold.
-          {:else}
-            CO-REFERENCE ON FILE. Cite the record that carries this word in the clear.
-            AMBER adjudicates the citation before commit.
-          {/if}
-        </p>
-        {#if isInference}
-          <p class="meter">GROUNDING {groundedNow}/{threshold} {'▮'.repeat(groundedNow)}{'▯'.repeat(Math.max(0, threshold - groundedNow))}</p>
-        {/if}
-        <ul>
-          {#each clues as c (c.item)}
-            <li class="clue" class:cited={cited.has(c.item)} class:supports={cited.has(c.item) && c.corroborates}>
-              <button type="button" class="cite-btn" onclick={() => toggleCite(c.item)}>
-                <span class="box">{cited.has(c.item) ? '☑' : '☐'}</span>
-                <span class="src">{c.item}</span>
-                <span class="quote">{c.sentence}</span>
-              </button>
-            </li>
-          {/each}
-        </ul>
-      </div>
     {:else}
-      <p class="note">NO LEGIBLE CO-REFERENCE YET. Read the records this one links to.</p>
+      <p class="note">
+        {#if isInference}
+          ASSEMBLE GROUNDING. No single record states this word. Forge spans of corroborating
+          context from the records you have read; AMBER commits once grounding reaches threshold.
+        {:else}
+          FORGE A CITATION. Find the word where it stands in another record, select that span,
+          and forge it onto this field. AMBER judges the citation at commit.
+        {/if}
+      </p>
+    {/if}
+
+    {#if isInference}
+      <p class="meter">GROUNDING {groundedNow}/{threshold} {'▮'.repeat(groundedNow)}{'▯'.repeat(Math.max(0, threshold - groundedNow))}</p>
+    {/if}
+
+    <!-- The forge affordance: stake the live pane selection onto this slot. -->
+    <div class="forge">
+      <button type="button" class="forge-btn" disabled={!sel} onclick={forge}>
+        ＋ FORGE CITATION{sel ? ` ◂ ${sel.item}` : ''}
+      </button>
+      {#if sel}
+        <span class="sel-preview" title={sel.text}>「{truncate(sel.text)}」</span>
+      {:else}
+        <span class="sel-hint">select prose in a record to stake it</span>
+      {/if}
+    </div>
+
+    <!-- The evidence file: the spans the player has forged for this slot. -->
+    {#if buffer.length > 0}
+      <ul class="buffer">
+        {#each buffer as c, i (c.item + c.text + i)}
+          <li class="cit" class:supports={corroborates(c, ref)}>
+            <span class="box">{corroborates(c, ref) ? '▣' : '▢'}</span>
+            <span class="src">{c.item}</span>
+            <span class="quote">「{truncate(c.text)}」</span>
+            <button type="button" class="drop" title="remove" onclick={() => removeCitation(ref, i)}>✕</button>
+          </li>
+        {/each}
+      </ul>
     {/if}
 
     <div class="entry">
@@ -146,7 +176,7 @@
     </div>
 
     <button type="button" class="commit" disabled={!canCommit} onclick={commit}>
-      ▶ COMMIT{word.trim() ? ` "${word.trim()}"` : ''} · {cited.size} citation{cited.size === 1 ? '' : 's'}
+      ▶ COMMIT{word.trim() ? ` "${word.trim()}"` : ''} · {buffer.length} citation{buffer.length === 1 ? '' : 's'}
     </button>
   </div>
 {:else if ref && slot}
@@ -162,13 +192,13 @@
 
 <style>
   .lookup {
-    background: #080a0c;
-    border: 1px solid #1a1f24;
-    border-top: 2px solid #2a3138;
+    background: var(--amber-bg-raised, #100b06);
+    border: 1px solid var(--amber-edge, #3a2c12);
+    border-top: 2px solid var(--amber-edge-bright, #6a5220);
     padding: 0.6rem 0.75rem 0.7rem;
-    font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+    font-family: var(--amber-font, ui-monospace), monospace;
     font-size: 0.76rem;
-    color: #b9c0c8;
+    color: var(--amber-fg-dim, #8a6a2c);
   }
   .lk-head {
     display: flex;
@@ -176,49 +206,68 @@
     gap: 0.6rem;
     margin-bottom: 0.5rem;
     padding-bottom: 0.4rem;
-    border-bottom: 1px solid #161b20;
+    border-bottom: 1px solid var(--amber-edge, #3a2c12);
   }
   .lbl {
-    color: #5b6770;
+    color: var(--amber-fg-faint, #5a4720);
     text-transform: uppercase;
     letter-spacing: 0.1em;
     font-size: 0.62rem;
   }
-  .target { color: var(--slot-inserted-fg, #e8a33d); letter-spacing: 0.04em; }
-  .note { margin: 0 0 0.55rem; color: #6b7480; line-height: 1.45; font-size: 0.72rem; }
-  .note.orphan { color: #8a7f5a; }
-  .meter { margin: 0 0 0.5rem; color: var(--slot-revealed-fg, #8ad0a0); letter-spacing: 0.1em; font-size: 0.72rem; }
+  .target { color: var(--amber-fg, #e8b24d); letter-spacing: 0.04em; }
+  .note { margin: 0 0 0.55rem; color: var(--amber-fg-dim, #8a6a2c); line-height: 1.45; font-size: 0.72rem; }
+  .note.orphan { color: #b0925a; }
+  .meter { margin: 0 0 0.5rem; color: var(--amber-green, #8ad0a0); letter-spacing: 0.1em; font-size: 0.72rem; }
 
-  .clues ul { list-style: none; margin: 0 0 0.6rem; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
-  .cite-btn {
+  /* The forge affordance — stake the live selection. */
+  .forge { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
+  .forge-btn {
+    flex: 0 0 auto;
+    background: linear-gradient(#16140c, #100e08);
+    color: #d8c08a;
+    border: 1px solid #5a4a22;
+    border-radius: 2px;
+    padding: 0.3rem 0.55rem;
+    font: inherit;
+    font-size: 0.72rem;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+  }
+  .forge-btn:hover:not(:disabled) { border-color: #8a7234; color: #f0d89a; }
+  .forge-btn:disabled { color: #4f5a52; border-color: #1c2620; cursor: default; }
+  .sel-preview { color: #9aa9b6; font-style: italic; font-size: 0.7rem; overflow-wrap: anywhere; }
+  .sel-hint { color: #4d5560; font-size: 0.68rem; }
+
+  /* The evidence file — the forged citations staked on this slot. */
+  .buffer { list-style: none; margin: 0 0 0.6rem; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
+  .cit {
     display: flex;
     align-items: baseline;
     gap: 0.45rem;
-    width: 100%;
-    text-align: left;
-    background: #0c0f12;
-    border: 1px solid #1c2228;
+    background: var(--amber-bg-sunken, #060402);
+    border: 1px solid var(--amber-edge, #3a2c12);
     border-radius: 2px;
     padding: 0.3rem 0.45rem;
-    color: inherit;
-    font: inherit;
-    font-size: 0.72rem;
-    cursor: pointer;
+    font-size: 0.7rem;
   }
-  .cite-btn:hover { border-color: #33414c; }
-  .clue.cited .cite-btn { border-color: #4a5160; background: #11161b; }
-  .clue.supports .cite-btn { border-color: var(--slot-revealed-fg, #8ad0a0); }
-  .box { flex: 0 0 auto; color: #7f8a94; }
-  .clue.supports .box { color: var(--slot-revealed-fg, #8ad0a0); }
-  .src {
+  .cit.supports { border-color: var(--amber-green, #8ad0a0); }
+  .cit .box { flex: 0 0 auto; color: var(--amber-fg-dim, #8a6a2c); }
+  .cit.supports .box { color: var(--amber-green, #8ad0a0); }
+  .cit .src {
     flex: 0 0 auto;
-    color: #5e7a90;
+    color: var(--amber-fg, #e8b24d);
     font-size: 0.62rem;
-    border: 1px solid #294056;
+    border: 1px solid var(--amber-edge-bright, #6a5220);
     border-radius: 2px;
     padding: 0 0.3ch;
   }
-  .quote { color: #9aa9b6; font-style: italic; overflow-wrap: anywhere; }
+  .cit .quote { flex: 1 1 auto; color: var(--amber-fg-dim, #8a6a2c); font-style: italic; overflow-wrap: anywhere; }
+  .cit .drop {
+    flex: 0 0 auto;
+    background: none; border: none; color: #6b5050; cursor: pointer;
+    font: inherit; font-size: 0.7rem; padding: 0;
+  }
+  .cit .drop:hover { color: var(--slot-contradiction-fg, #e85d5d); }
 
   .entry { margin-bottom: 0.6rem; display: flex; flex-direction: column; gap: 0.3rem; }
   .entry input {

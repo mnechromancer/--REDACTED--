@@ -130,12 +130,18 @@ export function bodyContainsWord(body: string, word: string): boolean {
 }
 
 /**
- * The v2 grounding invariant (replaces the old mutation-set-alignment check). For a
- * **teaching** slot, every file it says to cite (`grounding.citeIn`) must (a) exist
- * and (b) actually hold the slot's truth word as plain text — so "the word is really
- * citeable there" is a build error, not a runtime surprise (handoff_reset_build.md §3.3).
- * We also require each cited file to be a declared xref of the carrying file: the
- * teaching verb is "follow the link, find the word, cite it," so the link must exist.
+ * The grounding winnability guarantee. For a **teaching** slot, every file it says to
+ * cite (`grounding.citeIn`) must (a) exist and (b) actually hold the slot's truth word
+ * as plain text — so "the word is really citeable there" is a build error, not a
+ * runtime surprise. Each cited file must also be a declared xref of the carrying file,
+ * so the followable link the player traverses to find the word actually exists.
+ *
+ * Under the forged-citation verb (Phase 3 — design_note_forged_citations.md) `citeIn`
+ * is NO LONGER the play-time gate: at play, AMBER accepts ANY forged span from a
+ * reachable file that carries the word. `citeIn`'s job is now this BUILD-TIME
+ * WINNABILITY GUARANTEE — it proves at least one reachable grounding exists for every
+ * teaching slot, which is what keeps the no-Quippy win reachable. The check is
+ * unchanged; only its role moved (gate → guarantee).
  *
  * **inference** slots ground by parallel context, not literal co-occurrence; they
  * carry no citeIn and are not checked here (their threshold is validated for shape at

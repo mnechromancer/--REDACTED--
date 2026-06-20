@@ -1,8 +1,14 @@
 # Design note — player-forged citations (the "find it yourself" upgrade)
 
-**Status:** design decision, captured 2026-06-17 from the Phase-1 playtest. Targets the
-Phase-2/3 CLI rebuild (`AmberLookup` / `AmberTerminal`). Not yet built. Supersedes the
-Phase-1 stopgap where AMBER *surfaces* the grounding clue.
+**Status:** ✅ **BUILT in Phase 3 (2026-06-17)** — see `amber_build_decisions.md`
+§"Phase 3". This note's decisions were implemented as written: citation unit =
+`(file, span-text)` (`ForgedCitation`), `spanContainsWord` commit check, "any span links,
+commit judges", `citeIn` demoted to a build-time winnability guarantee, the per-slot buffer
+persists, native DOM selection scoped to a `FilePane`. The Phase-1 stopgap (AMBER *surfaces*
+the clue, `groundingClues`) is removed. The open sub-questions below are resolved except
+inference per-span grounding, deferred until authored inference content exists.
+
+*(Original note, captured 2026-06-17 from the Phase-1 playtest, retained below as the spec.)*
 
 ## The problem this fixes
 In the Phase-1 `AmberLookup`, AMBER hands the player the grounding: for a teaching slot

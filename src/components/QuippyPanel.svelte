@@ -122,8 +122,12 @@
 {/if}
 
 <style>
-  /* Quippy's register is deliberately NOT AMBER's: a soft sans-serif GUI overlay,
-     warm violet, sitting over the cold terminal. The contrast is the content. */
+  /* Quippy's register is deliberately NOT AMBER's, and the contrast is now SHARPER:
+     where AMBER is a rough VT323 phosphor terminal that ROTS with exposure, Quippy is
+     CRISP and pleasing — a clean modern GUI, anti-aliased, smooth, untouched by the
+     corruption. It is the parasite WRAPPING AMBER and rewriting its IO stream: it
+     blurs the terminal behind it and presents a frictionless surface. The nicer it
+     looks next to the decaying terminal, the sharper the bargain reads. */
   .quippy-overlay {
     position: fixed;
     inset: 0;
@@ -132,22 +136,30 @@
     align-items: flex-start;
     justify-content: center;
     padding: 3rem 1rem;
-    background: rgba(8, 4, 14, 0.4);
-    backdrop-filter: blur(1px);
+    background: rgba(8, 4, 14, 0.5);
+    /* a stronger, cleaner blur — Quippy visibly intercepts/obscures AMBER's stream. */
+    backdrop-filter: blur(3px) saturate(1.1);
     animation: q-in 0.18s ease-out;
   }
-  .quippy-overlay.post-breach { background: rgba(10, 2, 6, 0.6); }
-  @keyframes q-in { 0% { opacity: 0; } 100% { opacity: 1; } }
+  .quippy-overlay.post-breach { background: rgba(10, 2, 6, 0.65); }
+  @keyframes q-in { 0% { opacity: 0; transform: scale(0.99); } 100% { opacity: 1; transform: scale(1); } }
 
   .quippy-card {
     width: min(34rem, 92vw);
-    background: linear-gradient(#181225, #100b18);
-    border: 1px solid #3a2c54;
-    border-radius: 10px;
-    padding: 1rem 1.2rem 1.1rem;
-    box-shadow: 0 14px 55px rgba(90, 50, 150, 0.25);
-    color: #d8cce8;
-    font-family: ui-sans-serif, system-ui, sans-serif;
+    background: linear-gradient(#1c1530, #120c1e);
+    border: 1px solid #4a3568;
+    border-radius: 12px;
+    padding: 1.05rem 1.25rem 1.15rem;
+    /* a crisp, designed drop shadow + inner highlight — polished, unlike AMBER's
+       boxed institutional chrome. */
+    box-shadow:
+      0 18px 60px rgba(90, 50, 150, 0.35),
+      inset 0 1px 0 rgba(200, 160, 255, 0.12);
+    color: #e4d8f4;
+    font-family: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: 0.005em;
   }
   /* The card curdles as the band rises: warmer/brighter early, colder/redder late. */
   .quippy-card.mid { border-color: #4a3568; }

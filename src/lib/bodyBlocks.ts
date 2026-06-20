@@ -20,12 +20,25 @@ export type Block =
   | { kind: 'h1'; runs: InlineRun[] }
   | { kind: 'h2'; runs: InlineRun[] }
   | { kind: 'object-class'; runs: InlineRun[] }
+  | { kind: 'margin'; runs: InlineRun[] } // a `> ` blockquote — a margin note (gutter)
   | { kind: 'para'; inlines: Inline[] };
 
 function isHeaderLine(line: string): Block | null {
   if (line.startsWith('## ')) return { kind: 'h2', runs: inlineRuns(line.slice(3)) };
   if (line.startsWith('# ')) return { kind: 'h1', runs: inlineRuns(line.slice(2)) };
   if (/^\*\*Object Class:\*\*/.test(line)) return { kind: 'object-class', runs: inlineRuns(line) };
+  return null;
+}
+
+/**
+ * A `> ` blockquote line is a MARGIN NOTE (Phase 3 — reset_amber_v2.md §2.2): the
+ * post's marginalia render in an actual gutter, not inline. Handled before plain prose
+ * so the marker is consumed. Slots/wikilinks inside a margin note are not supported
+ * (marginalia are commentary, not redacted record fields); the line is styled text.
+ */
+function isMarginLine(line: string): Block | null {
+  if (line.startsWith('> ')) return { kind: 'margin', runs: inlineRuns(line.slice(2)) };
+  if (line === '>') return { kind: 'margin', runs: [] };
   return null;
 }
 
@@ -78,6 +91,18 @@ export function bodyBlocks(segments: BodySegment[]): Block[] {
       if (header) {
         flush();
         blocks.push(header);
+        continue;
+      }
+      const margin = isMarginLine(trimmed);
+      if (margin) {
+        flush();
+        // Merge a run of consecutive `>` lines into one margin note (one gutter card).
+        const last = blocks[blocks.length - 1];
+        if (last && last.kind === 'margin' && margin.kind === 'margin') {
+          last.runs.push({ text: ' ', bold: false }, ...margin.runs);
+        } else {
+          blocks.push(margin);
+        }
         continue;
       }
       para.push({ kind: 'runs', runs: inlineRuns(line.trim()) });

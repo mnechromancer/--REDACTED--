@@ -6,7 +6,9 @@
 // in-flight AMBER citation commit — none of it touches truth/overlay (that is
 // game.svelte.ts); it only decides what the terminal shows and where the cursor is.
 
+import { SvelteMap } from 'svelte/reactivity';
 import { corpus, allRefs, splitRef, makeRef, resolveSlot, anchorOf, seedReachable } from './game.svelte.ts';
+import type { ForgedCitation } from './corpus.ts';
 import { session } from './session.svelte.ts';
 
 export type InterfaceMode = 'amber' | 'quippy';
@@ -57,6 +59,88 @@ export function log(text: string, tone: LogTone = 'system'): void {
 
 export function clearLog(): void {
   terminal.lines = [];
+}
+
+// ── Selection + the forged-citation buffer (Phase 3) ───────────────────────
+// The forged-citation verb (design_note_forged_citations.md): the player reads a
+// reachable record, SELECTS the span where the recovered word stands, and forges a
+// citation from it onto the slot they're solving. AMBER never surfaces where the word
+// lives — the player finds it. `selection` is the live pane selection (the raw
+// material); `forgeCitation` snapshots it into the active slot's buffer; the buffer
+// persists on the slot so the player can see the case they've built before committing.
+
+/**
+ * The current text selection inside a reachable file pane: the file it was selected in
+ * and the exact selected text (`item: ''` ⇒ nothing selected). FilePane writes this on
+ * selectionchange; `forgeCitation` reads it. The link "always draws" — we never judge
+ * here; the span is staked as-is and the COMMIT adjudicates (the note's
+ * "any span links, commit judges" rule).
+ */
+export const selection = $state<{ item: string; text: string }>({ item: '', text: '' });
+
+/** Record a pane selection (or clear it when the selected text is empty). */
+export function captureSelection(item: string, text: string): void {
+  const t = text.trim();
+  selection.item = t ? item : '';
+  selection.text = t;
+}
+
+/** A normalized read of the live selection, or null when nothing is selected. */
+export function currentSelection(): ForgedCitation | null {
+  if (!selection.item || !selection.text.trim()) return null;
+  return { item: selection.item, text: selection.text.trim() };
+}
+
+/**
+ * Per-slot forged-citation buffer: anchor_ref → the spans the player has staked for
+ * that slot. Persists across re-selection so the evidence file the player builds is
+ * visible (the note lean: persist, don't make it per-commit ephemeral). A SvelteMap so
+ * reads in the panel react to add/remove.
+ */
+const citationBuffers = new SvelteMap<string, ForgedCitation[]>();
+
+/** The forged citations currently staked on `ref` (empty array if none). */
+export function citationsFor(ref: string): ForgedCitation[] {
+  return citationBuffers.get(ref) ?? [];
+}
+
+/**
+ * Forge the current pane selection onto the active slot's buffer. No-op if there is no
+ * selection or no active slot. De-dupes an identical (item, text) span so staking the
+ * same selection twice doesn't pile up. Returns the forged citation, or null.
+ */
+export function forgeCitation(): ForgedCitation | null {
+  const ref = ui.activeSpan;
+  const sel = currentSelection();
+  if (!ref || !sel) return null;
+  const buf = citationBuffers.get(ref) ?? [];
+  const dup = buf.some((c) => c.item === sel.item && c.text.toLowerCase() === sel.text.toLowerCase());
+  if (!dup) {
+    citationBuffers.set(ref, [...buf, sel]);
+    log(`forged citation — ${ref} ◂ ${sel.item}: 「${truncate(sel.text)}」`, 'echo');
+  }
+  return sel;
+}
+
+/** Remove the citation at `index` from `ref`'s buffer. */
+export function removeCitation(ref: string, index: number): void {
+  const buf = citationBuffers.get(ref);
+  if (!buf) return;
+  citationBuffers.set(ref, buf.filter((_, i) => i !== index));
+}
+
+/** Drop every forged citation on `ref` (e.g. after a successful commit). */
+export function clearBuffer(ref: string): void {
+  citationBuffers.delete(ref);
+}
+
+/** Drop every slot's forged citations — a fresh run. */
+export function clearAllBuffers(): void {
+  citationBuffers.clear();
+}
+
+function truncate(s: string, n = 48): string {
+  return s.length > n ? s.slice(0, n - 1) + '…' : s;
 }
 
 // ── Mode switching (the refusable thesis) ──────────────────────────────────

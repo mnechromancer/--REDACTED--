@@ -1,3 +1,15 @@
+/* AMBER's terminal face — VT323 (VT220/DEC-console register, OFL; self-hosted in
+ * public/fonts). A CRT serial-terminal bitmap-derived face: tall thin glyphs that
+ * glow well against the amber phosphor. `display:swap` so boot text paints
+ * immediately in the mono fallback, then upgrades. The license ships beside it. */
+@font-face {
+  font-family: "VT323";
+  src: url("/fonts/VT323-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* Four-state slot grammar (design_document.md §5.8, technical_document.md §7).
  * SlotSpan switches its appearance by `state` using these tokens. Only the
  * redacted and inserted states are reachable before propagation (C6) and
@@ -5,9 +17,10 @@
  * so the grammar is complete and SlotSpan needs no later restyle. */
 
 :root {
-  /* 1. Redacted — untouched, unrevealed. Solid bar. */
-  --slot-redacted-bg: #1a1a1a;
-  --slot-redacted-fg: #1a1a1a;
+  /* 1. Redacted — untouched, unrevealed. A word painted over with ink (warm near-
+     black to sit in the amber field, not a cold grey GUI chip). */
+  --slot-redacted-bg: #17120a;
+  --slot-redacted-fg: #17120a;
 
   /* 2. Player-inserted — a guess the player wrote here. Amber. */
   --slot-inserted-fg: #e8a33d;
@@ -31,6 +44,48 @@
    * honest). This is the fifth visual distinction, rendered as a modifier rather
    * than a sixth state so the four-state ladder is untouched. */
   --slot-via-quippy-tell: #9d6bd6;
+
+  /* ── AMBER's 80s institutional register (Phase 3, reset_amber_v2.md §2.1) ──
+   * Deluxe Paint + institutional-80s / VMware-console: a cold amber-phosphor
+   * console on near-black, limited palette, boxed status regions, a real command
+   * line. These tokens centralize the chrome so the AMBER components share one
+   * register. Quippy is deliberately OUTSIDE this palette — a warm violet GUI
+   * intruder (QuippyPanel) that must not look like AMBER. */
+  --amber-bg: #0a0805;          /* the console field — warm near-black */
+  --amber-bg-raised: #100b06;   /* boxed regions sit a shade up */
+  --amber-bg-sunken: #060402;   /* the log / inputs sit a shade down */
+  --amber-fg: #e8b24d;          /* primary amber-phosphor text */
+  --amber-fg-dim: #8a6a2c;      /* secondary / labels */
+  --amber-fg-faint: #5a4720;    /* tertiary / hints, rules */
+  --amber-edge: #3a2c12;        /* boxed-region borders */
+  --amber-edge-bright: #6a5220; /* active/hover edges */
+  --amber-green: #8ad0a0;       /* AMBER's "OK/commit" green (shared w/ slot-revealed) */
+  --amber-red: #e85d5d;         /* AMBER's "reject" red (shared w/ contradiction) */
+  --amber-glow: rgba(232, 178, 77, 0.16); /* phosphor bloom on active chrome */
+  /* The AMBER terminal face: VT323 (a CRT serial-terminal register) over a mono
+   * fallback. VT323 runs small and tall, so AMBER chrome bumps font-size to suit. */
+  --amber-font: "VT323", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+
+/* A faint CRT scanline wash for the AMBER console field — additive, motion-free,
+ * dropped under reduced-motion-agnostic since it doesn't move. Applied to the
+ * outermost AMBER container so the whole register reads as a phosphor screen. */
+.crt-scan {
+  position: relative;
+}
+.crt-scan::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.22) 3px
+  );
+  mix-blend-mode: multiply;
+  z-index: 1;
 }
 
 /* Propagated slots carry a subtle glitch flicker so a cross-file mutation reads

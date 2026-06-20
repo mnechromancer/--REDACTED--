@@ -7,7 +7,7 @@
 //  1. Grounding soundness: every non-self TEACHING slot's word actually appears in the
 //     clear in each file it says to cite, and those files are reachable from the seed.
 //     (The build enforces this too; here it's the runtime mirror.)
-//  2. End-to-end solve: drive the real corpus through teaching-cite → commit for every
+//  2. End-to-end solve: drive the real corpus through forge-span → commit for every
 //     non-self slot and assert the true ending.
 
 import { describe, it, expect, beforeEach } from 'vitest';
@@ -25,9 +25,15 @@ import {
   anchorOf,
   commitWithCitations,
   crossMentions,
+  splitRef,
   endState,
 } from '../game.svelte.ts';
-import type { Corpus } from '../corpus.ts';
+import type { Corpus, ForgedCitation } from '../corpus.ts';
+
+/** Strip markup so a "selected span" is plain prose, the way the UI hands one over. */
+function plain(body: string): string {
+  return body.replace(/⟦[^⟧]+⟧/g, ' ').replace(/\[\[([^\]]+)\]\]/g, '$1');
+}
 import corpusData from '../../../static/corpus.json';
 
 const REAL = corpusData as unknown as Corpus;
@@ -63,16 +69,17 @@ describe('the real authored corpus is soundly grounded for the citation gate', (
 });
 
 describe('the real authored pair solves to the true ending via AMBER alone', () => {
-  it('teaching-cite → commit every non-self slot → loop-broken at exposure 0', () => {
+  it('forge a real span → commit every non-self slot → loop-broken at exposure 0', () => {
     const targets: string[] = [];
     for (const file of Object.values(corpus)) {
       if (file.entity_self) continue;
       for (const a of file.anchors) targets.push(makeRef(file.item, a.id));
     }
 
-    // Iterate to a fixed point: teaching slots are immediately committable (their
-    // grounding is a reachable file's plain text); inference slots become committable
-    // as their co-carriers get solved. Repeated passes let the chain bootstrap.
+    // Iterate to a fixed point: teaching slots are immediately committable (their word
+    // stands in the clear in a reachable file's prose, so a span carrying it can be
+    // forged); inference slots become committable as their co-carriers get solved.
+    // Repeated passes let the chain bootstrap.
     let progressed = true;
     let guard = 0;
     while (progressed && guard++ < 20) {
@@ -82,9 +89,16 @@ describe('the real authored pair solves to the true ending via AMBER alone', () 
         const truth = anchorOf(ref).truth;
         if (o && o.value === truth) continue; // already solved
         const anchor = anchorOf(ref);
-        // teaching → cite the citeIn files; inference → cite the solved co-carriers.
-        const citations =
-          anchor.grounding.kind === 'teaching' ? anchor.grounding.citeIn : crossMentions(ref);
+        // Forge a citation from each grounding source: teaching → the citeIn files;
+        // inference → the solved co-carriers' files. The "selected span" is that file's
+        // plain prose — it grounds only if the word truly stands in it (commit judges).
+        const sources =
+          anchor.grounding.kind === 'teaching'
+            ? anchor.grounding.citeIn
+            : crossMentions(ref).map((r) => splitRef(r).item);
+        const citations: ForgedCitation[] = sources
+          .filter((item) => corpus[item])
+          .map((item) => ({ item, text: plain(corpus[item].body) }));
         const r = commitWithCitations(ref, truth, citations);
         if (r.ok) progressed = true;
       }

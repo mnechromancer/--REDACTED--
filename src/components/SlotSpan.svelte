@@ -80,21 +80,34 @@
     outline-offset: 1px;
   }
 
-  /* 1. Redacted — a solid classified bar. user-select off so the value can't be
-        lifted from the DOM. */
+  /* 1. Redacted — a word "painted over" with ink, the old-record look. It must NOT
+        warp line spacing: the bar is sized to the LINE BOX (1em tall, no border ring,
+        no extra vertical padding) so a redacted line is the same height as a clear one.
+        A flat ink fill with a faint paint texture; sits on the baseline like a word.
+        user-select off so the value can't be lifted from the DOM (and a forged-citation
+        drag across it picks up no letters of the hidden word). */
   .slot.redacted {
     padding: 0;
-    margin: 0 0.18em;
+    margin: 0 0.1em;
   }
   .slot.redacted .bar {
     display: inline-block;
-    width: calc(var(--ch, 6) * 0.62ch);
-    color: var(--slot-redacted-fg);
-    background: var(--slot-redacted-bg);
-    border-radius: 1px;
-    box-shadow: inset 0 0 0 1px #000, 0 0 0 1px #2a2f36;
+    width: calc(var(--ch, 6) * 0.58ch);
+    height: 1em;
+    line-height: 1em;
+    vertical-align: text-bottom;
+    color: transparent;
+    /* painted ink: a near-black wash with a subtle horizontal brush texture, so it
+       reads as redaction APPLIED to the page, not a GUI chip. */
+    background-color: var(--slot-redacted-bg, #161310);
+    background-image: repeating-linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.55) 0,
+      rgba(0, 0, 0, 0.15) 2px,
+      rgba(0, 0, 0, 0.55) 4px
+    );
+    border-radius: 0;
     user-select: none;
-    vertical-align: baseline;
   }
 
   /* 2. Player-inserted — amber, bracketed like a typed entry. */
