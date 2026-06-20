@@ -49,6 +49,20 @@ describe('per-file parsing (parseEntry)', () => {
     expect(() => parseEntry(raw)).toThrow(/truth/);
   });
 
+  it('parses an optional lure (Quippy\'s escalatory wrong word)', () => {
+    const raw = VALID_003.replace('truth: "switchboard"', 'truth: "switchboard"\n    lure: "exchange"');
+    expect(parseEntry(raw).anchors[0].lure).toBe('exchange');
+  });
+
+  it('omits lure when absent (Quippy only offers the truth)', () => {
+    expect(parseEntry(VALID_003).anchors[0].lure).toBeUndefined();
+  });
+
+  it('rejects a lure equal to the truth (a lure must be the WRONG word)', () => {
+    const raw = VALID_003.replace('truth: "switchboard"', 'truth: "switchboard"\n    lure: "switchboard"');
+    expect(() => parseEntry(raw)).toThrow(/lure/);
+  });
+
   it('rejects an unknown grounding kind', () => {
     const raw = VALID_003.replace('kind: "teaching"', 'kind: "telepathy"');
     expect(() => parseEntry(raw)).toThrow(/grounding/);

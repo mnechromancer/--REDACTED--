@@ -161,12 +161,26 @@ function parseAnchor(v: unknown, idx: number): Anchor {
     concept = asString(conceptRaw, `anchor "${id}".concept`);
   }
 
+  // lure is optional (Phase 4 — Question F): Quippy's escalatory wrong word. When set,
+  // it must be a non-empty string DIFFERENT from the truth — a lure equal to the truth
+  // is a content bug (Quippy would be offering the right answer, not lobbying). It is
+  // never an AMBER answer, so it has no winnability/grounding implications.
+  const lureRaw = o.lure;
+  let lure: string | undefined;
+  if (lureRaw !== undefined && lureRaw !== null && lureRaw !== '') {
+    lure = asString(lureRaw, `anchor "${id}".lure`);
+    if (lure.trim() === truth.trim()) {
+      throw new EntryParseError(`anchor "${id}".lure must differ from truth (a lure is the WRONG escalatory word)`);
+    }
+  }
+
   return {
     id,
     slot_type: slot_type as SlotType,
     truth,
     grounding,
     ...(concept ? { concept } : {}),
+    ...(lure ? { lure } : {}),
     exposure_weight: o.exposure_weight,
   };
 }

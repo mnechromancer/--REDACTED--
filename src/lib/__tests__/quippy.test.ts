@@ -1,7 +1,8 @@
-// Quippy's behaviour (quippy.svelte.ts, scp_x_bible.md §3–§4): the exposure bands
-// and the costed one-click fill. v2 reset: there is no candidate set to reorder —
-// Quippy offers the one truth word and fills it at cost. The escalatory-wrong-word
-// tell is deferred past Phase 1 (open F).
+// Quippy's behaviour (quippy.svelte.ts, scp_x_bible.md §3–§4): the exposure bands,
+// the costed one-click fill, and the escalatory-wrong-word tell (Phase 4 — Question F).
+// A slot with no authored `lure` only ever offers the truth (costly, not wrong); a slot
+// WITH a lure has Quippy lobby for it as exposure rises (down-ranking, then omitting, the
+// true reading), per the §4 band table.
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
@@ -12,6 +13,7 @@ import {
   seedReachable,
   seedReach,
   makeRef,
+  anchorOf,
   insert,
 } from '../game.svelte.ts';
 import {
@@ -52,16 +54,50 @@ describe('exposure bands (§4)', () => {
   });
 });
 
-describe('the single-word offer', () => {
+describe('the offer with NO lure (truth-only, merely costly)', () => {
   it('offers the one truth word', () => {
     const s = quippySuggestions(F1_A1);
     expect(s.map((x) => x.value)).toEqual(['alpha']);
   });
 
   it('frames the offer harder (recommended) as Quippy curdles', () => {
-    expect(quippySuggestions(F1_A1)[0].framing).toBe('plain'); // low band
+    expect(quippySuggestions(F1_A1)[0].framing).toBe('dull'); // low band: the boring true one
     exposure.value = QUIPPY_MID_THRESHOLD;
     expect(quippySuggestions(F1_A1)[0].framing).toBe('recommended');
+  });
+});
+
+describe('the offer WITH a lure (the escalatory wrong-word tell, §4)', () => {
+  // Give F1#a1 an authored lure so Quippy has a wrong reading to lobby for.
+  beforeEach(() => {
+    anchorOf(F1_A1).lure = 'omega'; // the escalatory WRONG word (truth is 'alpha')
+  });
+
+  it('low band: surfaces BOTH — the lure plain, the truth as the dull alternate', () => {
+    const s = quippySuggestions(F1_A1);
+    expect(s.map((x) => x.value)).toEqual(['omega', 'alpha']);
+    expect(s[1].framing).toBe('dull'); // the true reading down-framed as boring
+  });
+
+  it('mid band: reorders so the lure is the RECOMMENDED reading, truth down-ranked', () => {
+    exposure.value = QUIPPY_MID_THRESHOLD;
+    const s = quippySuggestions(F1_A1);
+    expect(s[0]).toEqual({ value: 'omega', framing: 'recommended' });
+    expect(s.find((x) => x.value === 'alpha')?.framing).toBe('dull');
+  });
+
+  it('high band: OMITS the true reading entirely — only the lure remains', () => {
+    exposure.value = QUIPPY_HIGH_THRESHOLD;
+    const s = quippySuggestions(F1_A1);
+    expect(s.map((x) => x.value)).toEqual(['omega']);
+    expect(s[0].framing).toBe('recommended');
+  });
+
+  it('accepting the lure plants a wrong value: contradiction + extra exposure + taint', () => {
+    insert(F1_A1, 'omega', 'quippy'); // the player trusts the high-band offer
+    expect(overlay[F1_A1]).toMatchObject({ value: 'omega', via: 'quippy', contradicts_truth: true });
+    // STRUCK_PENALTY makes a wrong Quippy fill cost more than a right one.
+    expect(exposure.value).toBeGreaterThan(anchorOf(F1_A1).exposure_weight);
   });
 });
 

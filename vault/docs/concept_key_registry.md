@@ -293,6 +293,18 @@ These seven were anticipated by the setting and have now had carriers assigned b
 
 ---
 
+> **⚠ Phase-4 note (2026-06-17):** the first content batch authored under v2 added carriers for
+> several keys. The **mutation-index** machinery these tables describe is RETIRED (single-word +
+> grounding now; `scp_x_bible.md` §5 / `amber_build_decisions.md`) — the index rows below are
+> kept as *narrative escalation* guidance (what the boring vs. escalatory reading of a key is, now
+> realized as `truth` vs. the optional `lure`), not as a mechanical mutation-set contract. Newly
+> authored carriers (`✎`): `audit-cycle` ← `SCP-41B-003`; `the-access-road` ← `SCP-41B-004`;
+> `the-claim` ← `SCP-41B-005`; `sublevel-grid` ← `SCP-41B-006`; `fixative` ← `SCP-41B-007`;
+> `the-flood-of-71` ← `SCP-41B-008`; `sze-experiment` ← `SCP-41B-009`. The two area-arc keys now
+> have **one** authored carrier each — a second is owed (no-orphan rule) when the batch grows. The
+> `lure` words on 006–009 (`directive`/`solvent`/`rota`/`Concordance`) are the entity's escalatory
+> readings, the §4 candidate-tell made content. Authoritative: the entries + the decisions log.
+
 ## 3b. Placeholder keys — area arc & redactor thread (re-frame [R§4]; index meanings TBD)
 
 Seeded so authors coin them here first (the registry's own rule) before the area-arc and redactor entities are authored. **No carriers yet, no locked mutation indices** — these are reservations, not finished keys. When the area-arc / redactor entities are authored (`entity_roster.md` reserves the slots), fill in carriers and index meanings and promote them into §1/§3 above. Do not author entries against these until the indices are set.
