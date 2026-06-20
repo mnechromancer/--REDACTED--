@@ -7,7 +7,7 @@
   // AmberLookup, summoned by the terminal, not embedded per-slot.
   import type { ScpFile } from '../lib/corpus.ts';
   import { isReachable, makeRef, overlay } from '../lib/game.svelte.ts';
-  import { openFile, log, captureSelection } from '../lib/ui.svelte.ts';
+  import { openFile, log, captureSelection, xrefLinksOf } from '../lib/ui.svelte.ts';
   import { parseBody } from '../lib/parseBody.ts';
   import { bodyBlocks } from '../lib/bodyBlocks.ts';
   import SlotSpan from './SlotSpan.svelte';
@@ -65,6 +65,15 @@
   });
 
   const blocks = $derived(accessible ? bodyBlocks(parseBody(file.body)) : []);
+
+  // Number each cross-reference the way `open <n>` expects (body order, de-duplicated),
+  // so the prose shows "[2] SCP-41B-005" and the keyboard player types `open 2`. This is
+  // what makes AMBER followable without a mouse (the playtest fix). Clicking still works.
+  const linkNo = $derived.by(() => {
+    const map = new Map<string, number>();
+    xrefLinksOf(file.item).forEach((t, i) => map.set(t, i + 1));
+    return map;
+  });
 </script>
 
 <svelte:document onselectionchange={onSelectionChange} />
@@ -104,8 +113,9 @@
               />{:else if inl.kind === 'wikilink'}<button
                 type="button"
                 class="wikilink"
+                title="open {inl.target} — or type: open {linkNo.get(inl.target)}"
                 onclick={() => followLink(inl.target)}
-                >{inl.target}</button
+                ><span class="link-no" aria-hidden="true">{linkNo.get(inl.target)}</span>{inl.target}</button
               >{:else}{#each inl.runs as r (r)}{#if r.bold}<strong>{r.text}</strong>{:else}{r.text}{/if}{/each}{/if}{/each}</p>
         {/if}
       {/each}
@@ -252,6 +262,17 @@
   .wikilink::before { content: '['; color: var(--amber-fg-faint); }
   .wikilink::after { content: ']'; color: var(--amber-fg-faint); }
   .wikilink:hover { color: #ffd27a; border-bottom-color: var(--amber-fg); }
+  /* The reference number: how the keyboard player addresses this link (`open <n>`). */
+  .link-no {
+    display: inline-block;
+    margin-right: 0.4ch;
+    padding: 0 0.35ch;
+    background: var(--amber-edge, #3a2c12);
+    color: var(--amber-fg, #e8b24d);
+    border-radius: 1px;
+    font-size: 0.82em;
+  }
+  .wikilink:hover .link-no { background: var(--amber-edge-bright, #6a5220); color: #ffd27a; }
 
   .lockout { padding: 1.1rem 0.9rem; color: var(--amber-red); }
   .lockout p { margin: 0.15rem 0; letter-spacing: 0.04em; }

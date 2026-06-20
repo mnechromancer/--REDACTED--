@@ -20,6 +20,7 @@
     summonQuippy,
     forgeCitation,
     currentSelection,
+    xrefLinksOf,
   } from '../lib/ui.svelte.ts';
   import FilePane from './FilePane.svelte';
   import AmberLookup from './AmberLookup.svelte';
@@ -85,6 +86,35 @@
     forgeCitation();
   }
 
+  // Open a record by `open <arg>`. The keyboard traversal verb (the playtest fix —
+  // AMBER must be followable without a mouse). `arg` resolves three ways:
+  //   - a bare number N → the Nth cross-reference link in the ACTIVE file (what the pane
+  //     shows numbered), so a player reads "[2] SCP-41B-005" and types `open 2`;
+  //   - an SCP id (full or just the trailing digits) → that record;
+  //   - otherwise, passed through (lets `open scp-41b-005` work case-insensitively).
+  function runOpen(arg: string) {
+    const a = arg.trim();
+    if (!a) {
+      log('open: which record? `open <number>` (a reference in this file) or `open SCP-41B-00n`.', 'reject');
+      return;
+    }
+    // bare number → the Nth cross-reference of the active file
+    if (/^\d+$/.test(a)) {
+      const links = ui.activeFile ? xrefLinksOf(ui.activeFile) : [];
+      const idx = parseInt(a, 10) - 1;
+      if (idx < 0 || idx >= links.length) {
+        log(`open: no reference [${a}] in this record (it has ${links.length}).`, 'reject');
+        return;
+      }
+      openFile(links[idx]);
+      return;
+    }
+    // an SCP id, full or trailing digits (`open 005` is caught above as a number, so a
+    // 3-digit record is reachable via its reference number or its full id).
+    const up = a.toUpperCase();
+    openFile(up.startsWith('SCP') ? up : a);
+  }
+
   function runCommand(raw: string) {
     const line = raw.trim();
     if (!line) return;
@@ -94,7 +124,7 @@
     switch (cmd) {
       case 'open':
       case 'o':
-        openFile(arg.toUpperCase().startsWith('SCP') ? arg.toUpperCase() : arg);
+        runOpen(arg);
         break;
       case 'next':
       case 'n':
@@ -119,7 +149,8 @@
         break;
       case 'help':
       case '?':
-        log('COMMANDS — open <file> · next · search <term> · cite · quippy · prov · help', 'system');
+        log('COMMANDS — open <n|record> · next · search <term> · cite · quippy · prov · help', 'system');
+        log('  open follows a cross-reference: `open 2` opens reference [2] in this record, or `open SCP-41B-005` by id.', 'system');
         log('KEYS — j/k step field · [ / ] step record · n next redaction · c forge citation · Tab summon Quippy', 'system');
         log('To restore a field: type the word, then SELECT the span where it stands in a record and forge a citation. AMBER judges at commit. Citation costs zero; Quippy charges.', 'system');
         break;
@@ -181,7 +212,7 @@
         {:else}
           <div class="no-file">
             <p>&gt; NO RECORD OPEN.</p>
-            <p class="hint">type <code>open SCP-41B-001</code> or press <code>]</code> to traverse the holdings.</p>
+            <p class="hint">type <code>open SCP-41B-001</code> to begin, or <code>help</code> for the command list.</p>
           </div>
         {/if}
       </div>
@@ -192,7 +223,7 @@
           type="text"
           spellcheck="false"
           autocomplete="off"
-          placeholder="open · next · raise · search · quippy · help"
+          placeholder="type a command — open · next · cite · search · help"
           bind:value={command}
           onkeydown={(e) => {
             if (e.key === 'Enter') runCommand(command);
@@ -201,6 +232,18 @@
         <button class="quippy-btn" type="button" onclick={summonQuippy} title="summon Quippy (Tab)">
           ◇ Quippy
         </button>
+      </div>
+
+      <!-- Persistent command legend — AMBER is keyboard-operated, so the verbs are
+           always on screen (the playtest fix: the player should never forget the CLI
+           exists). Compact; `help` expands the full list in the log. -->
+      <div class="cmd-legend" aria-label="AMBER commands">
+        <span class="leg"><b>open</b> <i>n</i></span>
+        <span class="leg"><b>next</b></span>
+        <span class="leg"><b>cite</b></span>
+        <span class="leg"><b>search</b> <i>term</i></span>
+        <span class="leg"><b>help</b></span>
+        <span class="leg keys">keys: <i>j/k</i> field · <i>[ ]</i> record · <i>n</i> next · <i>c</i> cite · <i>Tab</i> Quippy</span>
       </div>
     </div>
 
@@ -375,6 +418,26 @@
     caret-color: var(--amber-fg);
   }
   .cmd input::placeholder { color: var(--amber-fg-faint); }
+
+  /* The always-on command legend — AMBER's keyboard verbs, never off screen. */
+  .cmd-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.3rem 1rem;
+    padding: 0.35rem 0.7rem;
+    margin-top: -0.2rem;
+    background: var(--amber-bg-raised);
+    border: 1px solid var(--amber-edge);
+    border-top: none;
+    font-size: 0.66rem;
+    letter-spacing: 0.03em;
+    color: var(--amber-fg-faint);
+  }
+  .cmd-legend .leg { color: var(--amber-fg-dim); }
+  .cmd-legend .leg b { color: var(--amber-green); font-weight: 400; }
+  .cmd-legend .leg i { color: var(--amber-fg-faint); font-style: normal; }
+  .cmd-legend .leg.keys { margin-left: auto; color: var(--amber-fg-faint); }
   .quippy-btn {
     flex: 0 0 auto;
     background: #0e0a14;

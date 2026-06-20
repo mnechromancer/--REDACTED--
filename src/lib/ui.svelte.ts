@@ -9,6 +9,7 @@
 import { SvelteMap } from 'svelte/reactivity';
 import { corpus, allRefs, splitRef, makeRef, resolveSlot, anchorOf, seedReachable } from './game.svelte.ts';
 import type { ForgedCitation } from './corpus.ts';
+import { parseBody } from './parseBody.ts';
 import { session } from './session.svelte.ts';
 
 export type InterfaceMode = 'amber' | 'quippy';
@@ -208,6 +209,24 @@ export function openFile(item: string): boolean {
   // it never pitches the answer to the file the player hasn't read yet.
   maybeFirstContact(item, priorSpan);
   return true;
+}
+
+/**
+ * The cross-reference targets in a file's body, in the order they appear, de-duplicated.
+ * This is the player's KEYBOARD traversal surface (the playtest fix): AMBER is keyboard-
+ * first, so a player must be able to follow a link without a mouse — `open <n>` opens the
+ * Nth of these. The order matches what the rendered prose shows (FilePane numbers them the
+ * same way), so "the second reference" means the same thing in the pane and on the command
+ * line. Empty for a file with no cross-references.
+ */
+export function xrefLinksOf(item: string): string[] {
+  const file = corpus[item];
+  if (!file) return [];
+  const out: string[] = [];
+  for (const seg of parseBody(file.body)) {
+    if (seg.kind === 'wikilink' && !out.includes(seg.target)) out.push(seg.target);
+  }
+  return out;
 }
 
 /** Cycle to the next/prev file in `order` (item ids), wrapping. */

@@ -134,6 +134,17 @@ describe('cross-file: xref resolution', () => {
     const errs = checkXrefs(files, index(files));
     expect(errs.some((e) => e.rule === 'wikilink-declared' && /SCP-41B-002/.test(e.message))).toBe(true);
   });
+
+  it('fires when a declared xref has NO body wikilink (xref-linked — a dead traversal edge)', () => {
+    // The 005/007/009 playtest bug: an xref the player can reach in the graph but has no
+    // clickable link to follow. Declare an xref but never link it in prose.
+    const files = clone(validFiles());
+    const target = files[1].item; // a real second file
+    files[0].xrefs = [target];
+    files[0].body = 'this body declares the xref but never links it.';
+    const errs = checkXrefs(files, index(files));
+    expect(errs.some((e) => e.rule === 'xref-linked' && e.message.includes(target))).toBe(true);
+  });
 });
 
 describe('bodyContainsWord', () => {
