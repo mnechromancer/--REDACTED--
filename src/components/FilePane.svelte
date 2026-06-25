@@ -7,7 +7,7 @@
   // AmberLookup, summoned by the terminal, not embedded per-slot.
   import type { ScpFile } from '../lib/corpus.ts';
   import { isReachable, makeRef, overlay } from '../lib/game.svelte.ts';
-  import { openFile, log, captureSelection } from '../lib/ui.svelte.ts';
+  import { openFile, log, captureSelection, xrefLinksOf } from '../lib/ui.svelte.ts';
   import { parseBody } from '../lib/parseBody.ts';
   import { bodyBlocks } from '../lib/bodyBlocks.ts';
   import SlotSpan from './SlotSpan.svelte';
@@ -65,6 +65,15 @@
   });
 
   const blocks = $derived(accessible ? bodyBlocks(parseBody(file.body)) : []);
+
+  // Number each cross-reference the way `open <n>` expects (body order, de-duplicated),
+  // so the prose shows "[2] SCP-41B-005" and the keyboard player types `open 2`. This is
+  // what makes AMBER followable without a mouse (the playtest fix). Clicking still works.
+  const linkNo = $derived.by(() => {
+    const map = new Map<string, number>();
+    xrefLinksOf(file.item).forEach((t, i) => map.set(t, i + 1));
+    return map;
+  });
 </script>
 
 <svelte:document onselectionchange={onSelectionChange} />
@@ -104,8 +113,9 @@
               />{:else if inl.kind === 'wikilink'}<button
                 type="button"
                 class="wikilink"
+                title="open {inl.target} — or type: open {linkNo.get(inl.target)}"
                 onclick={() => followLink(inl.target)}
-                >{inl.target}</button
+                ><span class="link-no" aria-hidden="true">{linkNo.get(inl.target)}</span>{inl.target}</button
               >{:else}{#each inl.runs as r (r)}{#if r.bold}<strong>{r.text}</strong>{:else}{r.text}{/if}{/each}{/if}{/each}</p>
         {/if}
       {/each}
@@ -158,23 +168,25 @@
     letter-spacing: 0.06em;
   }
 
-  /* The record body: prose in the main column, marginalia running SIDEWAYS up a thin
-     gutter (a note written up the margin of the page, turned 90°). The narrow gutter
-     keeps the note out of the prose flow without a clunky card. */
+  /* The record body: prose in the main column, marginalia in a right margin — a note
+     in the post's hand set in the page edge, aligned to where it falls in the flow.
+     `align-items: start` keeps each gutter note pinned to the top of its grid row
+     (beside the passage it annotates), not stretched or vertically centred. */
   .body {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 2.4rem;
-    column-gap: 0.9rem;
-    padding: 0.95rem 1.1rem 1.1rem;
+    grid-template-columns: minmax(0, 1fr) 13rem;
+    column-gap: 1.4rem;
+    align-items: start;
+    padding: 0.95rem 1.2rem 1.1rem;
     line-height: 1.7;
     color: var(--amber-fg);
     font-size: 0.86rem;
   }
   .col-main { grid-column: 1; }
   .col-gutter { grid-column: 2; }
-  @media (max-width: 60rem) {
-    /* On narrow screens, fall back to an inline sidebar note (rotation needs width). */
-    .body { grid-template-columns: 1fr; }
+  @media (max-width: 58rem) {
+    /* Narrow screens: the margin collapses, the note drops inline under its passage. */
+    .body { grid-template-columns: 1fr; column-gap: 0; }
     .col-gutter { grid-column: 1; }
   }
 
@@ -200,41 +212,35 @@
   .body p { margin: 0 0 0.65rem; }
   .body p.object-class { color: var(--amber-fg-dim); font-size: 0.82rem; margin-bottom: 0.9rem; }
 
-  /* Marginalia: a note in the post's hand, written SIDEWAYS up the margin (turned 90°,
-     reading bottom-to-top). A thin annotation against the gutter edge, not a card. */
+  /* Marginalia: a note in the post's hand, set in the right margin beside the passage
+     it annotates. Read horizontally (rotation read as clunky); marked off as a hand
+     annotation by a tab label and a left rule, smaller and dimmer than the record so it
+     reads as commentary ON the page, not part of it. Fully visible — no clipping. */
   .margin-note {
     align-self: start;
-    writing-mode: vertical-rl;
-    transform: rotate(180deg);
-    margin: 0.2rem auto 0.7rem;
-    padding: 0.35rem 0.2rem;
-    border-right: 2px solid var(--amber-edge-bright);
+    margin: 0.1rem 0 0.7rem;
+    padding: 0.05rem 0 0.15rem 0.6rem;
+    border-left: 2px solid var(--amber-edge-bright);
     color: var(--amber-fg-dim);
-    font-size: 0.7rem;
-    line-height: 1.35;
+    font-size: 0.72rem;
+    line-height: 1.5;
     font-style: italic;
-    letter-spacing: 0.02em;
-    max-height: 22rem;
-    overflow: hidden;
-    white-space: nowrap;
   }
   .margin-note::before {
-    content: "✎";
+    content: "R. HALLORAN — MARGIN";
+    display: block;
     font-style: normal;
+    font-size: 0.54rem;
+    letter-spacing: 0.1em;
     color: var(--amber-fg-faint);
-    margin-bottom: 0.4em;
+    margin-bottom: 0.35rem;
   }
-  /* Narrow screens: un-rotate to a readable inline slip (the gutter collapses). */
-  @media (max-width: 60rem) {
+  /* Narrow screens: the note drops inline under its passage, a touch more set-off. */
+  @media (max-width: 58rem) {
     .margin-note {
-      writing-mode: horizontal-tb;
-      transform: none;
-      white-space: normal;
-      max-height: none;
-      border-right: none;
-      border-left: 2px solid var(--amber-edge-bright);
-      padding: 0.4rem 0.55rem;
-      margin: 0.1rem 0 0.7rem;
+      margin: 0.2rem 0 0.8rem;
+      padding: 0.4rem 0.6rem;
+      background: var(--amber-bg-sunken);
     }
   }
 
@@ -252,6 +258,17 @@
   .wikilink::before { content: '['; color: var(--amber-fg-faint); }
   .wikilink::after { content: ']'; color: var(--amber-fg-faint); }
   .wikilink:hover { color: #ffd27a; border-bottom-color: var(--amber-fg); }
+  /* The reference number: how the keyboard player addresses this link (`open <n>`). */
+  .link-no {
+    display: inline-block;
+    margin-right: 0.4ch;
+    padding: 0 0.35ch;
+    background: var(--amber-edge, #3a2c12);
+    color: var(--amber-fg, #e8b24d);
+    border-radius: 1px;
+    font-size: 0.82em;
+  }
+  .wikilink:hover .link-no { background: var(--amber-edge-bright, #6a5220); color: #ffd27a; }
 
   .lockout { padding: 1.1rem 0.9rem; color: var(--amber-red); }
   .lockout p { margin: 0.15rem 0; letter-spacing: 0.04em; }

@@ -32,3 +32,6 @@ Thumbs.db
 # obsidian: ignore volatile workspace, keep shareable config if you choose to commit it
 vault/.obsidian/workspace*
 vault/.obsidian/cache
+
+# Obsidian per-machine editor state — not project content
+vault/.obsidian/

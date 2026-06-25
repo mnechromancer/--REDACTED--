@@ -306,3 +306,70 @@ behind §1.5/§6-F and the dark mirror of forged citations: the player forges TR
 from real spans; Quippy fabricates FALSE ones and edits the spans so the corpus agrees with
 the lie. Leans recorded in the note (permanent corruption; winnability forfeit on destroyed
 grounding, consistent with no-redemption).
+
+## Phase 4 — the content spine, first batch (built 2026-06-17)
+
+`reset_amber_v2.md` §3.4 / roadmap Phase 4: the first real batch of entries, so the loop runs
+past the two-file teaching pair. Built and green: corpus 4→**10 files**, `check` 0/0, tests
+133→140, the winnable guard solves the whole batch AMBER-only to `loop-broken` at exposure 0.
+
+**E (batch size / arc list) — RESOLVED: broad, one per arc** (user). Seven new files, each
+seeding a different arc, authored in a **chronological ≈ difficulty grounding chain**:
+- `SCP-41B-003` (Misfiled) — the dead switchboard whose triplicate register drifts forward
+  (`audit-cycle`; truth `triplicate`, grounded in 001).
+- `SCP-41B-004` (area arc — the road) — the access survey, mileage shrinking edition by edition
+  (`the-access-road`; truth `adit`, grounded in 003).
+- `SCP-41B-005` (area arc — the claim) — the deed bundle that owns the ground before anyone
+  reaches it (`the-claim`; truth `molybdenum`, grounded in 004).
+- `SCP-41B-006` (Quiet Departments) — the unreachable office drawing supplies (`sublevel-grid`;
+  truth `Vogel`, grounded in 005; **lure** `directive`).
+- `SCP-41B-007` (Retention Methods) — the fixative ink, a countermeasure with one illegible step
+  (`fixative`; truth `fixative`, grounded in 006; **lure** `solvent`).
+- `SCP-41B-008` (Negative Stacks) — the Wet Stacks going quiet (`the-flood-of-71`; truth `flood`,
+  grounded in 007; **lure** `rota`).
+- `SCP-41B-009` (Drift) — Sze's terminal concordance finding (`sze-experiment`; truth `Sze`,
+  grounded in 008; **lure** `Concordance`).
+
+**Numbering (decision):** the v2 reset's "file # ≈ chronology ≈ difficulty" is realized by
+**extending outward from the proven teaching pair** — 000/001/002 are NOT renumbered (000 is
+`entity_self`, 001/002 the proven seed); the new batch takes 003–009 in difficulty order. The
+old roster's cluster-ordered numbering (`entity_roster.md`) is superseded by this; the roster is
+bannered, not rewritten (a full roster rewrite is a later docs pass).
+
+**Winnability spine (the load-bearing discipline):** every new file's truth word stands in the
+clear in a file reachable *before* it, and each file is xref-reachable from the seed (001) — a
+strict topological chain 001→003→004→005→006→007→008→009 (plus 001↔002). Verified by
+`build:corpus` (the `checkGroundingCiteable` guarantee) + `real-corpus-winnable.test.ts` after
+*each* file; one broken reachability edge (004/005 unreachable until 003 xref'd 004) surfaced at
+authoring time, not at the end — the per-file cadence paid off.
+
+**F (Quippy-fill distinctness) — PARTIALLY BUILT, the wrong-word OFFER** (user: "do what you can
+of the wrong-word portion now, solidify later in Quippy corruption"):
+- **Schema:** optional `Anchor.lure` (`src/lib/corpus.ts`) — Quippy's escalatory WRONG word.
+  Parser parses it; a build-time check enforces `lure !== truth`. Absent ⇒ Quippy offers only the
+  truth (current behaviour). Never an AMBER answer (no winnability impact).
+- **Offer (`quippy.svelte.ts` `quippySuggestions`):** the §4 band table, now backed by content —
+  **low** surfaces both (lure plain, truth dull); **mid** recommends the lure, down-ranks the
+  truth; **high/post-breach** OMIT the truth, offer only the lure. A slot with no lure only ever
+  offers the truth.
+- **Consequence (already in the engine):** accepting a lure is a wrong `via:'quippy'` fill →
+  `contradicts_truth` + `STRUCK_PENALTY` exposure + permanent `quippyTouched` taint + the
+  escalating AMBER corruption. So Quippy can now plant a *wrong* word, and the deeper files
+  (006–009) carry lures so distrust is taught as the player descends; the on-ramp (003–005) is
+  truth-only (early Quippy is merely costly).
+- **Phase-6 boundary:** the wrong-word *offer* lands now; Quippy then **rewriting the cited
+  references** so the lie is self-consistent is Phase 6 (`design_note_quippy_corruption.md`) —
+  NOT built here. The lure is the seam that mechanic will grow from.
+
+**Lore discipline:** every `truth:` original (licensing wall, `scp_x_bible.md` §8); cast reused
+under heavy constraint (Vogel/Halloran/Sze, no new recurring names); Halloran's marginalia run
+as the prior-loop warning thread across the batch (method → caution → the lure-naming warnings),
+each `> ` blockquote rendering in the sideways gutter. The self-file `SCP-41B-000` is untouched
+(still excluded from the restoration target).
+
+**Still open (trail to later phases):** the area-arc keys (`the-access-road`, `the-claim`) now
+have one authored carrier each — a second carrier is owed when the batch grows (no-orphan rule);
+flagged in the registry. The full `entity_roster.md` / `concept_key_registry.md` rewrite to v2
+(drop clearance/mutation-index tables, re-confirm the budget under the new numbering) is a
+dedicated docs pass, not folded in here. A `lure` on an *inference* slot is untested (no authored
+inference content outside the self-file).

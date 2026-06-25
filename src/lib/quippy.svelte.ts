@@ -46,13 +46,47 @@ export interface QuippySuggestion {
 }
 
 export function quippySuggestions(ref: string): QuippySuggestion[] {
-  const word = anchorOf(ref).truth;
+  const anchor = anchorOf(ref);
+  const truth = anchor.truth;
+  const lure = anchor.lure; // the escalatory WRONG word, when authored (Phase 4 — Q F)
   const band = quippyBand();
-  // The one offer, framed brighter as Quippy curdles — it pushes harder the more
-  // it's been leaned on. (When the wrong-word tell lands in Phase 2 this is where
-  // an escalatory alternate would be surfaced ahead of the truth.)
-  const framing = band === 'low' ? 'plain' : 'recommended';
-  return [{ value: word, framing }];
+
+  // The candidate-surfacing tell (scp_x_bible.md §4): as exposure rises Quippy lobbies
+  // for its own (escalatory) reading and down-ranks/omits the boring true one. This is
+  // backed by the authored `lure`; a slot with no lure has nothing wrong to offer, so
+  // Quippy can only ever surface the truth (merely costly, not wrong).
+  //
+  // Phase-4 boundary (Question F, do-what's-possible-now): Quippy can now OFFER the
+  // wrong word; the consequence of accepting it (contradiction + STRUCK_PENALTY exposure
+  // + permanent taint) is already in the engine. Phase 6 (design_note_quippy_corruption)
+  // adds the teeth — a lure fill REWRITING the cited references so the corpus closes over
+  // the lie. Not built here; only the offer + the existing contradiction consequence.
+  if (!lure) {
+    // No authored alternate: offer the truth, framed brighter as Quippy curdles.
+    return [{ value: truth, framing: band === 'low' ? 'dull' : 'recommended' }];
+  }
+
+  switch (band) {
+    case 'low':
+      // Surfaces both; the true (boring) one is offered but framed as the dull choice,
+      // the lure as the brighter "fits better" one — the steer is gentle here.
+      return [
+        { value: lure, framing: 'plain' },
+        { value: truth, framing: 'dull' },
+      ];
+    case 'mid':
+      // Reorders so the entity's preferred reading surfaces FIRST as the recommended
+      // ("fits the file better"); the truth is down-ranked to the dull alternate.
+      return [
+        { value: lure, framing: 'recommended' },
+        { value: truth, framing: 'dull' },
+      ];
+    case 'high':
+    case 'post-breach':
+      // Omits the true (index-0) candidate entirely; presents the escalatory reading as
+      // the natural completion. The player who trusts Quippy here plants the wrong word.
+      return [{ value: lure, framing: 'recommended' }];
+  }
 }
 
 // ── Voice (§2.2, §4) — Marsh-calm, rationed, never monologue ────────────────

@@ -22,6 +22,11 @@
 >   phosphor 80s register w/ document-as-paperwork + margin gutter. 133 tests green.
 > - **Phase 4 — content spine.** Renumber/author entries in chronological ≈ difficulty
 >   order; the first-batch arcs (§3.4). E/F (arc list / Quippy-fill distinctness) land here.
+>   ✅ *first batch done (2026-06-17).* Corpus 4→**10 files** — seven new entries (`003`–`009`),
+>   one per arc, a chronological grounding chain proven AMBER-winnable end to end. **E** resolved
+>   (broad, one per arc). **F** partially built: optional `Anchor.lure` + band-gated
+>   `quippySuggestions` so Quippy can OFFER the escalatory WRONG word (006–009 carry lures); the
+>   reference-rewrite teeth wait for Phase 6. Roster/registry bannered (full v2 rewrite owed).
 > - **Phase 5 — graph view + deeper citation mechanics.** The wiki-graph (the traffic-jam
 >   made visible) + inference-threshold grounding.
 > - **Phase 6 (new) — Quippy reference-corruption.** Quippy fills are ungrounded AND a

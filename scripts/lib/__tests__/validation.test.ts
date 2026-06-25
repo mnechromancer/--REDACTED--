@@ -49,6 +49,20 @@ describe('per-file parsing (parseEntry)', () => {
     expect(() => parseEntry(raw)).toThrow(/truth/);
   });
 
+  it('parses an optional lure (Quippy\'s escalatory wrong word)', () => {
+    const raw = VALID_003.replace('truth: "switchboard"', 'truth: "switchboard"\n    lure: "exchange"');
+    expect(parseEntry(raw).anchors[0].lure).toBe('exchange');
+  });
+
+  it('omits lure when absent (Quippy only offers the truth)', () => {
+    expect(parseEntry(VALID_003).anchors[0].lure).toBeUndefined();
+  });
+
+  it('rejects a lure equal to the truth (a lure must be the WRONG word)', () => {
+    const raw = VALID_003.replace('truth: "switchboard"', 'truth: "switchboard"\n    lure: "switchboard"');
+    expect(() => parseEntry(raw)).toThrow(/lure/);
+  });
+
   it('rejects an unknown grounding kind', () => {
     const raw = VALID_003.replace('kind: "teaching"', 'kind: "telepathy"');
     expect(() => parseEntry(raw)).toThrow(/grounding/);
@@ -119,6 +133,17 @@ describe('cross-file: xref resolution', () => {
     files[0].body = 'see [[SCP-41B-001]] and [[SCP-41B-002]].';
     const errs = checkXrefs(files, index(files));
     expect(errs.some((e) => e.rule === 'wikilink-declared' && /SCP-41B-002/.test(e.message))).toBe(true);
+  });
+
+  it('fires when a declared xref has NO body wikilink (xref-linked — a dead traversal edge)', () => {
+    // The 005/007/009 playtest bug: an xref the player can reach in the graph but has no
+    // clickable link to follow. Declare an xref but never link it in prose.
+    const files = clone(validFiles());
+    const target = files[1].item; // a real second file
+    files[0].xrefs = [target];
+    files[0].body = 'this body declares the xref but never links it.';
+    const errs = checkXrefs(files, index(files));
+    expect(errs.some((e) => e.rule === 'xref-linked' && e.message.includes(target))).toBe(true);
   });
 });
 

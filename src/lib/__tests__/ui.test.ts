@@ -34,6 +34,7 @@ import {
   removeCitation,
   clearBuffer,
   clearAllBuffers,
+  xrefLinksOf,
 } from '../ui.svelte.ts';
 import { session, resetSession } from '../session.svelte.ts';
 import { makeCorpus } from './fixtures.ts';
@@ -135,6 +136,23 @@ describe('file traversal', () => {
     expect(ui.activeFile).toBe('SCP-41B-001'); // wrapped
     stepFile(ORDER, -1);
     expect(ui.activeFile).toBe('SCP-41B-003'); // wrap backward
+  });
+});
+
+describe('xrefLinksOf — the keyboard traversal surface (open <n>)', () => {
+  it('lists a file body wikilinks in order, de-duplicated', () => {
+    // F1's body: "... see [[SCP-41B-002]] and [[SCP-41B-003]]." (fixtures.ts)
+    expect(xrefLinksOf('SCP-41B-001')).toEqual(['SCP-41B-002', 'SCP-41B-003']);
+  });
+
+  it('is empty for an unknown file', () => {
+    expect(xrefLinksOf('SCP-41B-999')).toEqual([]);
+  });
+
+  it('the Nth link is what `open <n>` resolves — order matches the rendered numbering', () => {
+    const links = xrefLinksOf('SCP-41B-001');
+    expect(links[0]).toBe('SCP-41B-002'); // `open 1`
+    expect(links[1]).toBe('SCP-41B-003'); // `open 2`
   });
 });
 

@@ -41,6 +41,17 @@ export interface Anchor {
   /** how this slot's word is grounded for AMBER's cited commit (see Grounding). */
   grounding: Grounding;
   /**
+   * Quippy's escalatory wrong word (Phase 4 — Question F; scp_x_bible.md §3/§4). When
+   * present, this is the plausible-but-WRONG reading Quippy lobbies for as exposure
+   * rises — the entity's preferred (re-shelving) reading where the `truth` is mundane.
+   * Optional: absent ⇒ Quippy only ever offers the truth (merely costly, not wrong).
+   * Never the AMBER answer (the gate only accepts `truth`); a build-time check enforces
+   * `lure !== truth`. Phase 6 (design_note_quippy_corruption.md) adds the teeth — a
+   * Quippy fill of the lure rewriting the cited references so the corpus closes over the
+   * lie; here only the OFFER and the contradiction/exposure consequence land.
+   */
+  lure?: string;
+  /**
    * shared key; anchors with the same concept are co-carriers — they propagate
    * together AND can contribute to each other's inference grounding (registry =
    * the grounding graph). Omitted/"" = local-only (no co-carriers).

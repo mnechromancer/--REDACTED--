@@ -82,10 +82,16 @@ export function checkEntitySelf(files: ScpFile[], allowIncomplete = false): Vali
 }
 
 /**
- * Rule 3: every declared xref resolves to an existing item. Also enforces
- * consistency between frontmatter `xrefs` and body `[[wikilinks]]` per §8 step 2:
- * every wikilinked item must be declared as an xref (so the cross-reference graph
- * the parser validates matches the one the prose asserts).
+ * Rule 3: every declared xref resolves to an existing item. Also enforces a
+ * BIDIRECTIONAL consistency between frontmatter `xrefs` and body `[[wikilinks]]`
+ * (§8 step 2), because the body wikilink is the player's only clickable TRAVERSAL
+ * affordance:
+ *   - every wikilinked item must be a declared xref (the prose can't link off-graph), and
+ *   - every declared xref must appear as a body wikilink (an xref with no body link is a
+ *     DEAD TRAVERSAL EDGE — the file is reachable in the graph but the player has no link
+ *     to click through to it; this stranded the player at 005/007/009 in playtest).
+ * The two together keep the citation graph the engine walks identical to the link graph
+ * the player can actually follow.
  */
 export function checkXrefs(files: ScpFile[], byItem: Map<string, ScpFile>): ValidationError[] {
   const errors: ValidationError[] = [];
@@ -103,12 +109,24 @@ export function checkXrefs(files: ScpFile[], byItem: Map<string, ScpFile>): Vali
       }
     }
     const declared = new Set(f.xrefs);
+    const linked = new Set<string>();
     for (const m of f.body.matchAll(WIKILINK)) {
       const link = m[1].trim();
+      linked.add(link);
       if (!declared.has(link)) {
         errors.push({
           rule: 'wikilink-declared',
           message: `body wikilink [[${link}]] is not declared in xrefs`,
+          file: f.item,
+        });
+      }
+    }
+    // Forward direction: a declared xref with no clickable body link is a dead edge.
+    for (const ref of f.xrefs) {
+      if (ref !== f.item && byItem.has(ref) && !linked.has(ref)) {
+        errors.push({
+          rule: 'xref-linked',
+          message: `xref "${ref}" has no body wikilink [[${ref}]] — a dead traversal edge (the player can reach it in the graph but has no link to click)`,
           file: f.item,
         });
       }

@@ -1,5 +1,20 @@
 # Entity Roster / Series Bible
 
+> **⚠⚠ Phase-4 content note (2026-06-17): the authored corpus has diverged from the tables
+> below.** The v2 reset retired clearance/tiers and the `mutations[]` model, and Phase 4
+> authored the **first batch under a chronological ≈ difficulty numbering** (extend outward from
+> the proven teaching pair, not cluster-ordered). **Authoritative for what is BUILT:**
+> `planning/amber_build_decisions.md` §"Phase 4" + `vault/entries/*.md` (the files themselves).
+> Currently authored (`✎`): `SCP-41B-000` (self-file), `001` (Concordance), `002` (Halloran),
+> `003` (switchboard, `audit-cycle`), `004` (the road, `the-access-road`), `005` (the claim,
+> `the-claim`), `006` (the office, `sublevel-grid`, lure), `007` (the fixative, `fixative`, lure),
+> `008` (the Wet Stacks, `the-flood-of-71`, lure), `009` (Sze's finding, `sze-experiment`, lure).
+> The cluster tables, tier bands, and cluster-ordered numbering below are the **pre-reset plan**,
+> kept as direction — the *clusters and hooks* still guide authoring, but the *numbers, tiers, and
+> the `Tier`/`Clearance` columns* are superseded (no clearance under decision D). A full rewrite of
+> this roster to v2 is owed in a dedicated docs pass; until then, read the entries + the decisions
+> log for ground truth, and these tables for arc/cluster intent only.
+>
 > **Re-frame note (2026-06-13):** Updated per `planning/reframe_amber_quippy.md`. Three changes: (1) `SCP-41B-000`'s roster line is updated — it is **Quippy** (SCP-X), and its role changed (the entity you *starve* by reconstructing the record without it, not the puzzle you decipher; `scp_x_bible.md` §5.4). (2) Two **new content threads are reserved**: a **Site-41B-area arc** (the Rocky Mountain surroundings; `site_41b.md` §6a) and a **redactor entity** (the second entity that *made* the redactions, distinct from Quippy; `site_41b.md` §3.1) — see the new "Reserved threads" section below. (3) The **15–30 budget is re-confirmed against the longer-file scale** ([R§3]) — flagged for the human below. The existing 25-entity roster and its key-coverage/tier audits **survive unchanged**; the new threads are additive scope, not a rebuild.
 
 The corpus, planned up front for graph density and tier pacing. One line per entity: item #, class, hook, concept-key memberships, clearance tier, breach effect. Drafted from `site_41b.md` §2 clusters and `concept_key_registry.md`; every entity carries ≥2 concept-keys (CLAUDE.md invariant; design doc §7).
