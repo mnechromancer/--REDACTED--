@@ -10,7 +10,9 @@
     "build:corpus": "tsx scripts/build-corpus.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json && tsc -p tsconfig.scripts.json"
+    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json && tsc -p tsconfig.scripts.json",
+    "plugin:install": "node scripts/plugin-install.mjs",
+    "plugin:dev": "cd plugins/site41b-authoring && npm install && node esbuild.config.mjs"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^7.1.2",

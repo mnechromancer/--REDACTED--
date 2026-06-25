@@ -1,0 +1,9 @@
+{
+  "id": "site41b-authoring",
+  "name": "Site-41B Authoring",
+  "version": "1.0.0",
+  "minAppVersion": "1.6.0",
+  "description": "Build validation and Claude-assisted wiki generation for the Site-41B text game vault.",
+  "author": "Project Author",
+  "isDesktopOnly": true
+}
