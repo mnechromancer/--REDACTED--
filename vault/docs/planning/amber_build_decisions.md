@@ -428,3 +428,51 @@ The §8 disposition ran: `vault/docs/` collapsed to one live spec per concern.
   `docs/planning/handoff_authoring.md`; repointed to `docs/entry_authoring.md` and rebuilt.
   The v2 corpus (`vault/entries/000–009`) is **not** touched in Phase 0 — it stays green as
   the engine's regression bed until Phase 2 lands the replacement content.
+
+## Phase 1 — the frame's engine (built 2026-07-04)
+
+`reset_v3_intake.md` §9 Phase 1 / `spec_game.md` §8. Built and green: 144→**164 tests**,
+`check` 0/0, corpus + prod build clean. The v2 corpus (`entries/000–009`) runs unmodified
+on the new engine (both new schema fields optional, defaulting to inbound/day-1) and stays
+the regression bed until Phase 2 replaces it.
+
+- **Schema:** `ScpFile.collection?: 'local' | 'inbound'` + `ScpFile.day?: number`
+  (`corpus.ts`). Parser rules (`parse-entry.ts`): a local file has ZERO anchors (the shelf
+  is in the clear) and never carries `day`; `day` is a positive integer.
+- **Reachability — the day is the gate (build decision).** The v2 seed-plus-xref-closure
+  gate is RETIRED (`seedReach`/`seedReachable` removed): reachable = local ∪ (inbound with
+  `day <= session.day`). Every mounted file is openable — the tray is open; the xref graph
+  is navigation and grounding-discovery, and a reference to an unmounted file rejects with
+  `NOT IN ARCHIVE` until its 4 AM. Rationale: the day replaces the dungeon-crawl gate as
+  pacing; intra-day xref-gating was a v2 compensation for having no day structure, and it
+  read as diegetically false (documents in your tray you may not open).
+- **Winnability guarantee rewired (`validate-corpus.ts`):** a teaching slot's `citeIn`
+  must be local OR mount no later than the citing file (`mounts AFTER` is a build error);
+  a shelf cite needs NO declared xref (the shelf is on the desk, not behind a link —
+  and a Site-41B document would not reference the receiving site's own volumes); the xref
+  requirement stays for inbound→inbound cites (discovery discipline).
+- **The turnover (transmittal model, decision v3-A):** engine half `session.advanceDay()`
+  (notes destroyed, day+1); presentation half `ui.endShift()` (buffers, selection, log,
+  cursor memory wiped; new consignment + mail announced). **Kept across the wipe: the
+  whole overlay** — cited commits transmit, and Quippy's fills survive too (a tell: your
+  notes died, its "help" didn't) — plus exposure, breaches, taint, quippyMet. *Amends the
+  spec's earlier "wipe clears breach effects" line (my invention, not a user decision):
+  breaches recompute from exposure, which persists, so clearing them would be a lie — the
+  erasure takes work-product, not consequences.*
+- **Session/mail/notes:** `session.day` + `session.notes` (`session.svelte.ts`);
+  `mail.svelte.ts` — day-gated delivery, read-state, persistent across the wipe (it is
+  correspondence, not notes about the data); Phase-1 mailbox authored in code
+  (supervisor/HR/facilities voice; no message ever names Quippy — test-enforced), Phase 2
+  re-authors the opening set. Terminal: `mail/m [n]`, `note [text]`, `end`/`eod`, DAY
+  readout in the header.
+- **First contact retargeted (decision v3-C, pulled forward from Phase 2):** fires on the
+  first successful forged-and-committed citation (`ui.noteHonestCommit`, called by
+  AmberLookup on commit OK), routing to the blank the player most recently abandoned
+  (`lastLeftSpan`, captured on openFile), falling back to the next redacted span, never
+  the slot just solved. Pulled into Phase 1 because the reachability change dissolved the
+  old trigger's premise ("opened a non-seed file" — there are no seeds now).
+  `QUIPPY_FIRST_CONTACT` beats rewritten for the new moment (it watched the whole verb
+  land, then appeared at the a-ha).
+- **Known mid-build seam (accepted):** the boot screen still speaks the v2 Site-41B-annex
+  framing while the mailbox speaks the v3 receiving-site voice; Phase 2 (the opening)
+  reconciles them.

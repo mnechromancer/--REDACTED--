@@ -8,10 +8,11 @@ Prior roadmaps (the v1 epic/milestone table, the v2 phase ledger) live in git hi
 
 - **Phase 0 — decisions + docs consolidation.** §7 A–D answered; the doc set collapsed to
   one live spec per concern + `archive/`; `CLAUDE.md` rewritten. ✅ *done 2026-07-04.*
-- **Phase 1 — the frame's engine.** `ScpFile.collection: local | inbound` (shelf seeds
-  reachable + unredacted); the day clock, 4 PM transmittal wipe (commits persist, notes
-  and uncommitted work erase), batch mounting by `day`; `note`; the mail store + `mail`.
-  Proven on a hand-built micro-corpus (2 shelf + 1 inbound). *Next.*
+- **Phase 1 — the frame's engine.** `collection: local | inbound` + `day`; day-gated
+  reachability (the tray is open — seed-plus-closure retired); the 4 PM transmittal
+  turnover (`end`); `note`; the mail store + `mail`; first contact retargeted to the
+  first honest commit (v3-C, pulled forward). ✅ *done 2026-07-04 — 164 tests, corpus/
+  check/build green; details in the decisions log.*
 - **Phase 2 — the opening.** Boot/login; day-1 mail (the supervisor's brief states the
   premise); the real shelf (~5–6 files) + day-1 batch (4 files ramped by word kind);
   Quippy's rebuilt entrance (rides the batch; manifests after the player's first
@@ -35,8 +36,8 @@ Prior roadmaps (the v1 epic/milestone table, the v2 phase ledger) live in git hi
 | Phase | State |
 |---|---|
 | 0 — Decisions + consolidation | ✅ done (2026-07-04) |
-| 1 — Frame engine | next |
-| 2 — Opening | blocked on 1 |
+| 1 — Frame engine | ✅ done (2026-07-04) |
+| 2 — Opening | next |
 | 3 — OS | after 2 |
 | 4–7 | horizon |
 

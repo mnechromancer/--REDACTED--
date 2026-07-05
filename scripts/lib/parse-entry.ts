@@ -6,6 +6,7 @@ import { load as parseYaml } from 'js-yaml';
 import type {
   Anchor,
   BreachEffect,
+  Collection,
   Grounding,
   ScpFile,
   SlotType,
@@ -227,10 +228,44 @@ export function parseEntry(raw: string): ScpFile {
     throw new EntryParseError('field "entity_self" must be a boolean');
   }
 
+  // v3 (Phase 1): collections + the day cycle. `collection` defaults to 'inbound'
+  // (the v2 corpus carries neither field); `day` is the 4 AM mount that delivers an
+  // inbound file, defaulting to 1. The shelf's rules are structural:
+  //  - a local file is IN THE CLEAR — zero anchors (that is its job as the
+  //    grounding floor; a redacted shelf would re-gate the on-ramp);
+  //  - a local file never carries `day` (it was always here).
+  let collection: Collection | undefined;
+  if (o.collection !== undefined && o.collection !== null) {
+    const c = asString(o.collection, 'collection');
+    if (c !== 'local' && c !== 'inbound') {
+      throw new EntryParseError(`field "collection" "${c}" is not local|inbound`);
+    }
+    collection = c;
+  }
+  let day: number | undefined;
+  if (o.day !== undefined && o.day !== null) {
+    if (typeof o.day !== 'number' || !Number.isInteger(o.day) || o.day < 1) {
+      throw new EntryParseError('field "day" must be a positive integer (the 4 AM mount that delivers this file)');
+    }
+    day = o.day;
+  }
+  if (collection === 'local') {
+    if (day !== undefined) {
+      throw new EntryParseError('a local (shelf) file must not carry "day" — the shelf was always here');
+    }
+    if (anchors.length > 0) {
+      throw new EntryParseError(
+        `a local (shelf) file must have zero anchors (found ${anchors.length}) — the shelf is in the clear`,
+      );
+    }
+  }
+
   const file: ScpFile = {
     item: asString(o.item, 'item'),
     object_class: asString(o.object_class, 'object_class'),
     site: asString(o.site, 'site'),
+    ...(collection ? { collection } : {}),
+    ...(day !== undefined ? { day } : {}),
     anchors,
     xrefs: rawXrefs as string[],
     breach_effect: parseBreachEffect(o.breach_effect),

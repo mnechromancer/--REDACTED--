@@ -9,24 +9,26 @@
   import {
     corpus,
     loadCorpus,
-    seedReach,
     reachableFiles,
+    collectionOf,
   } from './lib/game.svelte.ts';
   import { ui, dismissQuippy, clearAllBuffers } from './lib/ui.svelte.ts';
   import { session, beginSession, resetSession } from './lib/session.svelte.ts';
+  import { resetMail } from './lib/mail.svelte.ts';
   import AmberTerminal from './components/AmberTerminal.svelte';
   import QuippyPanel from './components/QuippyPanel.svelte';
   import EndState from './components/EndState.svelte';
   import corpusData from '../static/corpus.json';
 
   loadCorpus(corpusData as Corpus);
-  resetSession(); // fresh run: back to the bootup screen, Quippy not yet met
+  resetSession(); // fresh run: back to the bootup screen, day 1, Quippy not yet met
   clearAllBuffers(); // fresh run: no forged citations carried over
+  resetMail(); // fresh run: nothing read
 
-  // v2 reset (decision D): no clearance. The citation graph is the only gate —
-  // seed the opening file; reachability opens the rest by following its xrefs.
-  // The teaching pair: seed 001 (the intake hub); 001 → 002 via xref.
-  seedReach('SCP-41B-001');
+  // v3 (Phase 1): the day is the gate. The shelf (collection 'local') is always
+  // reachable; inbound files mount when their day arrives. No seed file — the v2
+  // seed-plus-xref-closure gate is retired (the tray is open; the jam is in the
+  // grounding).
 
   // The bootup exposition (Phase 2, reset_amber_v2.md §3.1) — AMBER's own clinical,
   // institutional voice, stating the SOURCE-LESS PREMISE as the job: the originals
@@ -111,16 +113,22 @@
     return '';
   }
 
-  // Visible files = the reachable set (decision D). The old onboarding-unlock gate
-  // is retired here: it was circular under the citation graph — 002 only unlocked
-  // after a confirmed solve, but solving 001 REQUIRES citing 002 (which was hidden).
-  // Reachability is the correct gate; the scripted onboarding is removed in Phase 2.
+  // Visible files = the reachable set: the shelf plus the mounted consignment.
+  // Order: the shelf first (reference volumes on the desk), then inbound by id with
+  // the legacy hub 001 leading its batch (keeps the v2 corpus opening on its seed
+  // until Phase 2 lands the real day-1 content).
   const visibleFiles = $derived.by(() => {
     const reached = reachableFiles();
-    // stable order: seed first, then the rest by id.
     return Object.values(corpus)
       .filter((f) => reached.has(f.item))
-      .sort((a, b) => (a.item === 'SCP-41B-001' ? -1 : b.item === 'SCP-41B-001' ? 1 : a.item.localeCompare(b.item)));
+      .sort((a, b) => {
+        const ac = collectionOf(a) === 'local' ? 0 : 1;
+        const bc = collectionOf(b) === 'local' ? 0 : 1;
+        if (ac !== bc) return ac - bc;
+        if (a.item === 'SCP-41B-001') return -1;
+        if (b.item === 'SCP-41B-001') return 1;
+        return a.item.localeCompare(b.item);
+      });
   });
   const visibleOrder = $derived(visibleFiles.map((f) => f.item));
 

@@ -218,3 +218,85 @@ describe('validateCorpus (aggregate)', () => {
     expect(validateCorpus(files)).toEqual([]);
   });
 });
+
+// ── v3 Phase 1 — collections + the day cycle ────────────────────────────────
+
+describe('per-file parsing — collection/day (v3)', () => {
+  const asLocal = (raw: string) =>
+    raw
+      .replace('site: "Site-41B"', 'site: "Site-41B"\ncollection: "local"')
+      // a local file is in the clear: strip the anchor list and its body token
+      .replace(/anchors:[\s\S]*?exposure_weight: 2\n/, 'anchors: []\n')
+      .replace('⟦a1⟧', 'a switchboard');
+
+  it('parses collection and day; both default to absent (inbound day-1 semantics)', () => {
+    const f = parseEntry(VALID_003);
+    expect(f.collection).toBeUndefined();
+    expect(f.day).toBeUndefined();
+    const g = parseEntry(
+      VALID_003.replace('site: "Site-41B"', 'site: "Site-41B"\ncollection: "inbound"\nday: 3'),
+    );
+    expect(g.collection).toBe('inbound');
+    expect(g.day).toBe(3);
+  });
+
+  it('parses a valid local (shelf) file — zero anchors, no day', () => {
+    const f = parseEntry(asLocal(VALID_003));
+    expect(f.collection).toBe('local');
+    expect(f.anchors).toHaveLength(0);
+  });
+
+  it('rejects an unknown collection', () => {
+    const raw = VALID_003.replace('site: "Site-41B"', 'site: "Site-41B"\ncollection: "outbound"');
+    expect(() => parseEntry(raw)).toThrow(/collection/);
+  });
+
+  it('rejects a non-positive or fractional day', () => {
+    const raw = VALID_003.replace('site: "Site-41B"', 'site: "Site-41B"\nday: 0');
+    expect(() => parseEntry(raw)).toThrow(/day/);
+    const raw2 = VALID_003.replace('site: "Site-41B"', 'site: "Site-41B"\nday: 1.5');
+    expect(() => parseEntry(raw2)).toThrow(/day/);
+  });
+
+  it('rejects a local file carrying a day (the shelf was always here)', () => {
+    const raw = asLocal(VALID_003).replace('collection: "local"', 'collection: "local"\nday: 1');
+    expect(() => parseEntry(raw)).toThrow(/local.*day|day.*local/i);
+  });
+
+  it('rejects a local file with anchors (the shelf is in the clear)', () => {
+    const raw = VALID_003.replace('site: "Site-41B"', 'site: "Site-41B"\ncollection: "local"');
+    expect(() => parseEntry(raw)).toThrow(/zero anchors/);
+  });
+});
+
+describe('grounding-citeable — the day/shelf rules (v3)', () => {
+  it('fires when the cited file mounts AFTER the citing file', () => {
+    const files = clone(validFiles());
+    const cited = files.find((f) => f.item === 'SCP-41B-001')!;
+    cited.day = 2; // 003 (day 1 by default) cites 001, which now arrives day 2
+    const errors = checkGroundingCiteable(files, index(files));
+    expect(errors.some((e) => e.rule === 'grounding-citeable' && /mounts AFTER/.test(e.message))).toBe(true);
+  });
+
+  it('passes when the cited file is local — always mounted, and no xref needed', () => {
+    const files = clone(validFiles());
+    const cited = files.find((f) => f.item === 'SCP-41B-001')!;
+    cited.collection = 'local';
+    cited.anchors = []; // the shelf is in the clear
+    const citing = files.find((f) => f.item === 'SCP-41B-003')!;
+    // remove the declared xref AND the body wikilink: the shelf needs no link.
+    citing.xrefs = [];
+    citing.body = citing.body.replace('[[SCP-41B-001]]', 'SCP-41B-001');
+    const errors = checkGroundingCiteable(files, index(files));
+    expect(errors).toHaveLength(0);
+  });
+
+  it('still requires the xref for an inbound→inbound cite (discovery discipline)', () => {
+    const files = clone(validFiles());
+    const citing = files.find((f) => f.item === 'SCP-41B-003')!;
+    citing.xrefs = [];
+    citing.body = citing.body.replace('[[SCP-41B-001]]', 'SCP-41B-001');
+    const errors = checkGroundingCiteable(files, index(files));
+    expect(errors.some((e) => e.rule === 'grounding-citeable' && /not a declared xref/.test(e.message))).toBe(true);
+  });
+});

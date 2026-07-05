@@ -9,8 +9,6 @@ import {
   overlay,
   exposure,
   breaches,
-  seedReachable,
-  seedReach,
   makeRef,
   insert,
   anchorOf,
@@ -19,14 +17,14 @@ import {
   PROPAGATION_FACTOR,
 } from '../game.svelte.ts';
 import { makeCorpus } from './fixtures.ts';
+import { session } from '../session.svelte.ts';
 
 beforeEach(() => {
   loadCorpus(makeCorpus());
   for (const k of Object.keys(overlay)) delete overlay[k];
-  seedReachable.clear();
+  session.day = 1; // v3: the day is the gate (all fixture files are inbound day-1)
   breaches.clear();
   exposure.value = 0;
-  seedReach('SCP-41B-001');
 });
 
 const F1_A1 = makeRef('SCP-41B-001', 'a1'); // alpha, key-a

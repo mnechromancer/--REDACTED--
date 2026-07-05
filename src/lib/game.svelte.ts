@@ -21,6 +21,7 @@ import type { Corpus, OverlayEntry, Anchor, Via, ForgedCitation } from './corpus
 // `corpus` is immutable after load; everything else is the mutable board state.
 
 import { SvelteSet } from 'svelte/reactivity';
+import { session } from './session.svelte.ts';
 
 export const corpus = $state<Corpus>({});            // immutable after load
 export const overlay = $state<Record<string, OverlayEntry>>({}); // mutable, propagating
@@ -37,50 +38,42 @@ export const breaches = new SvelteSet<string>();      // breached item ids
 // supersedes the old watch-item-1 redemption, where an AMBER re-solve cleared taint.
 export const quippyTouched = new SvelteSet<string>(); // anchor_refs ever touched by Quippy
 
-// ── Reachability (v2 reset — replaces clearance, decision D) ───────────────
-// Pure-graph gating: a file is reachable iff its inbound citations are reachable.
-// `seedReachable` is the opening file(s) the bootup hands the player; a file becomes
-// reachable when a reachable file links to it (xrefs) — the player can follow the
-// link to read it. There is no clearance tier; the citation graph is the only gate.
-// Kept minimal for the teaching pair: seed = the opening file, and following its
-// xref opens the linked file. The general topological solver is Phase 5 (the graph
-// view) — do not build it before the pair proves the primitive.
-export const seedReachable = new SvelteSet<string>(); // item ids handed to the player at start
+// ── Reachability (v3 frame — the day is the gate) ──────────────────────────
+// The v2 seed-plus-xref-closure gate is RETIRED (Phase 1, decision v3-A/§4.4): the
+// tray is open. A file is reachable iff it is on the SHELF (collection 'local' —
+// always here) or MOUNTED (an inbound file whose `day` has arrived). Within a day's
+// mount everything is openable; the xref graph is navigation and grounding-
+// discovery, not the opening gate — and a reference to a not-yet-mounted file is a
+// dead letter until its 4 AM (the tease is deliberate). The traffic jam lives in
+// what you can GROUND, not what you can open; pacing lives in days.
 
-/** Mark `item` as a starting (seed) reachable file. Call at load for the opening file(s). */
-export function seedReach(item: string): void {
-  seedReachable.add(item);
+/** A file's collection, defaulted: absent ⇒ 'inbound' (the v2 corpus/back-compat). */
+export function collectionOf(file: { collection?: 'local' | 'inbound' }): 'local' | 'inbound' {
+  return file.collection ?? 'inbound';
 }
 
 /**
- * The set of reachable file ids: the seed plus every file reachable by following
- * xrefs outward from a reachable file (transitive closure over the xref graph).
- * A file with no inbound path from a seed is unreachable — its slots can't yet be
- * cited and its body can't yet ground anything. With the teaching pair this is
- * "seed = 001; 001 xrefs 002; so {001, 002} are reachable."
+ * The 4 AM mount that delivers a file: local ⇒ 0 (always here, before any batch);
+ * inbound ⇒ its `day`, defaulting to 1 (the v2 corpus is all day-1 inbound).
  */
-export function reachableFiles(): Set<string> {
-  const reached = new Set<string>(seedReachable);
-  let grew = true;
-  while (grew) {
-    grew = false;
-    for (const item of [...reached]) {
-      const file = corpus[item];
-      if (!file) continue;
-      for (const x of file.xrefs) {
-        if (corpus[x] && !reached.has(x)) {
-          reached.add(x);
-          grew = true;
-        }
-      }
-    }
-  }
-  return reached;
+export function dayOf(file: { collection?: 'local' | 'inbound'; day?: number }): number {
+  return collectionOf(file) === 'local' ? 0 : (file.day ?? 1);
 }
 
-/** True if `item` is reachable in the current graph (seed + xref closure). */
+/** True if `item` is reachable now: on the shelf, or mounted by the current day. */
 export function isReachable(item: string): boolean {
-  return reachableFiles().has(item);
+  const file = corpus[item];
+  if (!file) return false;
+  return dayOf(file) <= session.day;
+}
+
+/** The set of reachable file ids under the current day. */
+export function reachableFiles(): Set<string> {
+  const reached = new Set<string>();
+  for (const file of Object.values(corpus)) {
+    if (dayOf(file) <= session.day) reached.add(file.item);
+  }
+  return reached;
 }
 
 /** Replace the corpus in place (the store is a module singleton). Call once at load. */

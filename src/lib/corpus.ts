@@ -68,6 +68,20 @@ export type BreachEffect =
   | { kind: 'lock_tier'; tier: number }
   | { kind: 'randomize_propagation'; fraction: number };
 
+/**
+ * Which collection a file belongs to (v3 frame — reset_v3_intake.md §2.2):
+ *
+ *  - **local** — the receiving site's own reference shelf: unredacted (ZERO anchors,
+ *    build-enforced), always reachable, persistent across days. The grounding floor —
+ *    the winnability chain bottoms out here. Never carries `day`.
+ *  - **inbound** — a redacted Site-41B document, mounted by the 4 AM batch of its
+ *    `day`. Unreachable until its day arrives; erased-and-re-mounted daily (the
+ *    transmittal model keeps only cited commits — decision v3-A).
+ *
+ * Optional for back-compat with the v2 corpus and fixtures: absent ⇒ 'inbound'.
+ */
+export type Collection = 'local' | 'inbound';
+
 /** One game entity, parsed from one `vault/entries/*.md` file. */
 export interface ScpFile {
   /** "SCP-41B-XXX" (site-local; see entity_roster.md) */
@@ -75,6 +89,13 @@ export interface ScpFile {
   /** Safe | Euclid | Keter | ... */
   object_class: string;
   site: string;
+  /** shelf or batch (v3). Absent ⇒ 'inbound' (back-compat). */
+  collection?: Collection;
+  /**
+   * Which 4 AM mount delivers an inbound file (1-based). Absent ⇒ 1. Local files
+   * never carry a day (the shelf was always here) — build-enforced.
+   */
+  day?: number;
   anchors: Anchor[];
   /** explicit narrative cross-references (item ids) */
   xrefs: string[];

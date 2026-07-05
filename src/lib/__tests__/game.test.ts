@@ -8,8 +8,6 @@ import {
   loadCorpus,
   overlay,
   exposure,
-  seedReachable,
-  seedReach,
   makeRef,
   insert,
   resolveSlot,
@@ -21,6 +19,7 @@ import {
   BREACH_THRESHOLD,
 } from '../game.svelte.ts';
 import { makeCorpus } from './fixtures.ts';
+import { session } from '../session.svelte.ts';
 import type { Corpus } from '../corpus.ts';
 
 // F2#a1 'beta' — sole carrier of key-b, so inserting here touches only itself.
@@ -32,11 +31,10 @@ const SOLO_WRONG = 'WRONG';
 beforeEach(() => {
   loadCorpus(makeCorpus());
   for (const k of Object.keys(overlay)) delete overlay[k];
-  seedReachable.clear();
+  session.day = 1; // v3: the day is the gate (all fixture files are inbound day-1)
   breaches.clear();
   quippyTouched.clear();
   exposure.value = 0;
-  seedReach('SCP-41B-001');
 });
 
 describe('insert — single-slot overlay', () => {

@@ -8,8 +8,6 @@ import {
   overlay,
   exposure,
   breaches,
-  seedReachable,
-  seedReach,
   makeRef,
   insert,
   commitWithCitations,
@@ -35,6 +33,7 @@ import {
   clearBuffer,
   clearAllBuffers,
   xrefLinksOf,
+  noteHonestCommit,
 } from '../ui.svelte.ts';
 import { session, resetSession } from '../session.svelte.ts';
 import { makeCorpus } from './fixtures.ts';
@@ -44,10 +43,8 @@ const ORDER = ['SCP-41B-001', 'SCP-41B-002', 'SCP-41B-003'] as const;
 beforeEach(() => {
   loadCorpus(makeCorpus());
   for (const k of Object.keys(overlay)) delete overlay[k];
-  seedReachable.clear();
   breaches.clear();
   exposure.value = 0;
-  seedReach('SCP-41B-001');
   ui.mode = 'amber';
   ui.quippyReason = 'summon';
   ui.activeFile = null;
@@ -70,37 +67,56 @@ describe('mode switching — refusable Quippy', () => {
   });
 });
 
-describe("Quippy's uninvited first contact (§3.3)", () => {
-  it('does NOT intrude when the player opens a SEED file', () => {
-    openFile('SCP-41B-001'); // the opening file the player was handed
+describe("Quippy's uninvited first contact (v3-C — the first honest commit)", () => {
+  const F1_A1 = makeRef('SCP-41B-001', 'a1');
+  // F2's body holds "alpha" in the clear — the real grounding span for F1#a1.
+  const CITE = { item: 'SCP-41B-002', text: 'holding alpha names' };
+
+  it('does NOT intrude on opening files — the tray is open, reading is free', () => {
+    openFile('SCP-41B-001');
+    openFile('SCP-41B-002');
+    openFile('SCP-41B-003');
     expect(ui.mode).toBe('amber');
     expect(session.quippyMet).toBe(false);
   });
 
-  it('intrudes once, marked first-contact, the first time a non-seed (linked) file opens', () => {
-    openFile('SCP-41B-002'); // followed the link off 001 (no prior blank to route to)
+  it('intrudes once, marked first-contact, on the FIRST successful AMBER commit', () => {
+    openFile('SCP-41B-001');
+    const r = commitWithCitations(F1_A1, 'alpha', [CITE]);
+    expect(r.ok).toBe(true);
+    noteHonestCommit(F1_A1); // the commit surface (AmberLookup) calls this on success
     expect(ui.mode).toBe('quippy');
     expect(ui.quippyReason).toBe('first-contact');
     expect(session.quippyMet).toBe(true);
   });
 
-  it('routes the cursor BACK to the blank the player left, not the unread file', () => {
-    // The realistic path: working a blank on 001, follow its link into 002.
-    openFile('SCP-41B-001');
-    const blank = redactedSpansOf('SCP-41B-001')[0];
-    expect(ui.activeSpan).toBe(blank); // cursor on 001's blank
-    openFile('SCP-41B-002'); // follow the link — first contact fires
+  it('routes the cursor BACK to a blank the player left — never the slot just solved', () => {
+    // The realistic path: cursor on 002's blank, walk away to 001, solve there.
+    openFile('SCP-41B-002');
+    const leftBlank = redactedSpansOf('SCP-41B-002')[0];
+    expect(ui.activeSpan).toBe(leftBlank);
+    openFile('SCP-41B-001'); // abandons 002's blank (lastLeftSpan captured)
+    commitWithCitations(F1_A1, 'alpha', [CITE]);
+    noteHonestCommit(F1_A1);
     expect(ui.mode).toBe('quippy');
-    // Quippy pitches the slot the player LEFT (on 001), not 002's unread blank.
-    expect(ui.activeFile).toBe('SCP-41B-001');
-    expect(ui.activeSpan).toBe(blank);
+    expect(ui.activeFile).toBe('SCP-41B-002');
+    expect(ui.activeSpan).toBe(leftBlank);
   });
 
-  it('does not re-fire on later opens — first contact is once per run', () => {
-    openFile('SCP-41B-002'); // first contact
+  it('falls back to the next redacted span when no blank was left', () => {
+    openFile('SCP-41B-001'); // first open — no prior blank abandoned
+    commitWithCitations(F1_A1, 'alpha', [CITE]);
+    noteHonestCommit(F1_A1);
+    expect(ui.mode).toBe('quippy');
+    expect(ui.activeSpan).not.toBeNull();
+    expect(ui.activeSpan).not.toBe(F1_A1); // never pitches the slot just earned
+  });
+
+  it('does not re-fire on later commits — first contact is once per run', () => {
+    noteHonestCommit(F1_A1); // fires
     dismissQuippy();
     expect(ui.mode).toBe('amber');
-    openFile('SCP-41B-003'); // another linked file — Quippy stays gone
+    noteHonestCommit(makeRef('SCP-41B-002', 'a1')); // a later commit — Quippy stays gone
     expect(ui.mode).toBe('amber');
     // a later player-initiated summon is a 'summon', not first-contact
     summonQuippy();
@@ -109,11 +125,6 @@ describe("Quippy's uninvited first contact (§3.3)", () => {
 });
 
 describe('file traversal', () => {
-  // These exercise navigation, not Quippy — disarm the first-contact trigger so
-  // opening a linked file doesn't route the cursor away mid-traversal.
-  beforeEach(() => {
-    session.quippyMet = true;
-  });
 
   it('open sets the active file and lands on its first redacted span', () => {
     expect(openFile('SCP-41B-002')).toBe(true);
