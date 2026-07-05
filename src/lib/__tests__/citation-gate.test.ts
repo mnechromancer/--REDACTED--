@@ -13,8 +13,6 @@ import {
   overlay,
   exposure,
   breaches,
-  seedReachable,
-  seedReach,
   makeRef,
   insert,
   corroborates,
@@ -25,6 +23,7 @@ import {
 } from '../game.svelte.ts';
 import type { ForgedCitation } from '../corpus.ts';
 import { makeCorpus } from './fixtures.ts';
+import { session } from '../session.svelte.ts';
 
 // teaching seams: F1#a1 'alpha' grounded by a span in F2; F2#a1 'beta' grounded in F1.
 const F1_A1 = makeRef('SCP-41B-001', 'a1'); // alpha — F2's body holds "alpha"
@@ -40,11 +39,10 @@ function cite(item: string, text: string): ForgedCitation {
 beforeEach(() => {
   loadCorpus(makeCorpus());
   for (const k of Object.keys(overlay)) delete overlay[k];
-  seedReachable.clear();
+  session.day = 1; // v3: the day is the gate (all fixture files are inbound day-1)
   breaches.clear();
   exposure.value = 0;
   // seed F1; F1 xrefs F2 and F3, so the whole non-self corpus is reachable.
-  seedReach('SCP-41B-001');
 });
 
 describe('spanContainsWord — the commit-time containment check', () => {
@@ -67,7 +65,7 @@ describe('corroborates — a forged span grounds the word', () => {
   });
 
   it('a span from an UNREACHABLE file grounds nothing', () => {
-    seedReachable.clear(); // nothing reachable now
+    session.day = 0; // before the first consignment — nothing inbound is mounted
     expect(corroborates(cite('SCP-41B-002', 'holding alpha names'), F1_A1)).toBe(false);
   });
 
@@ -154,7 +152,7 @@ describe('commitWithCitations — inference slot (transparent meter, decision A)
 
 describe('ungroundable slots', () => {
   it('a teaching slot whose citeIn (winnability) files are all unreachable is ungroundable', () => {
-    seedReachable.clear();
+    session.day = 0; // before the first consignment — nothing inbound is mounted
     expect(isUngroundable(F1_A1)).toBe(true);
     const r = commitWithCitations(F1_A1, 'alpha', [cite('SCP-41B-002', 'the holding alpha names')]);
     expect(r).toEqual({ ok: false, reason: 'ungroundable' });

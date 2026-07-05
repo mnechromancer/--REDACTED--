@@ -10,8 +10,6 @@ import {
   overlay,
   exposure,
   breaches,
-  seedReachable,
-  seedReach,
   makeRef,
   anchorOf,
   insert,
@@ -23,16 +21,16 @@ import {
   QUIPPY_HIGH_THRESHOLD,
 } from '../quippy.svelte.ts';
 import { makeCorpus } from './fixtures.ts';
+import { session } from '../session.svelte.ts';
 
 const F1_A1 = makeRef('SCP-41B-001', 'a1'); // truth 'alpha'
 
 beforeEach(() => {
   loadCorpus(makeCorpus());
   for (const k of Object.keys(overlay)) delete overlay[k];
-  seedReachable.clear();
+  session.day = 1; // v3: the day is the gate (all fixture files are inbound day-1)
   breaches.clear();
   exposure.value = 0;
-  seedReach('SCP-41B-001');
 });
 
 describe('exposure bands (§4)', () => {

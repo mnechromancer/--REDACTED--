@@ -1,66 +1,105 @@
-// Reachability (v2 reset, decision D) — the pure-graph gate that replaces clearance.
-// A file is reachable iff its inbound citations are reachable: the seed plus the
-// transitive closure of xrefs from a reachable file. This gates what can be cited and
-// what grounds anything — an unreachable carrier is not yet evidence.
+// Reachability (v3 Phase 1 — the day is the gate). The v2 seed-plus-xref-closure
+// gate is retired: a file is reachable iff it is on the SHELF (collection 'local',
+// always here) or MOUNTED (inbound, day <= session.day). The xref graph is
+// navigation and grounding-discovery, not the opening gate. Reachability still
+// gates what counts as evidence: an unmounted carrier is not yet citable.
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
   loadCorpus,
   overlay,
-  seedReachable,
-  seedReach,
   reachableFiles,
   isReachable,
+  collectionOf,
+  dayOf,
   crossMentions,
   makeRef,
 } from '../game.svelte.ts';
+import { session, resetSession } from '../session.svelte.ts';
 import { makeCorpus } from './fixtures.ts';
+import type { Corpus } from '../corpus.ts';
+
+/** The engine fixture, re-collectioned: F1 local (the shelf), F2 day-1, F3 day-2. */
+function makeDayCorpus(): Corpus {
+  const c = makeCorpus();
+  return {
+    ...c,
+    'SCP-41B-001': { ...c['SCP-41B-001'], collection: 'local', anchors: [] },
+    'SCP-41B-002': { ...c['SCP-41B-002'], collection: 'inbound', day: 1 },
+    'SCP-41B-003': { ...c['SCP-41B-003'], collection: 'inbound', day: 2 },
+  };
+}
 
 beforeEach(() => {
   loadCorpus(makeCorpus());
   for (const k of Object.keys(overlay)) delete overlay[k];
-  seedReachable.clear();
+  resetSession();
+  session.booting = false;
 });
 
-describe('reachableFiles — seed + xref closure', () => {
-  it('nothing is reachable before a seed', () => {
+describe('defaults — the v2 corpus is all inbound, day 1 (back-compat)', () => {
+  it('a file with neither field is inbound and mounts on day 1', () => {
+    const f = makeCorpus()['SCP-41B-001'];
+    expect(collectionOf(f)).toBe('inbound');
+    expect(dayOf(f)).toBe(1);
+  });
+
+  it('on day 1 the whole legacy corpus is reachable — the tray is open', () => {
+    const r = reachableFiles();
+    expect(r.has('SCP-41B-001')).toBe(true);
+    expect(r.has('SCP-41B-002')).toBe(true);
+    expect(r.has('SCP-41B-003')).toBe(true);
+    expect(r.has('SCP-41B-000')).toBe(true);
+  });
+
+  it('before the first consignment (day 0) nothing inbound is mounted', () => {
+    session.day = 0;
     expect(reachableFiles().size).toBe(0);
   });
+});
 
-  it('the seed reaches itself and everything its xrefs transitively open', () => {
-    seedReach('SCP-41B-001'); // F1 xrefs F2, F3; F2 xrefs F3 — closure is {F1,F2,F3}
-    const r = reachableFiles();
-    expect(r.has('SCP-41B-001')).toBe(true);
-    expect(r.has('SCP-41B-002')).toBe(true);
-    expect(r.has('SCP-41B-003')).toBe(true);
+describe('collections — the shelf and the mounts', () => {
+  beforeEach(() => {
+    loadCorpus(makeDayCorpus());
   });
 
-  it('a file with no inbound path from a seed stays unreachable', () => {
-    // F0 (self) is xref'd by nobody in the non-self graph and is not seeded.
-    seedReach('SCP-41B-001');
-    expect(isReachable('SCP-41B-000')).toBe(false);
+  it('a local file is reachable even before any consignment', () => {
+    session.day = 0;
+    expect(isReachable('SCP-41B-001')).toBe(true);
+    expect(dayOf(makeDayCorpus()['SCP-41B-001'])).toBe(0);
   });
 
-  it('seeding a leaf reaches only what IT links to', () => {
-    seedReach('SCP-41B-003'); // F3 xrefs only F2; F2 xrefs F1, F3 → {F3,F2,F1}
-    const r = reachableFiles();
-    expect(r.has('SCP-41B-003')).toBe(true);
-    expect(r.has('SCP-41B-002')).toBe(true);
-    expect(r.has('SCP-41B-001')).toBe(true);
+  it('an inbound file is unreachable until its day arrives, then stays mounted', () => {
+    expect(isReachable('SCP-41B-002')).toBe(true); // day 1, mounted
+    expect(isReachable('SCP-41B-003')).toBe(false); // day 2 — not yet arrived
+    session.day = 2;
+    expect(isReachable('SCP-41B-003')).toBe(true);
+    session.day = 3; // cumulative: earlier mounts stay
+    expect(isReachable('SCP-41B-002')).toBe(true);
+    expect(isReachable('SCP-41B-003')).toBe(true);
+  });
+
+  it('a dangling item is not reachable', () => {
+    expect(isReachable('SCP-41B-999')).toBe(false);
   });
 });
 
-describe('crossMentions respects reachability', () => {
-  it('a co-carrier in an unreachable file is not surfaced as evidence', () => {
-    // key-a: F1#a1 ↔ F3#a1. Seed only F3 in isolation by clearing the F1 path? F3
-    // xrefs F2 which xrefs F1, so F1 is reachable from F3. To get an unreachable
-    // co-carrier, seed nothing: then F1#a1 has no reachable peers.
-    seedReachable.clear();
-    expect(crossMentions(makeRef('SCP-41B-001', 'a1'))).toEqual([]);
+describe('crossMentions — an unmounted carrier is not yet evidence', () => {
+  beforeEach(() => {
+    loadCorpus(makeDayCorpus());
   });
 
-  it('once reachable, the co-carrier appears', () => {
-    seedReach('SCP-41B-001');
-    expect(crossMentions(makeRef('SCP-41B-001', 'a1'))).toEqual([makeRef('SCP-41B-003', 'a1')]);
+  it('a co-carrier in a not-yet-mounted file is not surfaced', () => {
+    // F2#a2 (key-inf) has co-carriers on F3 (a2/a3) — F3 mounts day 2.
+    const ref = makeRef('SCP-41B-002', 'a2');
+    expect(crossMentions(ref)).toEqual([]);
+  });
+
+  it('once its day arrives, the co-carrier appears', () => {
+    session.day = 2;
+    const ref = makeRef('SCP-41B-002', 'a2');
+    const mentions = crossMentions(ref);
+    expect(mentions).toContain(makeRef('SCP-41B-003', 'a2'));
+    expect(mentions).toContain(makeRef('SCP-41B-003', 'a3'));
   });
 });

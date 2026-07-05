@@ -7,10 +7,11 @@
 // game.svelte.ts); it only decides what the terminal shows and where the cursor is.
 
 import { SvelteMap } from 'svelte/reactivity';
-import { corpus, allRefs, splitRef, makeRef, resolveSlot, anchorOf, seedReachable } from './game.svelte.ts';
+import { corpus, allRefs, splitRef, makeRef, resolveSlot, anchorOf, isReachable, dayOf } from './game.svelte.ts';
 import type { ForgedCitation } from './corpus.ts';
 import { parseBody } from './parseBody.ts';
-import { session } from './session.svelte.ts';
+import { session, advanceDay } from './session.svelte.ts';
+import { mailArrivingOn } from './mail.svelte.ts';
 
 export type InterfaceMode = 'amber' | 'quippy';
 
@@ -135,9 +136,10 @@ export function clearBuffer(ref: string): void {
   citationBuffers.delete(ref);
 }
 
-/** Drop every slot's forged citations — a fresh run. */
+/** Drop every slot's forged citations — a fresh run (and part of the 4 PM wipe). */
 export function clearAllBuffers(): void {
   citationBuffers.clear();
+  lastLeftSpan = null; // the cursor's memory of an abandoned blank is work-product too
 }
 
 function truncate(s: string, n = 48): string {
@@ -153,36 +155,61 @@ export function summonQuippy(): void {
 }
 
 /**
- * Quippy's uninvited first contact (reset_amber_v2.md §3.3 — the motivated
- * entrance, decided trigger: opening the second file via the link). AMBER never
- * summons Quippy; Quippy intrudes. It surfaces the moment the player has shown the
- * honest verb works — they followed a slot's xref into a file they were not handed
- * at boot — which is exactly when Quippy makes its case to be unnecessary by being
- * easy. Fires at most once per run (`session.quippyMet`); after that, summoning is
- * the player's own choice. Refusal is one keystroke either way (Esc).
- *
- * The target it pitches (user decision): NOT a slot in the just-opened file — the
- * player hasn't read that file yet, and offering its answer is incoherent. Quippy
- * instead **routes the cursor back to the slot the player was working on** when they
- * followed the link (`priorSpan`) and offers to fill *that* — the blank the link was
- * going to help them cite. ("You don't need to be over here; I already know what
- * goes back there.") For the teaching pair that is 001's slot; it generalizes to any
- * file. `ui.activeFile` is moved back to that slot's file so the pane behind the
- * overlay shows the record Quippy is offering to fill, not the unread one.
- *
- * @param priorSpan the anchor_ref the cursor was on before this open (may be null).
+ * The blank the player most recently walked away from: the redacted span the cursor
+ * was on when they opened a different file. Quippy's first contact routes back to it
+ * (the "you don't need to be over here" beat). Wiped with the buffers at 4 PM and on
+ * a fresh run — it is work-product, not run state.
  */
-function maybeFirstContact(item: string, priorSpan: string | null): void {
+let lastLeftSpan: string | null = null;
+
+/**
+ * Quippy's uninvited first contact — v3 trigger (decision v3-C, superseding the v2
+ * "opened the second file" trigger): the player's FIRST successful forged-and-
+ * committed citation. Quippy watches the whole honest verb land — chase the
+ * reference, read, select, forge, argue it past AMBER — and intrudes at the moment
+ * of the a-ha, when its pitch ("that word you just earned? I had it the whole
+ * time") stings most. AMBER never summons it; it fires at most once per run
+ * (`session.quippyMet`); refusal is one keystroke (Esc).
+ *
+ * The target it pitches: a blank the player LEFT, preferring the span they most
+ * recently abandoned to follow a link (`lastLeftSpan`), falling back to the next
+ * still-redacted span anywhere reachable. Never the slot just solved. The pane
+ * behind the overlay moves to the pitched record so the player sees exactly what
+ * Quippy is offering to fill.
+ *
+ * Called by the commit surface (AmberLookup) after a successful AMBER commit.
+ * @param solvedRef the slot the player just committed (never the pitch target).
+ */
+export function noteHonestCommit(solvedRef: string): void {
   if (session.quippyMet) return;
-  if (seedReachable.has(item)) return; // the opening file(s) — not a followed link
   session.quippyMet = true;
   ui.quippyReason = 'first-contact';
-  // Route back to the slot the player left to follow the link, if it's still blank.
-  if (priorSpan && resolveSlot(priorSpan).state === 'redacted') {
-    ui.activeFile = splitRef(priorSpan).item;
-    ui.activeSpan = priorSpan;
+  const target =
+    lastLeftSpan && lastLeftSpan !== solvedRef && resolveSlot(lastLeftSpan).state === 'redacted'
+      ? lastLeftSpan
+      : firstRedactedAnywhere(solvedRef);
+  if (target) {
+    ui.activeFile = splitRef(target).item;
+    ui.activeSpan = target;
   }
   ui.mode = 'quippy';
+}
+
+/**
+ * The next still-redacted span anywhere reachable, preferring the active file, and
+ * never `excludeRef`. Quippy's fallback pitch target when the player left no blank.
+ */
+function firstRedactedAnywhere(excludeRef: string): string | null {
+  const items = ui.activeFile
+    ? [ui.activeFile, ...Object.keys(corpus).filter((i) => i !== ui.activeFile)]
+    : Object.keys(corpus);
+  for (const item of items) {
+    if (!isReachable(item)) continue;
+    for (const ref of redactedSpansOf(item)) {
+      if (ref !== excludeRef) return ref;
+    }
+  }
+  return null;
 }
 
 /** Dismiss Quippy back to AMBER — always available, one keystroke. */
@@ -200,14 +227,19 @@ export function openFile(item: string): boolean {
     log(`open: no such file ${item}`, 'reject');
     return false;
   }
-  const priorSpan = ui.activeSpan; // the slot the player leaves to follow the link
+  // v3: a referenced file whose day has not arrived is a dead letter — the record
+  // exists somewhere at Site-41B, but no consignment has delivered it yet.
+  if (!isReachable(item)) {
+    log(`open: ${item} — NOT IN ARCHIVE. no consignment has delivered this holding.`, 'reject');
+    return false;
+  }
+  // Remember the blank the player is walking away from (Quippy's route-back target).
+  if (ui.activeFile !== item && ui.activeSpan && resolveSlot(ui.activeSpan).state === 'redacted') {
+    lastLeftSpan = ui.activeSpan;
+  }
   ui.activeFile = item;
   ui.activeSpan = firstRedactedSpan(item) ?? null;
   log(`open ${item}`, 'echo');
-  // Quippy's uninvited entrance rides on the player following a link to a non-seed
-  // file (§3.3). It routes the cursor back to `priorSpan` (the blank they left), so
-  // it never pitches the answer to the file the player hasn't read yet.
-  maybeFirstContact(item, priorSpan);
   return true;
 }
 
@@ -320,6 +352,42 @@ export function amberProgress(): AmberProgress {
     else solved++;
   }
   return { total, redacted, solved, struck };
+}
+
+// ── The 4 PM turnover (v3 Phase 1 — the transmittal wipe) ───────────────────
+// The presentation half of the day cycle (engine half: session.advanceDay). At
+// 16:00 the erasure takes the player's WORK-PRODUCT — notes, forged-citation
+// buffers, the live selection, the terminal log, the cursor's memory — and the
+// next 04:00 mounts the new consignment and delivers the day's mail. What
+// survives is run state: the overlay (transmitted commits — and Quippy's fills,
+// which is a tell), exposure, breaches, taint, and quippyMet.
+
+/** End the shift: run the 16:00 erasure, advance to the next 04:00, announce. */
+export function endShift(): void {
+  const kept = amberProgress();
+  const noteLines = session.notes.length;
+
+  advanceDay(); // engine half: notes destroyed, day += 1
+  clearAllBuffers(); // uncommitted forge work (and lastLeftSpan) is work-product
+  selection.item = '';
+  selection.text = '';
+  clearLog(); // the shift's log does not keep either
+
+  const day = session.day;
+  const newFiles = Object.values(corpus).filter((f) => dayOf(f) === day).length;
+  log(`16:00 — WORKSPACE ERASURE. ${noteLines} note line(s) and all uncommitted work destroyed.`, 'system');
+  log(`${kept.solved} transmitted reconstruction(s) retained on file.`, 'ok');
+  log(`DAY ${day} — 04:00. CONSIGNMENT RECEIVED${newFiles ? ` (${newFiles} new holding(s))` : ''}.`, 'system');
+  const newMail = mailArrivingOn(day).length;
+  if (newMail) log(`MAIL — ${newMail} new message(s). type mail.`, 'system');
+
+  // The cursor: keep the open record if it survived the turnover; land on its next blank.
+  if (ui.activeFile && !isReachable(ui.activeFile)) {
+    ui.activeFile = null;
+    ui.activeSpan = null;
+  } else if (ui.activeFile) {
+    ui.activeSpan = firstRedactedSpan(ui.activeFile) ?? null;
+  }
 }
 
 // ── Span label helpers (for the terminal/lookup) ───────────────────────────

@@ -21,7 +21,10 @@
     forgeCitation,
     currentSelection,
     xrefLinksOf,
+    endShift,
   } from '../lib/ui.svelte.ts';
+  import { session, addNote } from '../lib/session.svelte.ts';
+  import { deliveredMail, isRead, markRead, unreadCount } from '../lib/mail.svelte.ts';
   import FilePane from './FilePane.svelte';
   import AmberLookup from './AmberLookup.svelte';
 
@@ -70,6 +73,52 @@
     );
     if (hits.length === 0) log(`SEARCH "${term}" — 0 records.`, 'system');
     else log(`SEARCH "${term}" — ${hits.length} record(s): ${hits.map((f) => f.item).join(', ')}`, 'system');
+  }
+
+  // ── Mail / notes / the shift end (v3 Phase 1) ─────────────────────────────
+  // `mail` lists the delivered messages; `mail <n>` prints one and marks it read.
+  // `note <text>` appends to the doomed scratchpad; `note` lists it. `end` runs the
+  // 16:00 turnover (ui.endShift): notes, buffers, and the log are erased; transmitted
+  // commits survive; the next 04:00 consignment mounts.
+  function runMail(arg: string) {
+    const box = deliveredMail();
+    const a = arg.trim();
+    if (!a) {
+      if (box.length === 0) {
+        log('MAIL — no messages on file.', 'system');
+        return;
+      }
+      log(`MAIL — ${box.length} message(s), ${unreadCount()} unread. \`mail <n>\` to read:`, 'system');
+      box.forEach((m, i) => {
+        log(`  [${i + 1}]${isRead(m.id) ? '  ' : ' ●'} d${m.day} · ${m.from} — ${m.subject}`, 'system');
+      });
+      return;
+    }
+    const idx = parseInt(a, 10) - 1;
+    if (!/^\d+$/.test(a) || idx < 0 || idx >= box.length) {
+      log(`mail: no message [${a}] (there are ${box.length}).`, 'reject');
+      return;
+    }
+    const m = box[idx];
+    markRead(m.id);
+    log(`── MAIL [${idx + 1}] · FROM: ${m.from} · SUBJ: ${m.subject}`, 'system');
+    for (const line of m.body.split('\n')) log(line || ' ', 'echo');
+    log('── END OF MESSAGE', 'system');
+  }
+
+  function runNote(arg: string) {
+    const a = arg.trim();
+    if (!a) {
+      if (session.notes.length === 0) {
+        log('NOTES — empty. `note <text>` to add a line. Notes do not survive 16:00.', 'system');
+        return;
+      }
+      log(`NOTES — ${session.notes.length} line(s), destroyed at 16:00:`, 'system');
+      session.notes.forEach((n, i) => log(`  ${i + 1}. ${n}`, 'echo'));
+      return;
+    }
+    addNote(a);
+    log(`noted (${session.notes.length} line(s) — erased at 16:00).`, 'echo');
   }
 
   // Forge a citation from the live pane selection onto the active field (the verb's
@@ -139,6 +188,17 @@
       case 'c':
         runForge();
         break;
+      case 'mail':
+      case 'm':
+        runMail(arg);
+        break;
+      case 'note':
+        runNote(arg);
+        break;
+      case 'end':
+      case 'eod':
+        endShift();
+        break;
       case 'quippy':
       case 'q':
         summonQuippy();
@@ -149,8 +209,9 @@
         break;
       case 'help':
       case '?':
-        log('COMMANDS — open <n|record> · next · search <term> · cite · quippy · prov · help', 'system');
+        log('COMMANDS — open <n|record> · next · search <term> · cite · mail [n] · note [text] · end · quippy · prov · help', 'system');
         log('  open follows a cross-reference: `open 2` opens reference [2] in this record, or `open SCP-41B-005` by id.', 'system');
+        log('  mail reads the message file. note keeps a scratchpad (destroyed at 16:00). end runs the turnover: transmitted commits survive; nothing else does.', 'system');
         log('KEYS — j/k step field · [ / ] step record · n next redaction · c forge citation · Tab summon Quippy', 'system');
         log('To restore a field: type the word, then SELECT the span where it stands in a record and forge a citation. AMBER judges at commit. Citation costs zero; Quippy charges.', 'system');
         break;
@@ -198,6 +259,7 @@
 <section class="amber crt-scan corrupt-{corruptBand}" style="--corrupt: {corrupt}">
   <header class="amber-bar">
     <span class="sys">▌AMBER · ARCHIVE MANAGEMENT &amp; BATCH ENTRY RESOURCE</span>
+    <span class="day" title="the 0400 consignment day — 1600 is the erasure">DAY {session.day}</span>
     <span class="prog">{progress.solved}/{progress.total} RESTORED · {progress.redacted} REDACTED{progress.struck ? ` · ${progress.struck} STRUCK` : ''}</span>
     <span class="via" class:tainted={board.viaQuippy > 0} title="fields filled by Quippy (the no-Quippy win needs zero)">
       Quippy {board.viaQuippy}
@@ -361,6 +423,7 @@
     text-transform: uppercase;
   }
   .amber-bar .sys { color: var(--amber-fg); }
+  .amber-bar .day { color: var(--amber-green); border: 1px solid var(--amber-edge); padding: 0 0.4ch; border-radius: 1px; }
   .amber-bar .prog { margin-left: auto; color: var(--amber-fg-dim); }
   .amber-bar .via {
     color: var(--amber-fg-faint);

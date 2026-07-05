@@ -67,8 +67,8 @@ mechanism, not two currencies.
    the win-taint stands.)
 6. **Breaches are board state, not a fail screen.** They mutate terminal behavior;
    recovery is first-class.
-7. **⟨Phase 1⟩ Notes die at 4 PM; cited commits survive.** The transmittal model is the
-   only in-fiction persistence. Never add another channel that bypasses citation — offering
+7. **Notes die at 4 PM; cited commits survive.** The transmittal model is the only
+   in-fiction persistence. Never add another channel that bypasses citation — offering
    one is Quippy's pitch, not a feature.
 8. **Licensing wall.** Flavor may echo canon as heavily as wanted; every ground-truth
    resolution is original; nothing verbatim ships.
@@ -119,22 +119,29 @@ draws (it is the player's assertion); **commit judges** (`spanContainsWord`). AM
 surfaces where a word lives. Redaction bars render `█████`, so a propagated value can never
 be selected as evidence — the honesty rule holds structurally.
 
-### 4.4 Collections & reachability ⟨Phase 1⟩
-`ScpFile.collection: 'local' | 'inbound'`.
-- **Local** (the shelf): the receiving site's own reference library. Unredacted, seeded
-  reachable, persistent across days. The grounding floor — the winnability chain bottoms
-  out here instead of at a seed entry.
-- **Inbound** (the batch): redacted Site-41B documents, mounted per day. Reachability flows
-  from the shelf + the day's mount along body wikilinks, as today.
+### 4.4 Collections & reachability (built — Phase 1)
+`ScpFile.collection: 'local' | 'inbound'` (absent ⇒ inbound), `ScpFile.day` (absent ⇒ 1).
+- **Local** (the shelf): the receiving site's own reference library. Unredacted (zero
+  anchors, build-enforced), always reachable, persistent across days. The grounding
+  floor — the winnability chain bottoms out here, and citing the shelf needs no declared
+  xref (the shelf is on the desk, not behind a link).
+- **Inbound** (the batch): redacted Site-41B documents, mounted by `day`.
+- **The day is the gate** (Phase-1 build decision, replacing v2's seed-plus-xref-closure):
+  every mounted file is openable — the tray is open. The xref graph is navigation and
+  grounding-discovery; a reference to a not-yet-mounted file is a dead letter (`NOT IN
+  ARCHIVE`) until its 4 AM, which is the tease. The traffic jam lives in what you can
+  *ground*, not what you can open; pacing lives in days.
 
-### 4.5 The day cycle — transmittal model ⟨Phase 1⟩
-A session clock runs 4 AM → 4 PM (diegetic pacing, not real-time pressure). At 4 PM:
-committed, cited unredactions **transmit** (persist, with provenance); the batch view,
-`note` contents, and uncommitted forge buffers **erase**. Next day mounts the cumulative
-batch (prior files plus new arrivals). Days are the content-pacing unit; mail (§5.1)
-paces the days. Quippy's memory pointedly survives the wipe (§5.2). The 4 PM wipe also
-clears active breach effects — the erasure is impartial — but exposure and taint persist
-(they are properties of the run, not the day).
+### 4.5 The day cycle — transmittal model (built — Phase 1)
+A day runs 4 AM → 4 PM (diegetic pacing, not real-time pressure); `end` runs the
+turnover. At 4 PM the erasure takes the **work-product**: `note` contents, forged-but-
+uncommitted citation buffers, the live selection, the terminal log, the cursor's memory.
+What persists is **run state**: the overlay — committed, cited unredactions transmit,
+and Quippy's fills survive too, which is a tell — plus exposure, breaches, and taint
+(breaches recompute from exposure, which persists; the erasure takes work, not
+consequences). Next 4 AM mounts the cumulative batch (prior files plus new arrivals)
+and delivers the day's mail. Quippy's *memory* also survives the wipe (§5.2) — the
+loudest early tell.
 
 ### 4.6 Propagation
 Concept-keyed, tool-agnostic, provenance-inheriting (unchanged since Sprint 1): co-carriers
@@ -174,15 +181,15 @@ carries this word`). AMBER never references Quippy — it has no record of it.
 **Design rule for every AMBER tool: it makes reading faster; it never reads for you.**
 
 Built: `open/o`, `next/n`, `search/s`, `cite/forge/c`, `quippy/q`, `prov`, `help/?` +
-keyboard span/file traversal.
+keyboard span/file traversal; and (Phase 1) `mail/m [n]` — the message store,
+onboarding/pacing, the receiving-site cast; `note [text]` — the scratchpad the erasure
+exists to take; `end`/`eod` — the 16:00 turnover.
 
 ⟨Phase 3⟩ the OS surface:
 - `ls` — list a collection (the day's batch, the shelf).
-- `mail` — the message store; onboarding, pacing, the receiving-site cast. ⟨Phase 1⟩
 - `man <cmd>` — AMBER's terse self-documentation; the only tutorial voice in the game.
 - `status` — day clock, transmittal count, exposure as a diegetic irregularity index.
 - `log` — the provenance ledger (grows from `prov`).
-- `note` — the scratchpad the erasure exists to take. ⟨Phase 1⟩
 - **`xref <word>` / `grep <word>` — the concordance.** Lists every *reachable* file whose
   *unredacted* text carries the word, with jumpable, forgeable hit spans. Indexes only
   what the player can open and only what is in the clear, so its coverage grows as the
@@ -198,8 +205,9 @@ solved/reachable/locked states. The dependency structure the player is clearing,
 **Register:** violet GUI overlay, paperclip-with-diamondback, warm/eager/first-person,
 curdling by exposure band (voice spec: `scp_x_bible.md`). Summonable, dismissable,
 refusable; it interrupts uninvited at authored triggers. Arrival: **rides the inbound
-batch**; first contact ⟨Phase 2⟩ fires after the player's first forged-and-committed
-citation on day 1, routing back to a blank the player left.
+batch**; first contact (built — Phase 1, decision v3-C) fires on the player's first
+forged-and-committed citation, routing back to a blank the player left (falling back
+to the next redacted span; never the slot just solved).
 
 Each mechanic is the negation of an AMBER tool, and each must be genuinely useful:
 
@@ -265,11 +273,12 @@ interface OverlayEntry {         // runtime; the player's layer — truth never 
 }
 ```
 
-**⟨Phase 1⟩ v3 delta:** `ScpFile.collection: 'local' | 'inbound'`;
-`ScpFile.day?: number` (which 4 AM mount delivers an inbound file; local files have none);
-session state for the day clock + transmitted set. Local files must have zero anchors (the
-shelf is in the clear) — build-enforced. Winnability reachability re-seeds from the shelf +
-day-1 mount.
+**v3 delta (built — Phase 1):** `ScpFile.collection?: 'local' | 'inbound'` and
+`ScpFile.day?: number` (both optional; absent ⇒ inbound, day 1 — the v2 corpus needs no
+edits). Local files: zero anchors, no `day` — build-enforced. The winnability guarantee's
+reachability half is now the day model: a teaching slot's `citeIn` must be local or mount
+no later than the citing file; shelf cites need no declared xref. Session state:
+`session.day`, `session.notes`, the mail store (`mail.svelte.ts`).
 
 ## 7. Engine & pipeline
 
@@ -295,7 +304,9 @@ day-1 mount.
 
 - **Phase 0 — decisions + docs consolidation.** ✅ *done 2026-07-04.*
 - **Phase 1 — the frame's engine.** Collections, day clock + transmittal wipe, `note`,
-  mail store. Micro-corpus (2 shelf + 1 inbound) proves it.
+  mail store; day-gated reachability replaces seed-plus-closure; first-contact trigger
+  moved to the first honest commit. Proven on a micro-corpus (shelf + day-1 + day-2).
+  ✅ *done 2026-07-04; 164 tests.*
 - **Phase 2 — the opening.** Boot/login, day-1 mail, the real shelf + day-1 batch
   (4 files, ramped by word-kind), Quippy's rebuilt entrance. Retires the v2 entries.
 - **Phase 3 — the OS.** `ls`/`man`/`status`/`log`, the concordance, `diff`, `verify` skin.

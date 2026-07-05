@@ -164,7 +164,23 @@ export function bodyContainsWord(body: string, word: string): boolean {
  * **inference** slots ground by parallel context, not literal co-occurrence; they
  * carry no citeIn and are not checked here (their threshold is validated for shape at
  * parse time).
+ *
+ * v3 (Phase 1) — the reachability half of the guarantee moves to the DAY model:
+ *  - a cited INBOUND file must mount **no later than** the citing file
+ *    (`dayOf(cited) <= dayOf(f)`) — grounding that arrives after the slot debuts
+ *    would leave the slot unwinnable on its own day;
+ *  - a cited LOCAL (shelf) file is always reachable and needs **no declared xref** —
+ *    the shelf is on the desk, not behind a link (a Site-41B document would not
+ *    reference the receiving site's own reference volumes). The xref requirement
+ *    stays for inbound→inbound cites: the reference the player follows to DISCOVER
+ *    the grounding must exist in the prose.
  */
+
+/** A file's mount day for validation: local ⇒ 0 (always here); inbound ⇒ day ?? 1. */
+function dayOf(f: ScpFile): number {
+  return (f.collection ?? 'inbound') === 'local' ? 0 : (f.day ?? 1);
+}
+
 export function checkGroundingCiteable(
   files: ScpFile[],
   byItem: Map<string, ScpFile>,
@@ -193,10 +209,18 @@ export function checkGroundingCiteable(
           });
           continue;
         }
-        if (!xrefs.has(target)) {
+        const citedIsLocal = (cited.collection ?? 'inbound') === 'local';
+        if (!citedIsLocal && !xrefs.has(target)) {
           errors.push({
             rule: 'grounding-citeable',
-            message: `${ref} grounding.citeIn names "${target}", which is not a declared xref (the cite link must exist)`,
+            message: `${ref} grounding.citeIn names "${target}", which is not a declared xref (the cite link must exist; only shelf files need no link)`,
+            file: f.item,
+          });
+        }
+        if (dayOf(cited) > dayOf(f)) {
+          errors.push({
+            rule: 'grounding-citeable',
+            message: `${ref} grounding.citeIn names "${target}" (day ${dayOf(cited)}), which mounts AFTER this file (day ${dayOf(f)}) — the grounding must arrive no later than the slot`,
             file: f.item,
           });
         }

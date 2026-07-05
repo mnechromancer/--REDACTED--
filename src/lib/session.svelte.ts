@@ -1,35 +1,38 @@
-// Session/boot state — the minimal first-run flow that replaces the retired
-// scripted onboarding (`progression.svelte.ts`, removed in Phase 2 per
-// reset_amber_v2.md §3 and handoff_reset_build.md §5).
+// Session state — the boot flag, Quippy's first-contact latch, and (Phase 1, v3)
+// the DAY CYCLE: the receiving site's 4 AM → 4 PM window and the doomed scratchpad.
 //
-// What the old module did and why it's gone:
-//   - file UNLOCK gating → dead. Under decision D (pure-graph), file visibility is
-//     reachability (`reachableFiles()` in game.svelte.ts); App derives the visible
-//     set from that. There is no separate unlock order anymore.
-//   - the staged SCRIPT (boot→restore→audit→link→open→free) → removed. It taught a
-//     retired loop (clearance/raise), front-loaded a mechanic the player couldn't
-//     act on, and NAMED Quippy in AMBER's own voice — which §0.2 forbids (AMBER
-//     never introduces Quippy; it behaves as if it keeps forgetting Quippy exists).
+// The transmittal model (decision v3-A, amber_build_decisions.md §"v3"): what the
+// 4 PM erasure takes is the player's WORK-PRODUCT — `notes` here, the forged-citation
+// buffers and terminal log in ui.svelte.ts. What persists is run state: the overlay
+// (cited commits are "transmitted"; even Quippy's fills survive — a tell), exposure,
+// breaches, and the permanent quippyTouched taint. Nothing in this module touches
+// truth/overlay; it is the clock and the notepad.
 //
-// What survives as the bare minimum: one boolean — are we on the bootup screen, or
-// in session — and one diegetic fact — has Quippy made its uninvited first contact
-// yet (so the panel can speak a real first-contact line instead of the recurring
-// "you came back" greeting, the §0.3 confusion). The source-less premise the bootup
-// states lives in App's bootup view; the teaching beats live in the corpus bodies
-// (001/002 already narrate the verb). Nothing here gates files or touches
-// truth/overlay.
+// (History: the v2 scripted-onboarding module this replaced is described in
+// archive/handoff_reset_build.md §5. `booting`/`quippyMet` are its survivors.)
 
 /**
  * `booting` — true until the player leaves the bootup screen and is handed the
- * terminal (alone with AMBER on the first record, §3.1).
- * `quippyMet` — false until Quippy's uninvited first contact fires. Drives the
- * one-time first-contact line and the motivated entrance trigger (§3.3): Quippy
- * pops up the moment the player follows 001's link into 002 — the instant they've
- * shown they can do the honest work without it. Reset by loadCorpus for a fresh run.
+ * terminal.
+ * `quippyMet` — false until Quippy's uninvited first contact fires. v3 trigger
+ * (decision v3-C): the player's FIRST successful forged-and-committed citation —
+ * Quippy watches honest work before it interrupts. Latched per run.
+ * `day` — the current day, 1-based. Inbound files with `day <= session.day` are
+ * mounted (reachable); the rest have not arrived yet. Tests may set 0 ("before the
+ * first batch") to make every inbound file unreachable.
+ * `notes` — the in-fiction scratchpad (`note` command). Exists to be erased at
+ * 4 PM: advanceDay() destroys it, and that loss is the theme taught mechanically.
  */
-export const session = $state<{ booting: boolean; quippyMet: boolean }>({
+export const session = $state<{
+  booting: boolean;
+  quippyMet: boolean;
+  day: number;
+  notes: string[];
+}>({
   booting: true,
   quippyMet: false,
+  day: 1,
+  notes: [],
 });
 
 /** Leave the bootup screen and hand over the terminal. */
@@ -37,8 +40,30 @@ export function beginSession(): void {
   session.booting = false;
 }
 
-/** Reset the boot/first-contact flags for a fresh run (called from loadCorpus). */
+/** Append a line to the doomed scratchpad. */
+export function addNote(text: string): void {
+  const t = text.trim();
+  if (t) session.notes.push(t);
+}
+
+/**
+ * The 4 PM → 4 AM turnover, engine half: destroy the notes, advance the day.
+ * The presentation half (ui.endShift) also wipes the citation buffers, the live
+ * selection, and the terminal log, then announces the new consignment and mail.
+ * Deliberately NOT wiped: overlay, exposure, breaches, quippyTouched, quippyMet —
+ * run state survives the erasure (Phase-1 decision: breaches recompute from
+ * exposure, which persists, so "the wipe clears breach effects" would be a lie;
+ * the erasure takes work-product, not consequences).
+ */
+export function advanceDay(): void {
+  session.notes = [];
+  session.day += 1;
+}
+
+/** Reset for a fresh run (called from App beside loadCorpus). */
 export function resetSession(): void {
   session.booting = true;
   session.quippyMet = false;
+  session.day = 1;
+  session.notes = [];
 }

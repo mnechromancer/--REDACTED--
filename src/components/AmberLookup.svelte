@@ -29,6 +29,7 @@
     citationsFor,
     removeCitation,
     clearBuffer,
+    noteHonestCommit,
   } from '../lib/ui.svelte.ts';
   import { logPropagation } from '../lib/ripples.svelte.ts';
 
@@ -91,8 +92,12 @@
         : `cited ${r.citedBy?.length ?? 0}`;
       log(`COMMIT OK — ${spanLabel(ref)} := "${word.trim()}" [${how}; via AMBER; exposure +0]`, 'ok');
       if (r.propagatedTo && r.propagatedTo.length) logPropagation(ref, r.propagatedTo);
-      clearBuffer(ref);
+      const committedRef = ref;
+      clearBuffer(committedRef);
       word = '';
+      // Quippy's uninvited first contact rides the player's FIRST honest commit
+      // (decision v3-C) — it watches the verb land, then makes its case.
+      noteHonestCommit(committedRef);
     } else {
       log(REASON_LINE[r.reason ?? 'uncited'], 'reject');
     }

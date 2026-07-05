@@ -16,8 +16,6 @@ import {
   overlay,
   exposure,
   breaches,
-  seedReachable,
-  seedReach,
   reachableFiles,
   bodyContainsWord,
   corpus,
@@ -29,6 +27,7 @@ import {
   endState,
 } from '../game.svelte.ts';
 import type { Corpus, ForgedCitation } from '../corpus.ts';
+import { session } from '../session.svelte.ts';
 
 /** Strip markup so a "selected span" is plain prose, the way the UI hands one over. */
 function plain(body: string): string {
@@ -38,16 +37,13 @@ import corpusData from '../../../static/corpus.json';
 
 const REAL = corpusData as unknown as Corpus;
 
-// The seed the app uses (App.svelte): the intake hub. Its xrefs open the rest.
-const SEED = 'SCP-41B-001';
 
 beforeEach(() => {
   loadCorpus(REAL);
   for (const k of Object.keys(overlay)) delete overlay[k];
-  seedReachable.clear();
+  session.day = 1; // v3: the day is the gate (all fixture files are inbound day-1)
   breaches.clear();
   exposure.value = 0;
-  seedReach(SEED);
 });
 
 describe('the real authored corpus is soundly grounded for the citation gate', () => {

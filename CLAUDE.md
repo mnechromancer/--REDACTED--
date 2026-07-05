@@ -48,8 +48,9 @@ register; 144 tests green. `npm install`, then `npm run dev` / `npm run build:co
    is proven AMBER-only solvable by test (`real-corpus-winnable.test.ts`).
 5. **Quippy taint is permanent** — any touch ever forecloses the true ending.
 6. **Breaches are board state**, not a fail screen; recovery is first-class.
-7. **⟨Phase 1⟩ Notes die at 4 PM; cited commits survive.** Never add another in-fiction
-   persistence channel — offering one is Quippy's pitch, not a feature.
+7. **Notes die at 4 PM; cited commits survive** (built). The whole overlay persists the
+   wipe (Quippy's fills surviving is a tell); exposure/breaches/taint are run state.
+   Never add another in-fiction persistence channel — offering one is Quippy's pitch.
 8. **Licensing:** flavor may echo canon; every ground truth original; nothing verbatim.
 
 ## Corpus schema (authority: `src/lib/corpus.ts`; authoring view: `entry_authoring.md`)
@@ -58,10 +59,11 @@ word/phrase, immutable, original), `grounding` (`teaching{citeIn[]}` | `inferenc
 `lure?` (Quippy's wrong word, ≠ truth), `concept?` (registry-coined co-carrier key),
 `exposure_weight`. File: `item`, `object_class` (no ACS), `site`, `anchors[]`, `xrefs[]`
 (each must also be a body `[[wikilink]]`), `breach_effect`, `entity_self` (exactly one
-`true`: `SCP-41B-000`). ⟨Phase 1 adds⟩ `collection: local|inbound` (shelf = unredacted,
-zero anchors, always reachable; batch = redacted, mounted by `day`). Body: one `⟦id⟧` per
-anchor; `> ` blockquote = margin note. Build (`scripts/build-corpus.ts`) fails loudly on
-every rule above.
+`true`: `SCP-41B-000`), `collection?: local|inbound` (shelf = unredacted, zero anchors,
+always reachable, cites need no xref; batch = redacted, mounted by `day?`; both default
+inbound/day-1). Reachability = the day gate: every mounted file is openable; xrefs are
+navigation. Body: one `⟦id⟧` per anchor; `> ` blockquote = margin note. Build
+(`scripts/build-corpus.ts`) fails loudly on every rule above.
 
 ## Layout
 - `vault/` — open THIS as the Obsidian vault. `vault/entries/` = parsed game data
@@ -71,10 +73,12 @@ every rule above.
 - Pipeline: `vault/entries/*.md` → `static/corpus.json`. Authors never edit JSON.
 
 ## Build order (v3 phases — `spec_game.md` §8, status in `planning/roadmap.md`)
-**Done:** the v2 engine (everything above) + Phase 0 (v3 decisions + docs consolidation).
-**Next: Phase 1** — collections, day clock + 4 PM transmittal wipe, `note`, mail. Then:
-Phase 2 the new opening (shelf + day-1 batch content, Quippy's rebuilt entrance — retires
-the current `entries/000–009`, which until then stay green as the engine's regression bed);
+**Done:** the v2 engine (everything above) + Phase 0 (v3 decisions + docs consolidation)
++ Phase 1 (collections, day-gated reachability, the 4 PM transmittal turnover `end`,
+`note`, `mail`, first contact on the first honest commit — 164 tests).
+**Next: Phase 2** — the new opening (shelf + day-1 batch content, boot/mail rewrite —
+retires the current `entries/000–009`, which until then stay green as the engine's
+regression bed). Then:
 Phase 3 the OS commands (`ls`/`man`/`status`/`log`, the concordance `xref`/`grep`, `diff`);
 Phase 4 context-puzzle content; Phase 5 Quippy's widening (ghost-text, summarize, batch
 fill, wipe-memory); Phase 6 the `map` graph; Phase 7 reference corruption. Each phase ends

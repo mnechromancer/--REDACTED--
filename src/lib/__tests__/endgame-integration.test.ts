@@ -10,14 +10,13 @@ import {
   overlay,
   exposure,
   breaches,
-  seedReachable,
-  seedReach,
   makeRef,
   insert,
   commitWithCitations,
   endState,
 } from '../game.svelte.ts';
 import type { Corpus } from '../corpus.ts';
+import { session } from '../session.svelte.ts';
 
 // Two files that mutually teaching-ground: F1#a1 'aaa' appears in the clear in F2's
 // body; F2#a1 'bbb' appears in F1's body. Each cites the other. Plus an excluded
@@ -59,10 +58,9 @@ const C2 = makeRef('SCP-41B-002', 'a1');
 beforeEach(() => {
   makeGroundedCorpus();
   for (const k of Object.keys(overlay)) delete overlay[k];
-  seedReachable.clear();
+  session.day = 1; // v3: the day is the gate (all fixture files are inbound day-1)
   breaches.clear();
   exposure.value = 0;
-  seedReach('SCP-41B-001'); // reaches F2 via xref
 });
 
 describe('THE TRUE ENDING via AMBER, end to end', () => {

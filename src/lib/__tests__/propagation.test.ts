@@ -10,14 +10,13 @@ import {
   overlay,
   exposure,
   breaches,
-  seedReachable,
-  seedReach,
   makeRef,
   insert,
   anchorOf,
   PROPAGATION_FACTOR,
 } from '../game.svelte.ts';
 import { makeCorpus } from './fixtures.ts';
+import { session } from '../session.svelte.ts';
 
 const F1_A1 = makeRef('SCP-41B-001', 'a1'); // alpha, key-a
 const F3_A1 = makeRef('SCP-41B-003', 'a1'); // alpha, key-a (same word → ripple peer)
@@ -26,10 +25,9 @@ const INF_C1 = makeRef('SCP-41B-003', 'a2'); // delta, key-inf (different words;
 beforeEach(() => {
   loadCorpus(makeCorpus());
   for (const k of Object.keys(overlay)) delete overlay[k];
-  seedReachable.clear();
+  session.day = 1; // v3: the day is the gate (all fixture files are inbound day-1)
   breaches.clear();
   exposure.value = 0;
-  seedReach('SCP-41B-001'); // reaches F1/F2/F3 via xrefs
 });
 
 describe('word propagation across same-word co-carriers', () => {
