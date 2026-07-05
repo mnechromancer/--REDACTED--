@@ -36,3 +36,6 @@ vault/.obsidian/cache
 # Obsidian per-machine editor state — not project content
 vault/.obsidian/
 .obsidian/
+
+# Claude Code per-machine permission grants — not project settings
+.claude/settings.local.json

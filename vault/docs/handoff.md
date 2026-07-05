@@ -45,14 +45,22 @@ well enough to read them yourself, and you starve it.*
 
 ## 4. Where we are (2026-07-04)
 
-- **Built and green (144 tests):** the v2 engine — single-word slots, forged citations,
-  teaching/inference grounding, pure-graph reachability, propagation, exposure, lures,
-  permanent Quippy taint, breaches, the no-Quippy ending; 80s AMBER register; 10-file
-  corpus proven AMBER-only winnable (that corpus is retired content, kept green as the
-  engine's regression bed until Phase 2 replaces it).
-- **v3 Phase 0 (decisions + docs consolidation): done.** This doc set is the result.
-- **Next: Phase 1** — the frame's engine: `collection: local | inbound`, the day clock +
-  transmittal wipe, `note`, mail. Then Phase 2 (the new opening) — see `spec_game.md` §8.
+- **Built and green (164 tests):** the engine — single-word slots, forged citations,
+  teaching/inference grounding, propagation, exposure, lures, permanent Quippy taint,
+  breaches, the no-Quippy ending; 80s AMBER register; **and the v3 frame (Phase 1):**
+  collections (`local` shelf / `inbound` batch), day-gated reachability (the tray is
+  open; the day is the gate), the 16:00 transmittal turnover (`end` — notes/buffers/log
+  erase, overlay/exposure/taint persist), `note`, the mail store + `mail`, and Quippy's
+  first contact on the player's first honest commit. The 10-file v2 corpus is retired
+  *content* kept green as the engine's regression bed until Phase 2 replaces it.
+- **v3 Phases 0–1 done** (decisions + consolidation; the frame's engine) — records in
+  `planning/amber_build_decisions.md` §"v3" and §"Phase 1".
+- **Next: Phase 2 — the opening.** The real shelf (~5–6 reference files), the four-file
+  day-1 batch ramped by word kind, the boot/login + mail rewrite to the receiving-site
+  voice (the boot screen still speaks the v2 annex framing — a known seam Phase 2
+  closes), Quippy's entrance beats on the new content, and the retirement of
+  `entries/000–009`. Design: `planning/reset_v3_intake.md` §5; authoring contract:
+  `entry_authoring.md`; phase list: `spec_game.md` §8.
 
 ## 5. Working with this collaborator
 
