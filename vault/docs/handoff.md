@@ -1,131 +1,61 @@
 # Handoff — ⟦REDACTED⟧ (SCP terminal decipherment game)
 
-> **⚠ READ FIRST — the project pivoted (2026-06-13).** Before this doc, read **`planning/reframe_amber_quippy.md`** (the master re-frame) and its two companion handoffs (`planning/handoff_docs_reviser.md`, `planning/handoff_janitor.md`). In brief: the single "help utility" interface splits into **AMBER** (an honest CLI archival OS) and **Quippy** (the SCP-X entity, a *refusable* GUI wrapper); the win inverts to **unredact the whole corpus without ever using Quippy.** The `vault/docs` specs have been rewritten to this frame (design_document, scp_x_bible, site_41b §5/§6, technical_document §7, entry_template, registry, roster). Two design questions remain **PENDING (human):** AMBER's concrete manual-unredaction mechanics ([R§6.2]) and the prototype's CLI scope ([R§6.6]) — both gate the mechanic build. Where this handoff still describes the *old* frame below, the re-frame supersedes it; the routing and environment setup remain valid.
-
-Purpose: bring a fresh session to full context and stand up the development + authoring environment for Claude Code and Obsidian. Read this first; the docs alongside it in `vault/docs/` are the detailed references. The compressed always-loaded version of this context is `CLAUDE.md` at the repo root.
-
----
+Onboarding pointer for a fresh session. The compressed always-loaded version is `CLAUDE.md`
+at the repo root; this doc is the human-readable routing layer. Current frame: **v3**
+(2026-07-04) — read `planning/reset_v3_intake.md` for the pivot and
+`planning/amber_build_decisions.md` for every decision since.
 
 ## 1. What this is
 
-A text/document game. The player is a low-clearance archivist on a decaying Foundation site OS. Files are partly redacted by access tier, and the player must unredact them. There are two tools: **AMBER**, the honest archival CLI, where unredaction is hard, manual, and safe (assemble the case for a value from the cross-referenced files); and **Quippy** (SCP-X), a friendly, *refusable* GUI wrapper that makes unredaction easy and fun — and is an intelligent informational entity that has caused a localized CK-class restructuring and is scaling it toward a site-wide breach. Every Quippy-assisted fill rewrites the record, propagates across cross-referenced files, and advances the breach. The skill the game teaches is learning the corpus well enough to do without Quippy.
+A text/document game. The player is a **temp archivist at an irrelevant Foundation records
+satellite** that receives a batch of heavily-redacted Site-41B documents every day at 4 AM
+and loses the batch — plus every note about it — to an unexplained erasure at 4 PM. The only
+thing that survives is a **properly-cited reconstruction committed in AMBER**, the site's
+ancient, honest records OS. **Quippy**, a friendly helper that rides the batch, is the
+entity `SCP-41B-000`: it makes unredaction one-click easy, and every assist raises exposure
+and permanently taints the run. The true ending is reconstructing the whole corpus with
+zero Quippy touches.
 
-Core loop in one line: **the easy tool reads the files for you and lets the thing out; learn the files well enough to read them yourself, and you starve it.** *(Prior one-liner, retired with the old endgame: "guess to see, but every guess corrupts, and corruption is what lets the thing in the walls out.")*
+One line: *the easy tool reads the files for you and lets the thing out; learn the files
+well enough to read them yourself, and you starve it.*
 
-## 2. Repo contents
+## 2. Routing
 
-```
-redacted/
-├── CLAUDE.md                         # Claude Code auto-loaded context (root)
-├── .gitignore
-└── vault/                            # open THIS folder as the Obsidian vault
-    ├── docs/
-    │   ├── handoff.md                # this file
-    │   ├── design_document.md        # authority on mechanics
-    │   ├── technical_document.md     # authority on stack, schema, algorithms, build order
-    │   ├── entry_template.md         # dual-purpose entry template + worked example (SCP-41B-003)
-    │   ├── agents.md                 # agentic dev methodology (lore QA pipeline, sprint roles)
-    │   ├── site_41b.md               # setting bible — Site-41B original canon
-    │   ├── concept_key_registry.md   # propagation-graph backbone — every concept-key + carriers
-    │   ├── entity_roster.md          # the entities; SCP-41B-### scheme; coverage/tier audits; area-arc + redactor reserved (re-frame)
-    │   ├── scp_x_bible.md            # Quippy (SCP-X): characterization, degrading-tone bands, no-Quippy endgame (re-frame)
-    │   ├── planning/                 # EXECUTION LAYER — sprint runbook, current sprint, roadmap
-    │   │   ├── README.md             # methodology (agents.md) vs. application (here) split
-    │   │   ├── sprint_process.md     # the repeatable sprint runbook
-    │   │   ├── sprint_01_vertical_slice.md  # current sprint
-    │   │   └── roadmap.md            # epics→sprints horizon
-    │   └── discovery/
-    │       ├── 01_lore_discovery.md  # Series I themes, K-class taxonomy
-    │       ├── 02_design_discovery.md# comparable games and borrowed mechanics
-    │       ├── 03_technical_discovery.md # engine landscape, the Svelte decision
-    │       └── 04_site41_antimemetics.md # Antimemetics Division research (internal, never ships)
-    └── entries/                      # game entities ONLY (parsed into the corpus)
-```
+| Question | Doc |
+|---|---|
+| Mechanics, schema, engine, build order | `spec_game.md` |
+| Setting, canon, cast, cosmology | `site_41b.md` |
+| Quippy: nature, voice, tells, endgame | `scp_x_bible.md` |
+| How to author an entry | `entry_authoring.md` |
+| Concept keys / the grounding graph | `concept_key_registry.md` |
+| Agentic method / personas | `agents.md` |
+| Current work, phases, decisions | `planning/` (`reset_v3_intake.md`, `roadmap.md`, `amber_build_decisions.md`) |
+| History (superseded specs, completed handoffs, prior pivots) | `archive/` |
+| Pre-canon research (never ships) | `discovery/` |
 
-If a question is about *what the game does*, read `design_document.md`. About *how it's built*, `technical_document.md`. About *how to author an entity*, `entry_template.md`. About *the setting, clusters, cast, or arc*, `site_41b.md`. About *how agents divide the work*, `agents.md`. About *concept-keys and the propagation graph*, `concept_key_registry.md`. About *the entity list, numbering, or coverage*, `entity_roster.md`. About *the Concordance, the self-file, or the endgame fork*, `scp_x_bible.md`. About *current work, sprints, or the roadmap*, `planning/`. Code and the source-code tree get added by the scaffold step below.
+## 3. Environment
 
-## 3. Locked decisions — do not relitigate
+- **Repo:** Svelte 5 (runes) + Vite + TS. `npm install`, then `npm run dev` /
+  `npm run build:corpus` / `npm run check` / `npm run test`. Do **not** re-scaffold.
+- **Obsidian:** open `vault/` as the vault root (never the repo root — keeps
+  `node_modules/` and source out of the index). Entries in `vault/entries/` are parsed
+  game data; `vault/docs/` is specs. Edit anchor YAML in Source mode.
+- **Authoring plugin:** `plugins/site41b-authoring/` — build validator + Claude wiki
+  generator; `npm run plugin:install`.
 
-- **Stack:** Svelte 5 (runes) + Vite + TypeScript. Deliverable is a repo, not a single-file artifact.
-- **Two protected invariants:**
-  1. *Inference is the spend.* The deduction tool and the risk meter are one mechanism. Never add a stability resource separate from inference.
-  2. *Overlay/ground-truth delta is the puzzle.* The player edits a mutable overlay that propagates; the immutable truth leaks in via clearance; the gap is the puzzle. The player never edits truth.
-- **Resolved contradiction:** decipherment of a *fixed* truth and *authoring* via MadLib are reconciled by the overlay being a parallel layer, not a rewrite of truth.
-- **Insertion is typed-slot only**, never free text. Bounded, hand-authored mutation sets per anchor.
-- **Validation is batched** (clearance-gated), never per-guess.
-- **Breaches are board state, not a fail screen.** They mutate terminal behavior; recovery is first-class.
-- **Two interfaces (re-frame):** unredaction happens via **AMBER** (honest CLI, hard, ~zero exposure) or **Quippy** (refusable GUI = SCP-X, easy, drives exposure). The spend is *leaning on Quippy*; inference in AMBER is the safe path. Tracked per-edit via `via: 'amber' | 'quippy'` provenance.
-- **Endgame is the no-Quippy completion (re-frame):** the true ending = fully unredact the corpus in AMBER with **zero Quippy assists** (read from provenance); every other outcome is a breach. The ending is still accumulated board state. *(SUPERSEDES the prior "ouroboros / decipher the entity using the entity / `thread_coherence` fork" endgame — `scp_x_bible.md` §5. SCP-41B-000 is now Quippy, the entity you starve, not the puzzle you decipher.)*
-- **Licensing line:** Series I *flavor* may resemble canon as heavily as wanted; *ground-truth resolutions* must be original. Nothing verbatim ships → CC-BY-SA clear.
-- **Content scope:** 15–30 entities, curated for graph density (≥2 shared concept-keys each), anchored on information/memetic/perceptual anomalies, avoiding famous canon entries.
+## 4. Where we are (2026-07-04)
 
-## 4. Schema quick-reference (full version in technical_document.md §2)
+- **Built and green (144 tests):** the v2 engine — single-word slots, forged citations,
+  teaching/inference grounding, pure-graph reachability, propagation, exposure, lures,
+  permanent Quippy taint, breaches, the no-Quippy ending; 80s AMBER register; 10-file
+  corpus proven AMBER-only winnable (that corpus is retired content, kept green as the
+  engine's regression bed until Phase 2 replaces it).
+- **v3 Phase 0 (decisions + docs consolidation): done.** This doc set is the result.
+- **Next: Phase 1** — the frame's engine: `collection: local | inbound`, the day clock +
+  transmittal wipe, `note`, mail. Then Phase 2 (the new opening) — see `spec_game.md` §8.
 
-Per anchor: `id`, `slot_type` (object|agent|location|outcome), `truth` (immutable), `redaction_level` (1–5), `concept` (shared key for propagation; optional), `mutations` (bounded set), `exposure_weight`.
+## 5. Working with this collaborator
 
-Per file (frontmatter): `item`, `object_class`, `site`, `clearance` (baseline to open), `anchors[]`, `xrefs[]`, `breach_effect`, `entity_self`.
-
-Body markup: `⟦anchor_id⟧` token at each slot; `[[SCP-41B-YYY]]` Obsidian wikilink per cross-reference.
-
-**Cross-file invariants (build-time validation errors):**
-- Exactly one file sets `entity_self: true` (the SCP-X self-file).
-- Anchors sharing a `concept` must have **equal-length, index-aligned** mutation sets across all files.
-- Every `⟦id⟧` in a body has a matching anchor; every `xref` resolves to a real file.
-
-## 5. Environment setup
-
-### Claude Code (the code repo)
-
-1. Unzip and `cd` into the project root. Git is already initialized with an initial commit; run `git log --oneline` to confirm, or delete `.git` and re-init if you prefer a clean history.
-2. Launch Claude Code in the directory. It auto-loads `CLAUDE.md`, so it starts with the invariants, schema, and layout already in context.
-3. Scaffold the Svelte app in place. When create-vite warns the directory is non-empty, choose **Ignore and continue** — it adds its files alongside `vault/` and `CLAUDE.md` without touching them:
-   ```
-   npm create vite@latest . -- --template svelte-ts
-   npm install
-   npm install idb
-   ```
-   Alternative (official Svelte CLI, scaffolds SvelteKit with optional prettier/eslint/vitest in one pass — use only if you later want routing/SSR, which this game does not): `npx sv create`. Stay on the plain Vite template unless there's a reason; the repo layout in technical_document.md §9 assumes plain Vite (`src/lib`, `src/components`, `static/`), not SvelteKit's `src/routes`.
-4. First code is the schema types + `scripts/build-corpus.ts` parser (milestone 1), not UI.
-
-A VS Code workflow still works identically; install the **Svelte for VS Code** (`svelte.svelte-vscode`) and **YAML** (`redhat.vscode-yaml`) extensions if using it instead of or alongside Claude Code.
-
-### Obsidian (the authoring vault)
-
-1. **Open the repo's `vault/` folder as an Obsidian vault** (Open folder as vault → select `vault`). Entries live at `vault/entries/`; the reference docs are readable at `vault/docs/`. Because the vault root is `vault/`, Obsidian never sees `node_modules/` or source code at the repo root.
-2. Core features:
-   - **Properties** renders the YAML frontmatter, but its UI handles *flat* fields only — it mangles the nested `anchors:` list-of-objects. **Edit anchors in Source mode** as raw YAML. Expect to live in Source mode for anchor work.
-   - **Graph view** visualizes `[[wikilinks]]`, i.e. your `xrefs` graph. An unresolved link flags a missing or mistyped cross-reference — a useful authoring signal.
-3. Recommended community plugins:
-   - **Templater** — apply `entry_template.md` automatically on new-entry creation.
-   - **Dataview** — query frontmatter to audit the graph: list every anchor carrying a given `concept`, find orphan concepts (carried by only one file → propagation dead end), check clearance-tier distribution, verify the ≥2-shared-concept density target. This is how the propagation graph stays coherent as the corpus grows.
-4. The build parser ignores files in `vault/entries/` whose names begin with `_` (e.g. the `_README.md` placeholder), so they won't fail validation. Author entities by copying `vault/docs/entry_template.md` to `vault/entries/SCP-41B-###.md` (designations per `entity_roster.md`).
-
-## 6. Where we are now
-
-**Planning lives in `vault/docs/planning/`** — sprint runbook, current sprint, roadmap. That folder is the source of truth for active work; this section is just the pointer.
-
-- **Current: Sprint 1 — Vertical Slice** (`planning/sprint_01_vertical_slice.md`). Full playable loop on three entities (SCP-41B-003/001/002): Vite scaffold + M1–M5 on the code track, the trio on the lore track, converging at propagation (M4). No breaches yet. Goal: *read → hover → insert → propagate → batched-validate, felt on three files.*
-- **Process:** `planning/sprint_process.md` — the repeatable cycle (two tracks, phases, done-gates), applied to every sprint hereafter.
-- **Horizon:** `planning/roadmap.md` — epics→sprints, content-scaling order, the endgame sequencing constraint.
-
-**Code-track status (as of 2026-06-10):** scaffolded; the entire Sprint 1 **code track C0–C8 + C5t/C6t/C7t is implemented and verified, and CR + CV are done** — 64 tests pass (`npm run test`), `npm run check` is clean, `vite build` is green. CR cleared the four invariant merge-gates and CV played the M5 loop end-to-end on the inline fixture (open → hover → insert → 001's carrier flips to propagated with provenance → raise clearance → truth-contradiction → exposure climbs, no breach). CR also caught one real bug — **carrier-clobber**: directly inserting at a propagated carrier propagated back and demoted the original insert (fixed by skipping `source:'inserted'` targets in propagation; sprint decision #7, +3 regression tests). Three low-severity findings are deferred to Sprint 2 (logged in `sprint_01_vertical_slice.md` decisions log). The engine is in: `scripts/build-corpus.ts` (parser + cross-file validators), `src/lib/corpus.ts` (schema), `src/lib/parseBody.ts` (runtime tokenizer reusing the build-time regexes), `src/lib/game.svelte.ts` (rune store: overlay, concept-keyed propagation, batched `raiseClearance`, the four-state `resolveSlot` ladder, exposure), and the components (`FileWindow`, `SlotSpan`, `HelpUtility`) + four-state CSS tokens. `src/App.svelte` is a slice harness wiring the loop on an inline fixture.
-
-Two deliberate deviations from the spec snippets, both settled with the collaborator — **do not revert:** (1) `resolveSlot` is a pure function, not `$derived.by` returned from a function (Svelte 5 forbids the latter; the branch *order* is verbatim and callers wrap it in `$derived`); (2) exposure is recomputed from the overlay (`recomputeExposure`), not `+=` accumulated, because §4's *stated* invariant is "no accumulated drift" and the literal `+=` pseudocode drifts on re-insertion. C6's `randomize_propagation` breach path was intentionally not stubbed (breaches are Sprint 2). `tsconfig.app.json` gained `allowImportingTsExtensions` to match `tsconfig.scripts.json`.
-
-**Still parked / what's next:** `vault/entries/` is intentionally empty — the trio (lore stories L1–L3) is a deliberate **model-switch** track (swap to the strongest model for prose + mutation sets; `agents.md` §5.4). So `npm run build:corpus` failing the entity-self rule is *correct*, not a bug. The only remaining Sprint 1 work is **LV** (verify the authored trio forms the three propagation edges), which waits on L1–L3 — CR and CV are done. Author entries via the §2 lore pipeline, not by hand into the parser.
-
-## 7. Working with this collaborator
-
-Direct, analytically rigorous, low tolerance for filler, hedging, or false consolation. Wants dense substantive engagement. Catches redundancy and over-completeness fast — do not pad. State decisions rather than asking permission for obvious ones; flag genuine forks. Lead with the load-bearing point.
-
-## 8. Planning artifacts — status
-
-The five "recommended additional documents" this section used to track are now built or scoped:
-
-- **Concept-Key Registry** → `concept_key_registry.md` (done — propagation backbone, all keys ≥2 carriers).
-- **Entity Roster / Series Bible** → `entity_roster.md` (done — 25 entities, `SCP-41B-###`, coverage/tier audits).
-- **SCP-X Bible** → `scp_x_bible.md` (rewritten for the re-frame — Quippy's characterization, degrading-tone bands, the **no-Quippy endgame**; the `thread_coherence` fork it formerly held is retired).
-- **Vertical Slice Definition** → `planning/sprint_01_vertical_slice.md` (done — the trio + M1–M5 with a played definition of done).
-- **Four-State Visual Grammar Spec** → **implemented** in Sprint 1 (C8): `src/styles/tokens.css` (the four custom-property states + a reduced-motion path that keeps colour/strike distinctions) and `SlotSpan.svelte` (state switching), per `design_document.md` §5.8 and `technical_document.md` §7. A richer presentation pass before the endgame's two-ending screen remains on the roadmap; the functional grammar is done.
-
-New planning work is tracked in `planning/` (roadmap + sprints), not here. This section stays a one-glance status; detail lives in those docs.
+Direct, analytically rigorous, low tolerance for filler, hedging, or false consolation.
+Dense engagement; state decisions rather than asking permission for obvious ones; flag
+genuine forks; lead with the load-bearing point. Do not pad.

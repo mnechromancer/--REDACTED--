@@ -373,3 +373,58 @@ flagged in the registry. The full `entity_roster.md` / `concept_key_registry.md`
 (drop clearance/mutation-index tables, re-confirm the budget under the new numbering) is a
 dedicated docs pass, not folded in here. A `lure` on an *inference* slot is untested (no authored
 inference content outside the self-file).
+
+---
+
+## v3 reset — §7 decisions (user, 2026-07-04)
+
+`reset_v3_intake.md` §7 posed four questions gating Phase 1 of the v3 frame (the receiving
+site / daily batch / 4 PM erasure). All four answered by the user; each landed on the doc's
+recorded lean.
+
+### A. Persistence — **TRANSMITTAL MODEL**
+Properly-cited AMBER commits transmit before the wipe and persist; the erasure takes the raw
+batch, all notes (`note` contents, forge buffers), and all uncommitted work. Diegetic
+reading: a grounded reconstruction is the one artifact the erasure cannot claim — citation
+is the fixative; the seniors failed because they produced annotation (wipes), not
+re-derivation (transmits). Days are content pacing + theme. The full-roguelike variant
+(board wipes daily; win = one perfect window) is reserved as a possible late
+difficulty/NG+ mode; schema decisions are compatible either way. *Engine impact (Phase 1):*
+day clock, batch mounting by `day`, the 4 PM wipe (clears notes/uncommitted/breach effects;
+preserves transmitted commits, exposure, and taint), mail cadence.
+
+### B. Canon — **CONCEPTS SURVIVE, DETAILS REDONE**
+The Site-41B sender-side canon survives at concept level (the mine, the Transfer, the
+Concordance, the retention methods, the cosmology, the five-figure cast, the redactor
+reservation, the genre statement); every entry-level detail written against it is retired
+and re-authored in the content pass. The 10 authored entries (000–009) retire as playable
+content (mined for prose); the concept-key registry resets empty; the roster is archived
+and regrows with v3 content. *Docs impact:* `site_41b.md` rewritten to concept altitude
+with "detail owed" markers; `concept_key_registry.md` reset with a non-binding candidate
+list.
+
+### C. Quippy's arrival — **RIDES THE BATCH; TRIGGER = FIRST HONEST COMMIT**
+Quippy is Site-41B contamination arriving with the inbound batch (AMBER has no record of
+it — the OS's amnesia becomes diegetic fact). First contact fires on day 1 after the
+player's **first forged-and-committed citation**, and routes back to a blank the player
+left (preserving the built Phase-2 first-contact beat). Day 1 up to that point belongs to
+AMBER, mail, and exploration.
+
+### D. Docs consolidation — **APPROVED AND EXECUTED (Phase 0, 2026-07-04)**
+The §8 disposition ran: `vault/docs/` collapsed to one live spec per concern.
+- **New/rewritten live set:** `spec_game.md` (merges design_document + technical_document,
+  v3), `site_41b.md` (concept altitude + receiving-site frame), `scp_x_bible.md` (v3: batch
+  vector, wipe-memory tell, hard gate recorded as settled), `entry_authoring.md` (merges
+  entry_template + handoff_authoring; v3 worked example; Phase-1-pending fields flagged),
+  `concept_key_registry.md` (reset), `handoff.md` (thin), `planning/roadmap.md` (v3
+  ledger), `planning/README.md` (thin), root `CLAUDE.md` (rewritten).
+- **Archived (one flat `vault/docs/archive/`, absorbing `planning/archive/`):**
+  design_document, technical_document, entry_template, entity_roster, the old
+  concept_key_registry, reframe_amber_quippy, reset_amber_v2, design_note_forged_citations
+  (BUILT), handoff_authoring, and the nine completed handoffs/sprint docs.
+- **Unchanged:** `agents.md` (banner refreshed), `sprint_process.md`,
+  `design_note_quippy_corruption.md` (Phase 7 spec, live), `discovery/`.
+- **Code note:** the authoring plugin's context assembler read
+  `docs/planning/handoff_authoring.md`; repointed to `docs/entry_authoring.md` and rebuilt.
+  The v2 corpus (`vault/entries/000–009`) is **not** touched in Phase 0 — it stays green as
+  the engine's regression bed until Phase 2 lands the replacement content.

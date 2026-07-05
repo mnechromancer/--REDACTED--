@@ -96,7 +96,7 @@ async function assembleContext(app: App, repoRoot: string): Promise<string> {
   };
 
   const [authoring, registry, siteBible, ex001, ex009, schema] = await Promise.all([
-    readVault('docs/planning/handoff_authoring.md'),
+    readVault('docs/entry_authoring.md'),
     readVault('docs/concept_key_registry.md'),
     readVault('docs/site_41b.md'),
     readVault('entries/SCP-41B-001.md'),
@@ -119,7 +119,7 @@ async function assembleContext(app: App, repoRoot: string): Promise<string> {
 ${schema}
 \`\`\`
 
-## AUTHORING RULES (handoff_authoring.md — read every rule before generating)
+## AUTHORING RULES (entry_authoring.md — read every rule before generating)
 ${authoring}
 
 ## SETTING BIBLE (site_41b.md — first section)
