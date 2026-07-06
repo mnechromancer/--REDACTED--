@@ -564,3 +564,52 @@ Fixed by decoupling forging from targeting:
   field — and die only at the 4 PM wipe (`clearWorkspace`, replacing `clearAllBuffers`).
 - The engine commit gate (`game.svelte.ts` `commitWithCitations`) is unchanged — this was a
   presentation/traversal fix, not a rules change.
+
+### Phase 2 playtest hardening (2026-07-05/06 — the rest of the pass)
+
+Everything else the first live playtest surfaced, fixed across the same days (implemented
+partly by Sonnet subagents against tight specs; reviewed and verified per change). One
+engine change, the rest interface:
+
+- **Case-insensitive typed-word commit (the one engine change).** `commitWithCitations`
+  matched the typed value against `truth` case-sensitively, so "euclid" E11-rejected
+  against "Euclid" — recall as a spelling drill. Now trimmed/lowercased on both sides; on
+  success the CANONICAL `anchor.truth` is written to the overlay, never the player's
+  casing. Test: `citation-gate.test.ts` (canonical-casing case).
+- **Commit lands visibly.** A commit made while reading another record routes the view
+  back to the solved record (`openFile` on success) and the slot fires a brief solve
+  flash (`SlotSpan` state-transition pulse). Quippy's first-contact routing still wins on
+  the first commit (its `noteHonestCommit` runs last, by design).
+- **The work slot** (`ui.workSlot`, `focusSpan`/`forgeTarget`): the field being restored,
+  held when the cursor clears (a shelf file has no fields). Introduced to fix the original
+  step-4 blocker (opening REF-01 dropped the forge target); now largely superseded as the
+  commit target by the pinned `prepare` verb above, but retained as the "held field"
+  readout, the SlotSpan dashed `held` outline, and Quippy's pitch target.
+- **The Concordance panel split into labeled tools** — FORGE (evidence: stake the live
+  selection), WORKSPACE (the pouch; selectable while preparing), UNREDACT (PREPARE →
+  INITIATE) — after the single FORGE button read as a confusing multi-tool.
+- **Layout: one screen.** The session is a 100vh layout (header / document+Concordance
+  columns, each scrolling internally / console); the document pane is capped at half the
+  page; the log and command line are fused into one full-width console (scrollback over
+  prompt); scrollbars styled to the amber register globally (`tokens.css`). Type scale
+  raised twice (VT323 runs small); floor ~0.85rem.
+- **Module power-on.** The terminal's regions blink on in sequence (0.3s stagger, hard-cut
+  flicker with chromatic stutter); reduced-motion gets no animation.
+- **Quippy's forced-entry glitch.** The overlay fights its way in — clip-path tears,
+  jitter, violet chromatic aberration; long (~1.3s) on first contact, brief (~0.4s) on a
+  routine summon; plain fade under reduced motion. AMBER's chrome stays clean (its
+  corruption remains exposure-driven only).
+- **Mail reads full-pane** in the document region (the log was an unreadable place for
+  prose); Esc or any navigation returns to the record.
+- **Discoverability:** a MOUNT listing at session start names the consignment and shelf
+  and teaches `]`/`[` cycling; `next` disambiguated (`next` = next struck field,
+  `next doc` = next record); `open` resolves designations case-insensitively; boot
+  highlights `mail` as the first step.
+- **Deployed to GitHub Pages** (user decision — the live test surface):
+  `.github/workflows/deploy.yml` rebuilds the corpus from the vault, runs the full test
+  suite as a deploy gate, and publishes `dist/` on every push to `main`; `vite.config.ts`
+  derives `base` from `GITHUB_REPOSITORY` in CI (local builds unchanged). Known trade-off,
+  accepted for the prototype: every `truth:` ships in the client bundle.
+
+State at the close of the pass: **169 tests**, `check` 0/0, corpus + prod build green;
+both playflows (blank-first and evidence-first) verified live.

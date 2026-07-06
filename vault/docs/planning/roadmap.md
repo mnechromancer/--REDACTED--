@@ -19,7 +19,11 @@ Prior roadmaps (the v1 epic/milestone table, the v2 phase ledger) live in git hi
   Euclid → Halloran → memetic → triplicate, each grounded in one shelf volume); the
   self-file re-authored to ride the batch (day 1, "title withheld" on the manifest);
   first-contact beats tuned to the shelf flow. **v2 corpus (001–009) retired.**
-  ✅ *done 2026-07-05 — 164 tests, corpus/check/build green; decisions in the log.*
+  ✅ *done 2026-07-05 — then hardened by the first live playtest (2026-07-06): the
+  citation workspace + pinned PREPARE/INITIATE unredaction verb, case-insensitive
+  commit, the one-screen terminal, Quippy's forced-entry glitch, and the GitHub Pages
+  deploy pipeline (tests gate every publish). 169 tests; both playflows (blank-first,
+  evidence-first) verified live. Records in the decisions log.*
 - **Phase 3 — the OS.** `ls` / `man` / `status` / `log`; the concordance (`xref`/`grep`
   over reachable unredacted text, forgeable hit spans); `diff`; `verify` as transmittal QC.
 - **Phase 4 — content: the context puzzles.** Day 2–3 batches; the directory-discrepancy

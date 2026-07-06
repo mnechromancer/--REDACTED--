@@ -31,10 +31,12 @@ outcome is a breach.
 ## Stack
 Svelte 5 (runes) + Vite + TypeScript. A repo, not a single-file artifact. Persistence:
 IndexedDB (`idb`) + localStorage. **Already scaffolded and built** — pipeline, viewer,
-forged-citation engine, propagation, exposure/lures/taint, breaches, endings, 80s AMBER
-register; 144 tests green. `npm install`, then `npm run dev` / `npm run build:corpus` /
-`npm run check` / `npm run test`. Do **not** re-scaffold. Obsidian authoring plugin:
-`plugins/site41b-authoring/` (`npm run plugin:install`).
+forged-citation engine (citation workspace + pinned PREPARE/INITIATE unredaction),
+propagation, exposure/lures/taint, breaches, endings, 80s AMBER register; 169 tests
+green. `npm install`, then `npm run dev` / `npm run build:corpus` / `npm run check` /
+`npm run test`. Do **not** re-scaffold. Deploys to GitHub Pages on push to `main`
+(`.github/workflows/deploy.yml` — rebuilds corpus, tests gate the publish). Obsidian
+authoring plugin: `plugins/site41b-authoring/` (`npm run plugin:install`).
 
 ## Invariants — do not violate (full list: `spec_game.md` §2)
 1. **Quippy is the spend.** AMBER unredaction costs zero exposure; Quippy carries it all.
@@ -81,7 +83,9 @@ navigation. Body: one `⟦id⟧` per anchor; `> ` blockquote = margin note. Buil
 `note`, `mail`, first contact on the first honest commit) + Phase 2 (the opening: the
 **Site-81C** receiving station — boot/mail in its voice; the shelf `REF-01…06`; the day-1
 batch `SCP-41B-101…104` ramped class→name→term→procedure, truths grounded one shelf
-volume each; the self-file re-authored to ride the batch; v2 entries retired — 164 tests).
+volume each; the self-file re-authored to ride the batch; v2 entries retired) + the
+Phase-2 playtest hardening (citation workspace, pinned PREPARE/INITIATE verb,
+case-insensitive commit, one-screen terminal, Pages deploy — 169 tests).
 **Next: Phase 3** — the OS commands (`ls`/`man`/`status`/`log`, the concordance
 `xref`/`grep`, `diff`). Then:
 Phase 4 context-puzzle content; Phase 5 Quippy's widening (ghost-text, summarize, batch

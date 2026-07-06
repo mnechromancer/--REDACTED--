@@ -43,9 +43,9 @@ well enough to read them yourself, and you starve it.*
 - **Authoring plugin:** `plugins/site41b-authoring/` — build validator + Claude wiki
   generator; `npm run plugin:install`.
 
-## 4. Where we are (2026-07-05)
+## 4. Where we are (2026-07-06)
 
-- **Built and green (164 tests):** the engine — single-word slots, forged citations,
+- **Built and green (169 tests):** the engine — single-word slots, forged citations,
   teaching/inference grounding, propagation, exposure, lures, permanent Quippy taint,
   breaches, the no-Quippy ending; 80s AMBER register; the v3 frame (Phase 1): collections,
   day-gated reachability, the 16:00 transmittal turnover, `note`, `mail`, first contact on
@@ -55,6 +55,17 @@ well enough to read them yourself, and you starve it.*
   self-file re-authored to ride the batch ("title withheld" on the cover slip's manifest),
   boot/login in the receiving-station voice, day-1 mail pointing at the slip and the
   shelf, and the v2 corpus (001–009) retired.
+- **Playtest-hardened (2026-07-06, first live pass):** the **citation workspace** (forging
+  is target-free; evidence-first play works) + the pinned **PREPARE/INITIATE
+  UNREDACTION** verb; case-insensitive word commit (canonical casing stored); the
+  one-screen terminal (document ≤ half page, log+prompt fused console, amber scrollbars);
+  sequential module power-on; Quippy's forced-entry glitch; mail read full-pane; MOUNT
+  listing + `next doc`. Full record: decisions log §"Phase 2 follow-up" and §"Phase 2
+  playtest hardening".
+- **Deployed:** GitHub Pages via Actions on every push to `main` —
+  `.github/workflows/deploy.yml` rebuilds the corpus from the vault and gates the publish
+  on the test suite; `vite.config.ts` derives `base` in CI. The live build is the current
+  test surface (note: truths ship in the client bundle — accepted for the prototype).
 - **v3 Phases 0–2 done** — records in `planning/amber_build_decisions.md` §"v3",
   §"Phase 1", §"Phase 2". Content decisions of record: the receiving site is **Site-81C**;
   the batch arrives on tape at 0400; receiving cast P. Redding (supervisor) + L. Ferro

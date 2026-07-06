@@ -113,11 +113,18 @@ slots. Never free-text-anything: the commit is judged against the one authored `
   ⟨Phase 4⟩ gives it winnable content (spec_game §10, patterns 2/5/7 of the intake doc).
 
 ### 4.3 Forged citations — the AMBER verb
-The player TYPES the recovered word, SELECTS the span in a reachable record where it
-stands, FORGES the citation (`ForgedCitation { item, text }`), and COMMITS. The link always
-draws (it is the player's assertion); **commit judges** (`spanContainsWord`). AMBER never
-surfaces where a word lives. Redaction bars render `█████`, so a propagated value can never
-be selected as evidence — the honesty rule holds structurally.
+The player SELECTS the span in a reachable record where a recovered word stands and FORGES
+a citation from it (`ForgedCitation { item, text }`). Forging is **target-free** (Phase-2
+playtest): every citation lands in the player's **citation workspace** — a global pouch,
+not a per-slot buffer — so evidence can be staked before the field it grounds is ever met.
+Unredaction is an explicit, **pinned** two-step: PREPARE UNREDACTION on a field (immune to
+browse-retargeting; only cancel, a successful initiate, or the wipe unpin it), select
+workspace citations toward it, TYPE the word (matched case-insensitively; the overlay
+stores the canonical truth), INITIATE. The link always draws (it is the player's
+assertion); **commit judges** (`spanContainsWord`). Citations are not consumed by a commit
+(one span may ground several fields) and die at the 4 PM wipe. AMBER never surfaces where
+a word lives. Redaction bars render `█████`, so a propagated value can never be selected
+as evidence — the honesty rule holds structurally.
 
 ### 4.4 Collections & reachability (built — Phase 1)
 `ScpFile.collection: 'local' | 'inbound'` (absent ⇒ inbound), `ScpFile.day` (absent ⇒ 1).
@@ -135,7 +142,8 @@ be selected as evidence — the honesty rule holds structurally.
 ### 4.5 The day cycle — transmittal model (built — Phase 1)
 A day runs 4 AM → 4 PM (diegetic pacing, not real-time pressure); `end` runs the
 turnover. At 4 PM the erasure takes the **work-product**: `note` contents, forged-but-
-uncommitted citation buffers, the live selection, the terminal log, the cursor's memory.
+the citation workspace, any prepared unredaction, the live selection, the terminal log,
+the cursor's memory.
 What persists is **run state**: the overlay — committed, cited unredactions transmit,
 and Quippy's fills survive too, which is a tell — plus exposure, breaches, and taint
 (breaches recompute from exposure, which persists; the erasure takes work, not
@@ -180,10 +188,15 @@ carries this word`). AMBER never references Quippy — it has no record of it.
 
 **Design rule for every AMBER tool: it makes reading faster; it never reads for you.**
 
-Built: `open/o`, `next/n`, `search/s`, `cite/forge/c`, `quippy/q`, `prov`, `help/?` +
-keyboard span/file traversal; and (Phase 1) `mail/m [n]` — the message store,
-onboarding/pacing, the receiving-site cast; `note [text]` — the scratchpad the erasure
-exists to take; `end`/`eod` — the 16:00 turnover.
+Built: `open/o` (designations resolve case-insensitively), `next/n` (next struck field;
+`next doc` cycles records), `search/s`, `cite/forge/c` (stakes the selection into the
+citation workspace, §4.3), `quippy/q`, `prov`, `help/?` + keyboard span/file traversal;
+(Phase 1) `mail/m [n]` — the message store, onboarding/pacing, the receiving-site cast —
+messages read full-pane in the document region; `note [text]` — the scratchpad the
+erasure exists to take; `end`/`eod` — the 16:00 turnover. A MOUNT listing at session
+start names the day's consignment and the shelf. Presentation: a one-screen terminal
+(document ≤ half page, Concordance beside it, log+prompt fused into one console), modules
+powering on in sequence, exposure-driven rot only.
 
 ⟨Phase 3⟩ the OS surface:
 - `ls` — list a collection (the day's batch, the shelf).
@@ -286,7 +299,7 @@ no later than the citing file; shelf cites need no declared xref. Session state:
   A repo, not a single-file artifact. Do not re-scaffold.
 - **State** (`src/lib/`): `game.svelte.ts` (overlay, insert/commit, exposure recompute,
   `quippyTouched`, `endState`), `ripples.svelte.ts` (propagation), `ui.svelte.ts` (mode,
-  citation buffers, traversal), `quippy.svelte.ts` (bands, suggestions, first contact),
+  citation workspace + prepare, traversal), `quippy.svelte.ts` (bands, suggestions, first contact),
   `session.svelte.ts` (boot/met flags; ⟨Phase 1⟩ grows the day clock), `corpus.ts` (types),
   `parseBody.ts`/`bodyBlocks.ts` (tokens, wikilinks, margin blocks).
 - **Key seam:** `commitWithCitations(ref, word, ForgedCitation[])` guards the shared
@@ -310,7 +323,9 @@ no later than the citing file; shelf cites need no declared xref. Session state:
 - **Phase 2 — the opening.** Boot/login (Site-81C receiving voice), day-1 mail, the real
   shelf (`REF-01…06`) + day-1 batch (`SCP-41B-101…104`, ramped by word-kind), the
   self-file riding the batch, Quippy's entrance on the new content. Retired the v2
-  entries. ✅ *done 2026-07-05; 164 tests.*
+  entries. ✅ *done 2026-07-05; hardened by live playtest 2026-07-06 (citation workspace +
+  PREPARE/INITIATE verb, case-insensitive commit, one-screen terminal, Pages deploy) —
+  169 tests. Records in the decisions log.*
 - **Phase 3 — the OS.** `ls`/`man`/`status`/`log`, the concordance, `diff`, `verify` skin.
 - **Phase 4 — content: the context puzzles.** Day 2–3 batches; the directory discrepancy;
   inference gets winnable slots; the new registry seeds.
