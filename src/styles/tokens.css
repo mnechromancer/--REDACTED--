@@ -67,6 +67,32 @@
   --amber-font: "VT323", ui-monospace, "SFMono-Regular", Menlo, monospace;
 }
 
+/* Amber-register scrollbars, applied globally (playtest fix — a default OS
+ * scrollbar is the one un-amber thing on screen once panes scroll internally).
+ * Thin, a near-black track, an amber-edge thumb that brightens on hover — both
+ * engines: Firefox's `scrollbar-*` properties and WebKit/Blink's pseudo-elements. */
+:root, * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--amber-edge) var(--amber-bg-sunken);
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: var(--amber-bg-sunken);
+}
+*::-webkit-scrollbar-thumb {
+  background: var(--amber-edge);
+  border-radius: 3px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--amber-edge-bright);
+}
+*::-webkit-scrollbar-corner {
+  background: var(--amber-bg-sunken);
+}
+
 /* A faint CRT scanline wash for the AMBER console field — additive, motion-free,
  * dropped under reduced-motion-agnostic since it doesn't move. Applied to the
  * outermost AMBER container so the whole register reads as a phosphor screen. */

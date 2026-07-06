@@ -45,6 +45,14 @@
 
   const greeting = $derived(inIntro ? introLine : QUIPPY_GREETING[band]);
 
+  // The forced-entry glitch (playtest ask — Quippy "just appeared," which undersold
+  // the whole thesis that it is an INTRUDER, not a menu). First contact fights its
+  // way in at length (~1.3s: it's the uninvited entrance the game is built around);
+  // a routine summon barely has to try (~0.4s: the player invited it). Both durations
+  // share one @keyframes (percentages rescale to whichever animation-duration the
+  // class below sets), so there's one glitch shape, just stretched or compressed.
+  const longEntrance = $derived(ui.quippyReason === 'first-contact');
+
   function advanceIntro() {
     if (!introDone) introStep += 1;
   }
@@ -63,13 +71,23 @@
 </script>
 
 {#if ui.mode === 'quippy'}
+  <!-- Keyed on mode+reason (per the glitch-in ask) so the forced-entry animation is
+       guaranteed to replay on every distinct entrance, not just the first mount —
+       even in the edge case where the overlay stays up and a fresh entrance reason
+       lands without an intervening dismiss. -->
+  {#key `${ui.mode}:${ui.quippyReason}`}
   <div
     class="quippy-overlay {band}"
+    class:long-entrance={longEntrance}
     role="dialog"
     aria-label="Quippy assistant"
     tabindex="-1"
   >
-    <div class="quippy-card {band}">
+    <div
+      class="quippy-card {band}"
+      class:glitch-in-long={longEntrance}
+      class:glitch-in-short={!longEntrance}
+    >
       <div class="q-head">
         <span class="q-icon {band}" aria-hidden="true" title="Quippy">
           <!-- paperclip with diamondback patterning; the tell surfaces with the band -->
@@ -121,6 +139,7 @@
       <p class="q-foot">{files.length} record{files.length === 1 ? '' : 's'} open · exposure {exposure.value}</p>
     </div>
   </div>
+  {/key}
 {/if}
 
 <style>
@@ -143,8 +162,106 @@
     backdrop-filter: blur(3px) saturate(1.1);
     animation: q-in 0.18s ease-out;
   }
+  /* First contact: the backdrop takes a beat longer to settle so it reads as part of
+     the same forced entry as the card fighting its way in, not a separate instant cut. */
+  .quippy-overlay.long-entrance { animation: q-in 0.5s ease-out; }
   .quippy-overlay.post-breach { background: rgba(10, 2, 6, 0.65); }
   @keyframes q-in { 0% { opacity: 0; transform: scale(0.99); } 100% { opacity: 1; transform: scale(1); } }
+
+  /* ── The forced-entry glitch (playtest ask) ─────────────────────────────────
+     Quippy doesn't just appear — it has to FIGHT its way into the interface. One
+     @keyframes shape (hard-cut opacity via steps(), a horizontal clip-path tear,
+     horizontal jitter, violet chromatic aberration) reused at two durations: the
+     long first-contact fight (~1.3s) and the short routine-summon flicker (~0.4s)
+     — percentages rescale to whichever duration the class below sets, so it's one
+     glitch, just stretched or compressed. Scoped to the card (and the backdrop's
+     own q-in above) — this never touches the AMBER chrome behind it. */
+  .quippy-card.glitch-in-long {
+    animation: quippy-glitch-in 1.3s steps(1, end) both;
+  }
+  .quippy-card.glitch-in-short {
+    animation: quippy-glitch-in 0.4s steps(1, end) both;
+  }
+  @keyframes quippy-glitch-in {
+    /* cut 1: a thin horizontal sliver, hard-clipped, jittered, chroma-split */
+    0% {
+      opacity: 0;
+      clip-path: inset(46% 0 46% 0);
+      transform: translateX(0);
+      filter: brightness(1);
+      box-shadow: none;
+    }
+    6% {
+      opacity: 1;
+      clip-path: inset(8% 0 74% 0);
+      transform: translateX(-7px);
+      filter: brightness(1.9);
+      box-shadow: -4px 0 0 0 rgba(157, 107, 214, 0.55), 4px 0 0 0 rgba(184, 140, 230, 0.5);
+    }
+    /* cut out — the panel drops away entirely for a frame */
+    12% {
+      opacity: 0;
+      clip-path: inset(46% 0 46% 0);
+      transform: translateX(5px);
+      filter: brightness(1);
+      box-shadow: none;
+    }
+    /* cut 2: a wider band, opposite jitter direction */
+    20% {
+      opacity: 1;
+      clip-path: inset(62% 0 4% 0);
+      transform: translateX(7px);
+      filter: brightness(1.7);
+      box-shadow: 4px 0 0 0 rgba(157, 107, 214, 0.5), -4px 0 0 0 rgba(184, 140, 230, 0.45);
+    }
+    /* cut out again — the second fight-back */
+    28% {
+      opacity: 0.15;
+      clip-path: inset(28% 0 58% 0);
+      transform: translateX(-4px);
+      filter: brightness(1);
+      box-shadow: none;
+    }
+    /* holds — nearly whole, still jittering and chroma-split, tear almost closed */
+    38% {
+      opacity: 1;
+      clip-path: inset(0 0 0 0);
+      transform: translateX(3px);
+      filter: brightness(1.4);
+      box-shadow: -2px 0 0 0 rgba(157, 107, 214, 0.4), 2px 0 0 0 rgba(184, 140, 230, 0.35);
+    }
+    50% {
+      opacity: 1;
+      clip-path: inset(0 0 0 0);
+      transform: translateX(-2px);
+      filter: brightness(1.15);
+      box-shadow: 1px 0 0 0 rgba(157, 107, 214, 0.25), -1px 0 0 0 rgba(184, 140, 230, 0.2);
+    }
+    /* settled — clean, holding, no more distortion. box-shadow returns to the
+       card's own static drop shadow (animation-fill-mode: both otherwise pins
+       whatever this keyframe says forever, so this must match `.quippy-card`'s
+       base box-shadow exactly or the panel would lose its shadow permanently). */
+    62%, 100% {
+      opacity: 1;
+      clip-path: inset(0 0 0 0);
+      transform: translateX(0);
+      filter: brightness(1);
+      box-shadow: 0 18px 60px rgba(90, 50, 150, 0.35), inset 0 1px 0 rgba(200, 160, 255, 0.12);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    /* A plain, quick fade — none of the flicker/tear/jitter, per the reduced-motion
+       ask; the backdrop's own q-in above is already a simple opacity/scale fade. */
+    .quippy-overlay.long-entrance { animation: q-in 0.18s ease-out; }
+    .quippy-card.glitch-in-long,
+    .quippy-card.glitch-in-short {
+      animation: quippy-fade-in 0.15s ease-out both;
+    }
+  }
+  @keyframes quippy-fade-in {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
 
   .quippy-card {
     width: min(34rem, 92vw);

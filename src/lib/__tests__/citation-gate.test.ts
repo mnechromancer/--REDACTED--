@@ -113,6 +113,14 @@ describe('commitWithCitations — teaching slot', () => {
     expect(r.ok).toBe(true);
     expect(overlay[F2_A1]).toMatchObject({ value: 'beta', source: 'inserted', via: 'amber' });
   });
+
+  it('a differently-cased value still commits, and the overlay holds the canonical truth casing', () => {
+    // The player recovered the word but typed it in the wrong case — a play barrier,
+    // not a puzzle element (the recall is the puzzle, not the spelling).
+    const r = commitWithCitations(F1_A1, 'ALPHA', [cite('SCP-41B-002', 'the holding alpha names')]);
+    expect(r.ok).toBe(true);
+    expect(overlay[F1_A1]).toMatchObject({ value: 'alpha', source: 'inserted', via: 'amber' });
+  });
 });
 
 describe('commitWithCitations — inference slot (transparent meter, decision A)', () => {

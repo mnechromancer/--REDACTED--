@@ -245,8 +245,14 @@ export function isUngroundable(ref: string): boolean {
 /**
  * AMBER commit. The honest unredaction verb. Under the single-word primitive the
  * only admissible value is the slot's truth word; the player must GROUND it with
- * forged citations (spans they selected and staked). Accepts → insert(ref, value,
- * 'amber') (exposure +0) and propagate.
+ * forged citations (spans they selected and staked). Accepts → insert(ref,
+ * anchor.truth, 'amber') (exposure +0) and propagate.
+ *
+ * The word match is case-insensitive (trim + lowercase both sides) — a play
+ * barrier, not a puzzle element; the player has recovered the word, and rejecting
+ * "euclid" for "Euclid" teaches nothing. On success the CANONICAL `anchor.truth`
+ * is written to the overlay (never the player's typed casing), so the
+ * reconstructed record always reads in its authored form.
  *
  *  - TEACHING: accept iff ≥1 forged span carries the word (from a reachable file).
  *    Otherwise 'uncited' (go read and forge a real span).
@@ -263,8 +269,11 @@ export function commitWithCitations(
   canPropagateTo?: (item: string) => boolean,
 ): CommitResult {
   const anchor = anchorOf(ref);
-  // Single-word primitive: the only correct value is the truth word.
-  if (value !== anchor.truth) return { ok: false, reason: 'wrong-word' };
+  // Single-word primitive: the only correct value is the truth word, matched
+  // case-insensitively (recall, not a spelling drill — see the doc comment above).
+  if (value.trim().toLowerCase() !== anchor.truth.trim().toLowerCase()) {
+    return { ok: false, reason: 'wrong-word' };
+  }
 
   if (isUngroundable(ref)) return { ok: false, reason: 'ungroundable' };
 
@@ -282,7 +291,7 @@ export function commitWithCitations(
 
   if (anchor.grounding.kind === 'teaching') {
     if (good.length === 0) return { ok: false, reason: 'uncited' }; // go find and forge the span
-    const propagatedTo = insert(ref, value, 'amber', canPropagateTo);
+    const propagatedTo = insert(ref, anchor.truth, 'amber', canPropagateTo);
     return { ok: true, citedBy: good, propagatedTo };
   }
 
@@ -290,7 +299,7 @@ export function commitWithCitations(
   const threshold = anchor.grounding.threshold;
   const grounded = good.length * GROUNDING_PER_CITE;
   if (grounded < threshold) return { ok: false, reason: 'insufficient', grounded, threshold, citedBy: good };
-  const propagatedTo = insert(ref, value, 'amber', canPropagateTo);
+  const propagatedTo = insert(ref, anchor.truth, 'amber', canPropagateTo);
   return { ok: true, citedBy: good, grounded, threshold, propagatedTo };
 }
 

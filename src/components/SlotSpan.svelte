@@ -27,6 +27,35 @@
   // only ever shows when `active` doesn't (the cursor is elsewhere).
   const held = $derived(!active && ui.workSlot === ref);
 
+  // The solve flash (playtest fix — "commit from anywhere" left the unredaction
+  // invisible when it landed off screen): pulse briefly the moment THIS span
+  // transitions from 'redacted' to any solved state, mirroring FilePane's
+  // prev-value-guarded pulse idiom. Fires regardless of which panel drove the
+  // commit — the span reacts to its own resolved state, not to who caused it.
+  //
+  // `{#each ... (j)}` in FilePane keys inlines by POSITION, so switching files can
+  // hand this same component instance a brand-new `ref` at the same slot. Guard
+  // against that: a `ref` change resets the tracked state without flashing, so a
+  // stale prevState from a different anchor's last-seen state never misfires here.
+  let solveFlash = $state(false);
+  let prevRef: string | null = null;
+  let prevState: string | null = null;
+  $effect(() => {
+    const s = slot.state;
+    if (ref !== prevRef) {
+      prevRef = ref;
+      prevState = s;
+      return;
+    }
+    if (prevState === 'redacted' && s !== 'redacted') {
+      solveFlash = true;
+      const t = setTimeout(() => (solveFlash = false), 800);
+      prevState = s;
+      return () => clearTimeout(t);
+    }
+    prevState = s;
+  });
+
   // Redaction-bar width: a fixed span that does NOT telegraph the hidden word's
   // length (single-word primitive — the length would itself be a clue). A short
   // proper-noun and a long phrase render the same bar until solved.
@@ -43,6 +72,7 @@
   class:quippy-tainted={quippyTainted}
   class:active
   class:held
+  class:solve-flash={solveFlash}
   role="button"
   tabindex="0"
   aria-current={active ? 'true' : undefined}
@@ -176,9 +206,32 @@
     30% { box-shadow: 0 0 12px 2px rgba(232, 93, 93, 0.5); }
     100% { box-shadow: 0 0 0 0 rgba(232, 93, 93, 0); filter: brightness(1); }
   }
+
+  /* The solve flash — "the word just landed here," fired wherever the commit
+     resolves regardless of which panel drove it (see the $effect above). A bright
+     amber outline/glow that decays over ~0.8s, distinct from the steady-state
+     `.inserted`/`.revealed` colouring underneath it. */
+  .slot.solve-flash {
+    animation: solve-flash 0.8s ease-out;
+  }
+  @keyframes solve-flash {
+    0% {
+      outline: 2px solid var(--slot-inserted-fg, #e8a33d);
+      outline-offset: 2px;
+      box-shadow: 0 0 14px 3px rgba(232, 163, 61, 0.7);
+      filter: brightness(1.6);
+    }
+    100% {
+      outline: 2px solid transparent;
+      outline-offset: 2px;
+      box-shadow: 0 0 0 0 rgba(232, 163, 61, 0);
+      filter: brightness(1);
+    }
+  }
   @media (prefers-reduced-motion: reduce) {
     .slot.truth-contradiction,
     .slot.revealed { animation: none; }
     .slot.quippy-tainted { text-shadow: none; text-decoration: underline wavy var(--slot-via-quippy-tell); }
+    .slot.solve-flash { animation: none; }
   }
 </style>

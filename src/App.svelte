@@ -129,6 +129,15 @@
   });
   const visibleOrder = $derived(visibleFiles.map((f) => f.item));
 
+  // Viewport fit (playtest fix — the page scrolled past one screen): once the
+  // session is live (booting done), the whole page is a fixed 100vh layout and the
+  // BODY never scrolls — every pane that needs more room than it's given scrolls
+  // internally instead (AmberTerminal's file/Concordance panes). The boot screen
+  // keeps its own (potentially taller) flow, so this only toggles once boot ends.
+  $effect(() => {
+    document.body.classList.toggle('session-active', !session.booting);
+  });
+
   function onWindowKey(e: KeyboardEvent) {
     // During boot: any key skips the type-out; once done, Enter/Space begins the shift.
     // This is the first thing that teaches the player AMBER answers to the keyboard.
@@ -178,7 +187,7 @@
     </div>
   </main>
 {:else}
-  <main>
+  <main class="session">
     <AmberTerminal files={visibleFiles} order={visibleOrder} />
   </main>
 
@@ -198,12 +207,31 @@
     color: var(--amber-fg-dim, #8a6a2c);
     font-family: var(--amber-font, ui-monospace), "SFMono-Regular", Menlo, monospace;
   }
+  /* Viewport fit (playtest fix — the page still scrolled past one screen): once the
+     session is live, the body itself never scrolls — everything fits ~100vh and any
+     pane that needs more room scrolls internally (AmberTerminal owns that). The boot
+     screen (no .session-active yet) keeps its own free-flowing height. */
+  :global(body.session-active) {
+    overflow: hidden;
+    height: 100vh;
+  }
   /* Full-bleed working surface (Phase 2 playtest ask) — the terminal takes the
      page, not a boxed column in the middle. */
   main {
     max-width: none;
     margin: 0;
     padding: 1.1rem 1.4rem 3rem;
+  }
+  /* The live session: a fixed 100vh column so AmberTerminal (its only child) can
+     size itself to fill exactly one screen and hand off internal scrolling to its
+     own panes, rather than the page growing taller than the viewport. */
+  main.session {
+    height: 100vh;
+    box-sizing: border-box;
+    padding: 1.1rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
   /* Boot/onboarding — an authentic mainframe login TYPED OUT char-by-char to a teletype.

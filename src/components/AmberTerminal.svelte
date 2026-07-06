@@ -396,6 +396,14 @@
     padding: 0.55rem;
     border: 1px solid var(--amber-edge);
     box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.5), 0 0 0 1px #000;
+    /* Viewport fit (playtest fix): fill the session's 100vh column exactly — header
+       (auto) / amber-grid (flexible) / console (auto) — instead of growing past one
+       screen. min-height: 0 is required for a flex child to be allowed to shrink. */
+    box-sizing: border-box;
+    height: 100%;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
   }
 
   /* ── Module power-on (Phase 2 playtest ask, re-tuned per later playtest) ─────
@@ -534,6 +542,7 @@
     .amber.corrupt-mid::before, .amber.corrupt-high::before, .amber.corrupt-breach::before { animation: none; }
   }
   .amber-bar {
+    flex: 0 0 auto;
     display: flex;
     align-items: baseline;
     gap: 1rem;
@@ -562,16 +571,34 @@
   .amber-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    /* A single explicit row sized to exactly the space this grid is given (not to
+       its content) — the piece that actually makes the two columns fill the
+       flexible band between the header and the console, so THEY can scroll
+       internally instead of the row growing to fit them. */
+    grid-auto-rows: minmax(0, 1fr);
     gap: 0.9rem;
     margin-top: 0.7rem;
-    align-items: start;
+    /* Viewport fit: this row is the flexible one between the header and the
+       console — it takes whatever height is left (min-height: 0 lets a grid row
+       shrink), and stretches its two columns to that height. */
+    flex: 1 1 auto;
+    min-height: 0;
+    align-items: stretch;
   }
   @media (max-width: 58rem) {
     .amber-grid { grid-template-columns: 1fr; }
   }
 
-  .main { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
-  .file-region { min-height: 8rem; }
+  .main { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; min-height: 0; }
+  /* The document pane scrolls internally — it no longer grows the page when a
+     record runs long (playtest fix). flex: 1 makes it fill `.main`'s height
+     (its only sibling-less child); min-height: 0 is what lets it actually shrink
+     and hand off to overflow-y instead of stretching the whole layout. */
+  .file-region {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
   .no-file { padding: 1.4rem 1rem; color: var(--amber-fg-dim); border: 1px dashed var(--amber-edge); background: var(--amber-bg-sunken); }
   .no-file .hint { color: var(--amber-fg-faint); font-size: 0.88rem; margin-top: 0.4rem; }
   code {
@@ -583,9 +610,16 @@
     font-size: 0.92em;
   }
 
-  .side { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
+  .side { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; min-height: 0; }
+  /* The Concordance column scrolls internally too, same reasoning as .file-region —
+     it's the taller of .side's two children so it's the one that takes the flex. */
+  .lookup-region {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
 
-  .actions { display: flex; flex-direction: column; gap: 0.3rem; }
+  .actions { flex: 0 0 auto; display: flex; flex-direction: column; gap: 0.3rem; }
   .act {
     padding: 0.4rem 0.5rem;
     background: linear-gradient(#1a1410, #120e0a);
@@ -608,13 +642,17 @@
      exactly one hairline separates them, not a gap) — and the legend attaches
      beneath as part of the same unit. Full width, below the two-column grid. */
   .console {
+    flex: 0 0 auto;
     margin-top: 0.9rem;
     display: flex;
     flex-direction: column;
   }
 
   .log {
-    height: 14rem;
+    /* Viewport fit: the log is allowed to shrink on shorter screens (down to 8rem)
+       rather than forcing the page past 100vh, but keeps its old 14rem on tall ones. */
+    height: clamp(8rem, 18vh, 14rem);
+    flex: 0 0 auto;
     overflow-y: auto;
     background: var(--amber-bg-sunken);
     border: 1px solid var(--amber-edge);

@@ -18,6 +18,7 @@
     isUngroundable,
     corroborates,
     commitWithCitations,
+    splitRef,
     type CommitReason,
   } from '../lib/game.svelte.ts';
   import {
@@ -31,6 +32,7 @@
     clearBuffer,
     noteHonestCommit,
     focusWord,
+    openFile,
   } from '../lib/ui.svelte.ts';
   import { logPropagation } from '../lib/ripples.svelte.ts';
 
@@ -112,6 +114,16 @@
       const committedRef = ref;
       clearBuffer(committedRef);
       word = '';
+      // Snap the view back to the record the word just landed in (playtest fix): the
+      // player may have been reading a shelf volume, or another record entirely, to
+      // find the grounding — without this the unredaction lands somewhere off screen
+      // and the player never sees it happen. Must run BEFORE noteHonestCommit below,
+      // whose first-contact routing (Quippy's uninvited entrance) may deliberately
+      // send the view elsewhere — that authored beat wins on the first commit; every
+      // later commit routes back to the solved record via this line.
+      if (splitRef(committedRef).item !== ui.activeFile) {
+        openFile(splitRef(committedRef).item);
+      }
       // Quippy's uninvited first contact rides the player's FIRST honest commit
       // (decision v3-C) — it watches the verb land, then makes its case.
       noteHonestCommit(committedRef);
@@ -154,54 +166,72 @@
       </p>
     {/if}
 
-    {#if isInference}
-      <p class="meter">GROUNDING {groundedNow}/{threshold} {'▮'.repeat(groundedNow)}{'▯'.repeat(Math.max(0, threshold - groundedNow))}</p>
-    {/if}
-
-    <!-- The forge affordance: stake the live pane selection onto this slot. -->
-    <div class="forge">
-      <button type="button" class="forge-btn" disabled={!sel} onclick={forge}>
-        ＋ FORGE CITATION{sel ? ` ◂ ${sel.item}` : ''}
-      </button>
+    <!-- FORGE — evidence: staking the live pane selection. Prominent (the button
+         states what it's about to stake) whenever there's a live selection;
+         collapses to a one-line hint when there's nothing selected yet, so the two
+         tools (forge evidence / spend it) read as distinct verbs, not one panel. -->
+    <div class="section forge-section">
+      <div class="sec-head"><span class="lbl">FORGE — evidence</span></div>
       {#if sel}
-        <span class="sel-preview" title={sel.text}>「{truncate(sel.text)}」</span>
+        <div class="forge">
+          <button type="button" class="forge-btn" onclick={forge}>
+            ＋ FORGE CITATION ◂ {sel.item}
+          </button>
+          <span class="sel-preview" title={sel.text}>「{truncate(sel.text)}」</span>
+        </div>
       {:else}
-        <span class="sel-hint">select prose in a record to stake it</span>
+        <p class="sel-hint">select prose in a record to stake it</p>
       {/if}
     </div>
 
-    <!-- The evidence file: the spans the player has forged for this slot. -->
-    {#if buffer.length > 0}
-      <ul class="buffer">
-        {#each buffer as c, i (c.item + c.text + i)}
-          <li class="cit" class:supports={corroborates(c, ref)}>
-            <span class="box">{corroborates(c, ref) ? '▣' : '▢'}</span>
-            <span class="src">{c.item}</span>
-            <span class="quote">「{truncate(c.text)}」</span>
-            <button type="button" class="drop" title="remove" onclick={() => removeCitation(ref, i)}>✕</button>
-          </li>
-        {/each}
-      </ul>
+    <!-- UNREDACT — commit: spending staked evidence. Only appears once there's
+         something to spend (a staked citation, or an inference slot's meter);
+         until then there is nothing here to confuse with FORGE above. -->
+    {#if buffer.length > 0 || isInference}
+      <div class="divider" aria-hidden="true"></div>
+      <div class="section unredact-section">
+        <div class="sec-head"><span class="lbl">UNREDACT — commit</span></div>
+
+        {#if isInference}
+          <p class="meter">GROUNDING {groundedNow}/{threshold} {'▮'.repeat(groundedNow)}{'▯'.repeat(Math.max(0, threshold - groundedNow))}</p>
+        {/if}
+
+        {#if buffer.length > 0}
+          <!-- The evidence file: the spans the player has forged for this slot. -->
+          <ul class="buffer">
+            {#each buffer as c, i (c.item + c.text + i)}
+              <li class="cit" class:supports={corroborates(c, ref)}>
+                <span class="box">{corroborates(c, ref) ? '▣' : '▢'}</span>
+                <span class="src">{c.item}</span>
+                <span class="quote">「{truncate(c.text)}」</span>
+                <button type="button" class="drop" title="remove" onclick={() => removeCitation(ref, i)}>✕</button>
+              </li>
+            {/each}
+          </ul>
+
+          <div class="entry">
+            <span class="lbl">WORD</span>
+            <input
+              type="text"
+              spellcheck="false"
+              autocomplete="off"
+              placeholder="type the recovered word"
+              bind:value={word}
+              bind:this={wordEl}
+              onkeydown={(e) => {
+                if (e.key === 'Enter') commit();
+              }}
+            />
+          </div>
+
+          <button type="button" class="commit" disabled={!canCommit} onclick={commit}>
+            ▶ UNREDACT{word.trim() ? ` "${word.trim()}"` : ''} · {buffer.length} citation{buffer.length === 1 ? '' : 's'}
+          </button>
+        {:else}
+          <p class="note subdued">no citations staked on this field — forge one first</p>
+        {/if}
+      </div>
     {/if}
-
-    <div class="entry">
-      <span class="lbl">WORD</span>
-      <input
-        type="text"
-        spellcheck="false"
-        autocomplete="off"
-        placeholder="type the recovered word"
-        bind:value={word}
-        bind:this={wordEl}
-        onkeydown={(e) => {
-          if (e.key === 'Enter') commit();
-        }}
-      />
-    </div>
-
-    <button type="button" class="commit" disabled={!canCommit} onclick={commit}>
-      ▶ COMMIT{word.trim() ? ` "${word.trim()}"` : ''} · {buffer.length} citation{buffer.length === 1 ? '' : 's'}
-    </button>
   </div>
 {:else if ref && slot}
   <div class="lookup settled">
@@ -242,7 +272,16 @@
   .held { color: var(--amber-green, #8ad0a0); font-size: 0.85rem; letter-spacing: 0.04em; }
   .note { margin: 0 0 0.55rem; color: var(--amber-fg-dim, #8a6a2c); line-height: 1.45; font-size: 0.9rem; }
   .note.orphan { color: #b0925a; }
+  .note.subdued { color: #5b636e; font-size: 0.85rem; margin-bottom: 0; }
   .meter { margin: 0 0 0.5rem; color: var(--amber-green, #8ad0a0); letter-spacing: 0.1em; font-size: 0.85rem; }
+
+  /* The two tools, split (playtest fix — a single FORGE-and-commit button read as
+     one confusing multi-tool): FORGE stakes evidence, UNREDACT spends it. Each gets
+     its own small header in the panel's existing label style; a hairline divider
+     between them reads as "two verbs," not one panel doing two things. */
+  .section { display: flex; flex-direction: column; }
+  .sec-head { margin-bottom: 0.4rem; }
+  .divider { height: 1px; background: var(--amber-edge, #3a2c12); margin: 0.7rem 0; }
 
   /* The forge affordance — stake the live selection. */
   .forge { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
@@ -258,10 +297,9 @@
     letter-spacing: 0.03em;
     cursor: pointer;
   }
-  .forge-btn:hover:not(:disabled) { border-color: #8a7234; color: #f0d89a; }
-  .forge-btn:disabled { color: #4f5a52; border-color: #1c2620; cursor: default; }
+  .forge-btn:hover { border-color: #8a7234; color: #f0d89a; }
   .sel-preview { color: #9aa9b6; font-style: italic; font-size: 0.85rem; overflow-wrap: anywhere; }
-  .sel-hint { color: #4d5560; font-size: 0.85rem; }
+  .sel-hint { color: #4d5560; font-size: 0.85rem; margin: 0; }
 
   /* The evidence file — the forged citations staked on this slot. */
   .buffer { list-style: none; margin: 0 0 0.6rem; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
