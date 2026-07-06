@@ -30,15 +30,14 @@
   // seed-plus-xref-closure gate is retired (the tray is open; the jam is in the
   // grounding).
 
-  // The bootup exposition (Phase 2, reset_amber_v2.md §3.1) — AMBER's own clinical,
-  // institutional voice, stating the SOURCE-LESS PREMISE as the job: the originals
-  // are gone; the only route back is triangulation across what cross-references
-  // survive. AMBER NEVER names Quippy here (§0.2 — it behaves as if it keeps
-  // forgetting Quippy exists; Quippy's arrival is uninvited, §3.3). No tutorial
-  // The bootup is an authentic old-corporate mainframe login + onboarding, TYPED OUT
-  // character by character to a teletype (left-aligned, monospace). It logs in, POSTs,
-  // states the source-less premise, and — the playtest fix — TEACHES THE COMMAND LINE:
-  // the player must learn that AMBER is keyboard-driven, so onboarding names the verbs.
+  // The bootup (v3 Phase 2 — the receiving-site opening, reset_v3_intake.md §5.1):
+  // AMBER POSTs in the 80s register at SITE-81C, the regional records satellite. A
+  // temp credential, no tutorial fiction — the PREMISE lives in the supervisor's mail
+  // (day-1 brief); the boot carries only the station's standing notice (the 1600
+  // cancellation, in banner language) and points at the message file. AMBER NEVER
+  // names Quippy here (it has no record of it — the entity rides the batch). The one
+  // teaching duty the boot keeps is UI literacy (the playtest fix): AMBER is
+  // keyboard-driven, so the essential verbs are named on the way in.
   // Each line is a {tone}:
   //   'sys'    — the machine's own login/header lines
   //   'post'   — [ OK ]/[WARN] diagnostics, the machine talking to itself
@@ -51,22 +50,24 @@
   type BootTone = 'sys' | 'post' | 'warn' | 'brief' | 'cmd' | 'prompt';
   const bootLines: { tone: BootTone; text: string }[] = [
     { tone: 'sys', text: 'AMBER  ·  ARCHIVE MANAGEMENT & BATCH ENTRY RESOURCE  ·  rev 4.1' },
-    { tone: 'sys', text: 'SITE-41B DEEP-RECORDS ANNEX — COLD STORAGE — CATALOGUE MAINFRAME' },
+    { tone: 'sys', text: 'SITE-81C — REGIONAL RECORDS SATELLITE — RECEIVING STATION' },
     { tone: 'sys', text: '' },
-    { tone: 'sys', text: 'LOGIN: archivist' },
-    { tone: 'post', text: 'AUTHENTICATING .................. OK   clearance LOW' },
-    { tone: 'post', text: 'catalogue index ................. mounted' },
-    { tone: 'post', text: 'cross-reference graph .......... threaded' },
-    { tone: 'warn', text: 'source records ................. NOT FOUND  (lost: Transfer)' },
+    { tone: 'sys', text: 'LOGIN: archivist-temp  (term appointment)' },
+    { tone: 'post', text: 'AUTHENTICATING .................. OK   standing TEMPORARY' },
+    { tone: 'post', text: 'reference shelf ................. mounted  (REF-01 … REF-06)' },
+    { tone: 'post', text: 'consignment reel, 0400 ......... mounted  (SITE-41B · 5 records)' },
+    { tone: 'warn', text: 'return channel to sender ....... NO CARRIER' },
+    { tone: 'post', text: 'message file .................... 3 waiting' },
     { tone: 'sys', text: '' },
-    { tone: 'brief', text: 'Operator. You hold the catalogue, not the records it indexed. Those originals were lost in the Transfer and never recovered; what survives is the web of references between them. A struck field has no original to fetch — you reconstruct it by triangulation, finding the same matter named in the clear on a record that points here.' },
+    { tone: 'brief', text: 'Operator. Standing notice, receiving stations: consignment material and all working annotation cancel at 1600 station local. Reconstructions committed to the citation ledger before cancellation are excepted. Your assignment is in the message file.' },
     { tone: 'brief', text: 'This terminal is keyboard-operated. It takes typed commands, not a pointer. The essential ones:' },
-    { tone: 'cmd', text: 'open <record>   — open a holding by its number' },
+    { tone: 'cmd', text: 'mail            — the message file (start here)' },
+    { tone: 'cmd', text: 'open <record>   — open a holding by its designation' },
     { tone: 'cmd', text: 'next            — jump to the next struck field' },
     { tone: 'cmd', text: 'cite            — stake the text you have selected as grounding' },
     { tone: 'cmd', text: 'help            — the full command list, any time' },
     { tone: 'sys', text: '' },
-    { tone: 'prompt', text: 'Type a recovered word into a field, cite where it stands, and commit. Most fields are out of reach until you open what grounds them; recover one and the next becomes reachable. Begin your shift.' },
+    { tone: 'prompt', text: 'Shift runs 0400 to 1600. Begin.' },
   ];
 
   // Typewriter cadence. Characters type fast; a beat is held between lines. POST/sys
@@ -113,22 +114,18 @@
     return '';
   }
 
-  // Visible files = the reachable set: the shelf plus the mounted consignment.
-  // Order: the shelf first (reference volumes on the desk), then inbound by id with
-  // the legacy hub 001 leading its batch (keeps the v2 corpus opening on its seed
-  // until Phase 2 lands the real day-1 content).
+  // Visible files = the reachable set: the mounted consignment plus the shelf.
+  // Order (v3 Phase 2) is the working order, which is also the traversal ring and
+  // the auto-open target: the day's batch first (the cover slip leads by id), the
+  // self-file at the batch's tail (the manifest's untitled passenger), and the
+  // reference shelf last (volumes on the desk, consulted rather than worked).
   const visibleFiles = $derived.by(() => {
     const reached = reachableFiles();
+    const rank = (f: (typeof corpus)[string]) =>
+      collectionOf(f) === 'local' ? 2 : f.entity_self ? 1 : 0;
     return Object.values(corpus)
       .filter((f) => reached.has(f.item))
-      .sort((a, b) => {
-        const ac = collectionOf(a) === 'local' ? 0 : 1;
-        const bc = collectionOf(b) === 'local' ? 0 : 1;
-        if (ac !== bc) return ac - bc;
-        if (a.item === 'SCP-41B-001') return -1;
-        if (b.item === 'SCP-41B-001') return 1;
-        return a.item.localeCompare(b.item);
-      });
+      .sort((a, b) => rank(a) - rank(b) || a.item.localeCompare(b.item));
   });
   const visibleOrder = $derived(visibleFiles.map((f) => f.item));
 
@@ -171,7 +168,7 @@
       </div>
       {#if bootDone}
         <div class="boot-ready">
-          <span class="ready-prompt">amber login: archivist —</span>
+          <span class="ready-prompt">amber login: archivist-temp —</span>
           <button class="boot-begin" onclick={beginSession}>▶ BEGIN SHIFT</button>
           <span class="ready-hint">[ press ENTER ]</span>
         </div>

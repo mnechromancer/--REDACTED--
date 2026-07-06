@@ -476,3 +476,71 @@ the regression bed until Phase 2 replaces it.
 - **Known mid-build seam (accepted):** the boot screen still speaks the v2 Site-41B-annex
   framing while the mailbox speaks the v3 receiving-site voice; Phase 2 (the opening)
   reconciles them.
+
+## Phase 2 — the opening (built 2026-07-05)
+
+`reset_v3_intake.md` §5 / `spec_game.md` §8 Phase 2. Built and green: corpus 10→**11
+files** (all-new content), tests steady at **164** (every guard is corpus-agnostic;
+the winnable test now proves the day-1 content), `check` 0/0, corpus + prod build clean.
+The boot seam accepted at Phase 1 is closed. Content decisions of record:
+
+- **The receiving site is `Site-81C`, regional records satellite.** The "C" extends 41B's
+  thesis — a derivative of a derivative; a copy-station processing a copy-site's mail.
+  Registered in `site_41b.md` §1.1 (was "detail owed").
+- **Delivery medium: tape.** The batch arrives as a leased-line burst spooled to reel,
+  mounted 0400; at 1600 the reel reads back blank. "Mounted" is literal.
+- **Receiving cast:** supervisor **P. Redding** (carried from the Phase-1 mailbox, now
+  canon) and **L. Ferro**, the opposite-shift temp — *named but unused*, reserved for
+  day-2+ mail (`site_41b.md` §4.2).
+- **Numbering:** shelf = `REF-01…06` (`site: Site-81C`, `collection: local`); inbound
+  batches take hundred-blocks by day (day 1 = `SCP-41B-101…104`); the self-file keeps
+  `SCP-41B-000`.
+- **The shelf (REF-01…06):** Object Classification Primer, Anomaly Taxonomy Circular,
+  Records Practice Manual (its ch. 11 doubles as the diegetic annotation-vs-reconstruction
+  manual), Site-41B Personnel Directory (stale 1966 copy — lists the five-figure cast;
+  seeds the Phase-4 directory-discrepancy family via its "staleness is information"
+  routing note), Standard Forms Compendium (the 41-T/41-P/41-C/41-R skeletons the batch's
+  forms follow — pattern-4 groundwork), Term Appointment Packet (the long-fuse gag file).
+- **The day-1 ramp (one teaching slot each, citeIn = one shelf volume, weight 2, no lures,
+  no concept keys):** 101 intake slip → `Euclid` (REF-01); 102 personnel action memo →
+  `Halloran` (REF-04); 103 containment amendment → `memetic` (REF-02); 104 retention
+  order → `triplicate` (REF-03). 104 is the day's link hub (xrefs 101/102/103 — the first
+  multi-link traversal); 101 is the cover document (manifest, erasure schedule in
+  transmittal language, xrefs none — its manifest lists designations as plain text, so
+  `open <id>` gets taught by typing).
+- **Class-word leak closed:** the pane header renders `object_class`, so 101 (whose class
+  field IS the puzzle) carries `object_class: "withheld"`; the parser's class field is a
+  free string, spec vocabulary stays Safe/Euclid/Keter for real classes. Shelf files carry
+  `"Safe"` but render a **REFERENCE VOLUME · LOCAL SHELF** header instead (FilePane),
+  keeping the collection split legible on screen.
+- **Anti-leak authoring rule (recorded in `entry_authoring.md` §4):** a slot's own file
+  must not hold its truth in the clear — 101 never says Euclid; 102 never says Halloran
+  (its margin attributions are structural: "the acting archivist's hand", initials
+  `r.h.` at most).
+- **The self-file rides the batch:** `SCP-41B-000` is `inbound, day: 1`, listed on 101's
+  manifest as *(title withheld)*; xrefs rewired to 101/104; clearance-era references
+  removed; the wipe-memory tell written into Addendum 000.3 ("the overlay's memory is not
+  subject to the cancellation schedule"); the Halloran addendum re-voiced so the body
+  never names the name. Its five inference anchors **dropped their v2 concept keys** —
+  keys return in Phase 4 when real co-carriers exist (registry rule: coin first, no
+  orphans).
+- **Boot/login rewritten (App.svelte):** Site-81C receiving station, temp credential
+  (`archivist-temp`), POST lines mount the shelf and the reel, `return channel … NO
+  CARRIER` is the sender's silence, and the premise moved OUT of the boot into the
+  supervisor's brief — the boot keeps only the standing notice (1600 cancellation /
+  ledger exception, banner language) and the keyboard lesson, and now points at `mail`
+  first. No tutorial fiction (§5.1: mail is the tutorial).
+- **Day-1 mail:** the brief now points at the cover slip and the REF shelf ("the seniors
+  read the batch and wrote notes; the shelf they left on the floor") while still
+  conspicuously not saying how to do the job.
+- **Terminal seams:** `open` resolves designations case-insensitively against corpus keys
+  (`open ref-03` works); file order/auto-open = the working order — the day's batch (slip
+  leads), the self-file at the batch's tail, the shelf last; hints/help re-pointed
+  (`mail` / `open SCP-41B-101` / `open REF-03`).
+- **First-contact beat 3 re-voiced** for the shelf flow (it watched the player read the
+  shelf, not chase a link); beats otherwise unchanged from the Phase-1 rewrite.
+
+**Still open (trail to later phases):** the directory-discrepancy puzzle proper (Phase 4;
+REF-04 seeds it), L. Ferro's first appearance (day-2+ mail), concept keys (Phase 4),
+`ls`/`man`/`status`/`log`/concordance/`diff` (Phase 3). The `--allow-incomplete` escape
+hatch was not needed (000 was rewritten in place, never deleted).

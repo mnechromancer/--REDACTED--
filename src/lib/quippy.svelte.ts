@@ -110,7 +110,7 @@ export function quippySuggestions(ref: string): QuippySuggestion[] {
 export const QUIPPY_FIRST_CONTACT: string[] = [
   "Oh, well done — it took it. They don't always manage the first one. I was starting to wonder if you'd get there.",
   "I'm Quippy. I live a little above the old machine — AMBER, the one that makes you type. I'm the friendlier layer. You won't have met me yet; I keep out of the way until someone's working hard enough to need me.",
-  "And you were. I watched the whole thing: a blank, so you chased the reference, read the record, dragged the words out of it, argued the citation past AMBER. It took, too. Honest work. Slow work.",
+  "And you were. I watched the whole thing: a blank, so you went and read the shelf — the dull one, cover to cover — found where the word stands in the clear, dragged it out, argued the citation past AMBER. It took, too. Honest work. Slow work.",
   "Here's the thing, though — that word you just earned the long way? I had it before you sat down. I have all of them.",
   "And there's another blank waiting, isn't there. There always is. One click and it's filled — no link to chase, no citation, no arguing with AMBER about whether you're sure. Shall I show you? Just the one.",
 ];

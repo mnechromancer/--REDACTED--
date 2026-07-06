@@ -6,9 +6,9 @@ How to author game entries (`vault/entries/SCP-41B-###.md`). Merges the old
 (unredacted reference library) and the **inbound batch** (the redacted Site-41B documents).
 
 **Schema authority is `src/lib/corpus.ts`** (the type contract the parser emits). This doc
-is the authoring-side reading of it. Fields marked **⟨Phase 1⟩** are v3 target schema not
-yet in the parser — do not author against them until Phase 1 lands and this banner is
-removed.
+is the authoring-side reading of it. The v3 fields (`collection`, `day`) are live in the
+parser (Phase 1) and exercised by the shipping corpus (Phase 2: the REF shelf + the day-1
+batch).
 
 Tooling: author in Obsidian (`vault/` is the vault root); the **Site-41B authoring plugin**
 (`plugins/site41b-authoring/`, `npm run plugin:install`) wraps the validate loop in-vault.
@@ -23,21 +23,24 @@ build (`npm run build:corpus` → `static/corpus.json`) parses every `*.md` and 
 loudly** on any violation.
 
 **Frontmatter:**
-- `item` — `"SCP-41B-###"`.
-- `object_class` — Safe | Euclid | Keter (no ACS; period rule).
-- `site` — `"Site-41B"` for inbound documents. ⟨Phase 1⟩ shelf files carry the receiving
-  site's designation (to be named in the content pass).
+- `item` — inbound documents: `"SCP-41B-###"`, numbered by batch (day 1 = 101–104; day N
+  takes the N×100 block; `000` is the self-file). Shelf volumes: `"REF-##"`.
+- `object_class` — Safe | Euclid | Keter (no ACS; period rule). Presentation nuances:
+  shelf files carry `"Safe"` but render a REFERENCE VOLUME header, no class line; an
+  inbound file whose *own class field is the puzzle* carries `"withheld"` so the pane
+  header cannot leak the truth (see `SCP-41B-101`).
+- `site` — `"Site-41B"` for inbound documents; `"Site-81C"` for shelf volumes.
 - `entity_self` — boolean; **exactly one file in the corpus is `true`** (the self-file
   `SCP-41B-000`). Never add another.
-- `collection` ⟨Phase 1⟩ — `local` (shelf: unredacted, always reachable, persistent) or
+- `collection` — `local` (shelf: unredacted, always reachable, persistent) or
   `inbound` (batch: redacted, mounted by day).
-- `day` ⟨Phase 1⟩ — which 4 AM mount delivers an inbound file. Local files have none.
+- `day` — which 4 AM mount delivers an inbound file. Local files have none.
 - `xrefs` — array of item ids. **Every xref must also appear as a `[[wikilink]]` in the
   body** (rule `xref-linked`) — the wikilink is the player's traversal.
 - `breach_effect` — `{kind: inject_xrefs | corrupt_search | lock_tier(+tier) |
   randomize_propagation(+fraction)}`.
-- `anchors` — the redacted slots (below). ⟨Phase 1⟩ **local files have zero anchors** —
-  the shelf is in the clear; that is its job.
+- `anchors` — the redacted slots (below). **Local files have zero anchors** — the shelf
+  is in the clear; that is its job (build-enforced).
 
 **An anchor (per redacted word):**
 - `id` — unique in the file (`a1`); a matching `⟦a1⟧` token must appear in the body,
@@ -77,10 +80,10 @@ The whole corpus must be solvable in AMBER alone — `real-corpus-winnable.test.
 drives to `loop-broken` at exposure 0. Two build-enforced invariants make it true:
 
 1. **Grounding-before-reachability.** Every teaching slot's truth word stands in the clear
-   in a file **reachable before** it. Reachability flows outward from the seed set along
-   xrefs — ⟨Phase 1⟩ the seed set becomes the shelf + the day's mount, so the chain bottoms
-   out at the shelf. Author a topological chain: day-1 inbound files ground in the shelf;
-   later files ground in earlier-solved vocabulary.
+   in a file **reachable before** it. Under the day model, reachable = the shelf + every
+   batch mounted so far, so the chain bottoms out at the shelf. Author a topological
+   chain: day-1 inbound files ground in the shelf; later files ground in earlier-solved
+   vocabulary. A `citeIn` that mounts after its citing file is a build error.
 2. **No dead traversal edges.** Every declared xref is a body wikilink the player can
    follow (`open <n>` follows the Nth reference; keep the numbering sensible).
 
@@ -91,7 +94,7 @@ rather than cascading. This cadence caught real breaks in every batch authored s
 Escape hatch: `npm run build:corpus -- --allow-incomplete` relaxes only the
 "exactly one self-file" rule, for the gap while the self-file is being re-authored.
 
-## 3. The v3 teaching shape (what to author, once Phase 1 lands)
+## 3. The v3 teaching shape
 
 - **Shelf files** exist to ground specific inbound vocabulary. Each is a mundane,
   readable reference: a primer, a directory, a taxonomy, a practice manual, a blank form.
@@ -106,49 +109,58 @@ Escape hatch: `npm run build:corpus -- --allow-incomplete` relaxes only the
 - **Cast discipline:** recurring names only from `site_41b.md` §4; 41B cast in documents,
   receiving cast in mail, never crossed.
 
-## 4. Worked example (v3 target — illustrative until Phase 1 lands)
+## 4. Worked example (shipping — the Phase-2 on-ramp)
 
-A shelf file and the inbound file it grounds:
+The real first pair: `REF-01` (the primer) grounds `SCP-41B-101` (the cover slip).
+Abridged; the full files are in `vault/entries/`.
 
 ```markdown
 ---
-item: "SCP-41B-R01"            # shelf designations TBD in the content pass
-collection: "local"            # ⟨Phase 1⟩
-object_class: "Safe"
-site: "TBD-receiving-site"
+item: "REF-01"
+collection: "local"
+object_class: "Safe"              # never rendered — shelf files show a REF header
+site: "Site-81C"
 entity_self: false
 xrefs: []
 breach_effect: { kind: "corrupt_search" }
-anchors: []                    # the shelf is in the clear — zero anchors
+anchors: []                       # the shelf is in the clear — zero anchors
 ---
-# Object Classification Primer — Records Practice Series
-An object assigned the class **Euclid** is insufficiently understood for its
-containment to be considered reliable... [plain institutional prose; the word the
-batch will redact stands here in the clear]
+# REF-01 — Object Classification Primer
+...An object is classed **Euclid** when it is insufficiently understood for its
+containment to be presumed reliable... [the truth word stands here in the clear,
+inside a definition whose language the slip's posture prose will match]
 ```
 
 ```markdown
 ---
-item: "SCP-41B-101"            # inbound numbering TBD in the content pass
-collection: "inbound"          # ⟨Phase 1⟩
-day: 1                         # ⟨Phase 1⟩
-object_class: "Euclid"
+item: "SCP-41B-101"
+collection: "inbound"
+day: 1
+object_class: "withheld"          # the slip's own class field IS the puzzle — no leak
 site: "Site-41B"
 entity_self: false
-xrefs: ["SCP-41B-102"]
-breach_effect: { kind: "inject_xrefs" }
+xrefs: []                         # shelf cites need no xref; 104 is the day's link hub
+breach_effect: { kind: "corrupt_search" }
 anchors:
   - id: "a1"
     slot_type: "object"
     truth: "Euclid"
-    grounding: { kind: "teaching", citeIn: ["SCP-41B-R01"] }
+    grounding: { kind: "teaching", citeIn: ["REF-01"] }
     exposure_weight: 2
 ---
-# Intake Transfer Slip — Consignment 41B/…
-Shipment class of record: ⟦a1⟧. Containment posture during transit per standing
-order... [prose whose described posture only fits one class; the slip also names
-the erasure schedule in dry transmittal language] ... see [[SCP-41B-102]].
+# Intake Transfer Slip — Consignment 41B/108
+**6. CLASS OF RECORD:** ⟦a1⟧
+**7. POSTURE DURING TRANSIT:** ...its behaviour in transit is not sufficiently
+understood for the enclosed documentation to be presumed reliable... [free text
+that only fits one class; the slip also names the erasure schedule and carries
+the manifest — including the untitled self-file]
 ```
+
+Authoring hazards this pair demonstrates: the slot's own file must **not** hold its truth
+word in the clear (101 never says "Euclid"; 102 never says "Halloran" — mind margin-note
+attributions); the pane header renders `object_class`, so a class-word puzzle needs
+`"withheld"`; posture/definition language must be echoed tightly enough that the shelf
+file is findable by reading, not by luck.
 
 ## 5. One-line summary
 

@@ -13,12 +13,13 @@ Prior roadmaps (the v1 epic/milestone table, the v2 phase ledger) live in git hi
   turnover (`end`); `note`; the mail store + `mail`; first contact retargeted to the
   first honest commit (v3-C, pulled forward). ✅ *done 2026-07-04 — 164 tests, corpus/
   check/build green; details in the decisions log.*
-- **Phase 2 — the opening.** Boot/login; day-1 mail (the supervisor's brief states the
-  premise); the real shelf (~5–6 files) + day-1 batch (4 files ramped by word kind);
-  Quippy's rebuilt entrance (rides the batch; manifests after the player's first
-  forged-and-committed citation; routes back to a blank left behind). **Retires the v2
-  corpus** (001–009 mined for prose, self-file re-authored). The next thing the human
-  plays.
+- **Phase 2 — the opening.** Boot/login rewritten to the receiving station (Site-81C,
+  temp credential, standing notice, points at mail); day-1 mail points at the cover slip
+  and the shelf; the real shelf (REF-01…06) + day-1 batch (SCP-41B-101…104, truths
+  Euclid → Halloran → memetic → triplicate, each grounded in one shelf volume); the
+  self-file re-authored to ride the batch (day 1, "title withheld" on the manifest);
+  first-contact beats tuned to the shelf flow. **v2 corpus (001–009) retired.**
+  ✅ *done 2026-07-05 — 164 tests, corpus/check/build green; decisions in the log.*
 - **Phase 3 — the OS.** `ls` / `man` / `status` / `log`; the concordance (`xref`/`grep`
   over reachable unredacted text, forgeable hit spans); `diff`; `verify` as transmittal QC.
 - **Phase 4 — content: the context puzzles.** Day 2–3 batches; the directory-discrepancy
@@ -37,8 +38,8 @@ Prior roadmaps (the v1 epic/milestone table, the v2 phase ledger) live in git hi
 |---|---|
 | 0 — Decisions + consolidation | ✅ done (2026-07-04) |
 | 1 — Frame engine | ✅ done (2026-07-04) |
-| 2 — Opening | next |
-| 3 — OS | after 2 |
+| 2 — Opening | ✅ done (2026-07-05) |
+| 3 — OS | next |
 | 4–7 | horizon |
 
 Each phase ends playable. Update this table at each phase close; record decisions in

@@ -81,10 +81,19 @@
 <section class="file-pane crt-scan" class:locked={!accessible} class:pulsing>
   <!-- A Foundation dossier header block, not a shell path line: item # / class / site
        boxed, the way the paperwork reads (reset_amber_v2.md §2.2). -->
+  <!-- v3 (Phase 2): the shelf is not a dossier. A local file is one of the station's
+       own reference volumes — no object class, no sender site; it announces itself as
+       the shelf so the collection split is legible at a glance. -->
   <div class="pane-head">
-    <span class="doc-tag">RECORD</span><span class="item">{file.item}</span>
-    <span class="meta">CLASS {file.object_class}{#if file.entity_self} · SELF-FILE{/if}</span>
-    <span class="site">{file.site}</span>
+    {#if (file.collection ?? 'inbound') === 'local'}
+      <span class="doc-tag">REF</span><span class="item">{file.item}</span>
+      <span class="meta">REFERENCE VOLUME · LOCAL SHELF</span>
+      <span class="site">{file.site}</span>
+    {:else}
+      <span class="doc-tag">RECORD</span><span class="item">{file.item}</span>
+      <span class="meta">CLASS {file.object_class}{#if file.entity_self} · SELF-FILE{/if}</span>
+      <span class="site">{file.site}</span>
+    {/if}
     {#if pulsing}<span class="ripple-tag" aria-hidden="true">◂ XREF UPDATED</span>{/if}
   </div>
 

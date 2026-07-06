@@ -138,13 +138,14 @@
   // Open a record by `open <arg>`. The keyboard traversal verb (the playtest fix —
   // AMBER must be followable without a mouse). `arg` resolves three ways:
   //   - a bare number N → the Nth cross-reference link in the ACTIVE file (what the pane
-  //     shows numbered), so a player reads "[2] SCP-41B-005" and types `open 2`;
-  //   - an SCP id (full or just the trailing digits) → that record;
-  //   - otherwise, passed through (lets `open scp-41b-005` work case-insensitively).
+  //     shows numbered), so a player reads "[2] SCP-41B-104" and types `open 2`;
+  //   - any holding's designation, case-insensitive (`open scp-41b-101`, `open ref-03` —
+  //     the shelf's REF designations resolve the same way the SCP ids do);
+  //   - otherwise, passed through so openFile reports NOT IN ARCHIVE.
   function runOpen(arg: string) {
     const a = arg.trim();
     if (!a) {
-      log('open: which record? `open <number>` (a reference in this file) or `open SCP-41B-00n`.', 'reject');
+      log('open: which record? `open <number>` (a reference in this file), `open SCP-41B-10n`, or `open REF-0n`.', 'reject');
       return;
     }
     // bare number → the Nth cross-reference of the active file
@@ -158,10 +159,10 @@
       openFile(links[idx]);
       return;
     }
-    // an SCP id, full or trailing digits (`open 005` is caught above as a number, so a
-    // 3-digit record is reachable via its reference number or its full id).
+    // a designation — resolve case-insensitively against the catalogue's own keys.
     const up = a.toUpperCase();
-    openFile(up.startsWith('SCP') ? up : a);
+    const exact = Object.keys(corpus).find((k) => k.toUpperCase() === up);
+    openFile(exact ?? up);
   }
 
   function runCommand(raw: string) {
@@ -210,7 +211,7 @@
       case 'help':
       case '?':
         log('COMMANDS — open <n|record> · next · search <term> · cite · mail [n] · note [text] · end · quippy · prov · help', 'system');
-        log('  open follows a cross-reference: `open 2` opens reference [2] in this record, or `open SCP-41B-005` by id.', 'system');
+        log('  open follows a cross-reference: `open 2` opens reference [2] in this record, or `open SCP-41B-104` / `open REF-03` by designation.', 'system');
         log('  mail reads the message file. note keeps a scratchpad (destroyed at 16:00). end runs the turnover: transmitted commits survive; nothing else does.', 'system');
         log('KEYS — j/k step field · [ / ] step record · n next redaction · c forge citation · Tab summon Quippy', 'system');
         log('To restore a field: type the word, then SELECT the span where it stands in a record and forge a citation. AMBER judges at commit. Citation costs zero; Quippy charges.', 'system');
@@ -274,7 +275,7 @@
         {:else}
           <div class="no-file">
             <p>&gt; NO RECORD OPEN.</p>
-            <p class="hint">type <code>open SCP-41B-001</code> to begin, or <code>help</code> for the command list.</p>
+            <p class="hint">type <code>mail</code> for your assignment, <code>open SCP-41B-101</code> for the consignment cover, or <code>help</code> for the command list.</p>
           </div>
         {/if}
       </div>

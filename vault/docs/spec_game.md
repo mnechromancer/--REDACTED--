@@ -307,8 +307,10 @@ no later than the citing file; shelf cites need no declared xref. Session state:
   mail store; day-gated reachability replaces seed-plus-closure; first-contact trigger
   moved to the first honest commit. Proven on a micro-corpus (shelf + day-1 + day-2).
   ✅ *done 2026-07-04; 164 tests.*
-- **Phase 2 — the opening.** Boot/login, day-1 mail, the real shelf + day-1 batch
-  (4 files, ramped by word-kind), Quippy's rebuilt entrance. Retires the v2 entries.
+- **Phase 2 — the opening.** Boot/login (Site-81C receiving voice), day-1 mail, the real
+  shelf (`REF-01…06`) + day-1 batch (`SCP-41B-101…104`, ramped by word-kind), the
+  self-file riding the batch, Quippy's entrance on the new content. Retired the v2
+  entries. ✅ *done 2026-07-05; 164 tests.*
 - **Phase 3 — the OS.** `ls`/`man`/`status`/`log`, the concordance, `diff`, `verify` skin.
 - **Phase 4 — content: the context puzzles.** Day 2–3 batches; the directory discrepancy;
   inference gets winnable slots; the new registry seeds.

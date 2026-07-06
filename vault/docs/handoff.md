@@ -43,24 +43,25 @@ well enough to read them yourself, and you starve it.*
 - **Authoring plugin:** `plugins/site41b-authoring/` — build validator + Claude wiki
   generator; `npm run plugin:install`.
 
-## 4. Where we are (2026-07-04)
+## 4. Where we are (2026-07-05)
 
 - **Built and green (164 tests):** the engine — single-word slots, forged citations,
   teaching/inference grounding, propagation, exposure, lures, permanent Quippy taint,
-  breaches, the no-Quippy ending; 80s AMBER register; **and the v3 frame (Phase 1):**
-  collections (`local` shelf / `inbound` batch), day-gated reachability (the tray is
-  open; the day is the gate), the 16:00 transmittal turnover (`end` — notes/buffers/log
-  erase, overlay/exposure/taint persist), `note`, the mail store + `mail`, and Quippy's
-  first contact on the player's first honest commit. The 10-file v2 corpus is retired
-  *content* kept green as the engine's regression bed until Phase 2 replaces it.
-- **v3 Phases 0–1 done** (decisions + consolidation; the frame's engine) — records in
-  `planning/amber_build_decisions.md` §"v3" and §"Phase 1".
-- **Next: Phase 2 — the opening.** The real shelf (~5–6 reference files), the four-file
-  day-1 batch ramped by word kind, the boot/login + mail rewrite to the receiving-site
-  voice (the boot screen still speaks the v2 annex framing — a known seam Phase 2
-  closes), Quippy's entrance beats on the new content, and the retirement of
-  `entries/000–009`. Design: `planning/reset_v3_intake.md` §5; authoring contract:
-  `entry_authoring.md`; phase list: `spec_game.md` §8.
+  breaches, the no-Quippy ending; 80s AMBER register; the v3 frame (Phase 1): collections,
+  day-gated reachability, the 16:00 transmittal turnover, `note`, `mail`, first contact on
+  the first honest commit; **and the v3 opening (Phase 2):** the shipping corpus — the
+  Site-81C reference shelf (`REF-01…06`) and the day-1 batch (`SCP-41B-101…104`, truths
+  ramped class → name → term of art → procedure, each grounded in one shelf volume), the
+  self-file re-authored to ride the batch ("title withheld" on the cover slip's manifest),
+  boot/login in the receiving-station voice, day-1 mail pointing at the slip and the
+  shelf, and the v2 corpus (001–009) retired.
+- **v3 Phases 0–2 done** — records in `planning/amber_build_decisions.md` §"v3",
+  §"Phase 1", §"Phase 2". Content decisions of record: the receiving site is **Site-81C**;
+  the batch arrives on tape at 0400; receiving cast P. Redding (supervisor) + L. Ferro
+  (opposite shift, reserved) — `site_41b.md` §1.1/§4.2.
+- **Next: Phase 3 — the OS.** `ls`/`man`/`status`/`log`, the concordance (`xref`/`grep`
+  over reachable unredacted text, forgeable hit spans), `diff`, the `verify` transmittal-QC
+  skin. Design: `reset_v3_intake.md` §3; phase list: `spec_game.md` §8.
 
 ## 5. Working with this collaborator
 

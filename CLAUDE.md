@@ -61,7 +61,10 @@ word/phrase, immutable, original), `grounding` (`teaching{citeIn[]}` | `inferenc
 (each must also be a body `[[wikilink]]`), `breach_effect`, `entity_self` (exactly one
 `true`: `SCP-41B-000`), `collection?: local|inbound` (shelf = unredacted, zero anchors,
 always reachable, cites need no xref; batch = redacted, mounted by `day?`; both default
-inbound/day-1). Reachability = the day gate: every mounted file is openable; xrefs are
+inbound/day-1). Designations: shelf `REF-##` at Site-81C; inbound `SCP-41B-###` in
+hundred-blocks by day (day 1 = 101–104). A slot's own file must never hold its truth in
+the clear (the pane header renders `object_class` — a class-word puzzle uses `"withheld"`).
+Reachability = the day gate: every mounted file is openable; xrefs are
 navigation. Body: one `⟦id⟧` per anchor; `> ` blockquote = margin note. Build
 (`scripts/build-corpus.ts`) fails loudly on every rule above.
 
@@ -75,11 +78,12 @@ navigation. Body: one `⟦id⟧` per anchor; `> ` blockquote = margin note. Buil
 ## Build order (v3 phases — `spec_game.md` §8, status in `planning/roadmap.md`)
 **Done:** the v2 engine (everything above) + Phase 0 (v3 decisions + docs consolidation)
 + Phase 1 (collections, day-gated reachability, the 4 PM transmittal turnover `end`,
-`note`, `mail`, first contact on the first honest commit — 164 tests).
-**Next: Phase 2** — the new opening (shelf + day-1 batch content, boot/mail rewrite —
-retires the current `entries/000–009`, which until then stay green as the engine's
-regression bed). Then:
-Phase 3 the OS commands (`ls`/`man`/`status`/`log`, the concordance `xref`/`grep`, `diff`);
+`note`, `mail`, first contact on the first honest commit) + Phase 2 (the opening: the
+**Site-81C** receiving station — boot/mail in its voice; the shelf `REF-01…06`; the day-1
+batch `SCP-41B-101…104` ramped class→name→term→procedure, truths grounded one shelf
+volume each; the self-file re-authored to ride the batch; v2 entries retired — 164 tests).
+**Next: Phase 3** — the OS commands (`ls`/`man`/`status`/`log`, the concordance
+`xref`/`grep`, `diff`). Then:
 Phase 4 context-puzzle content; Phase 5 Quippy's widening (ghost-text, summarize, batch
 fill, wipe-memory); Phase 6 the `map` graph; Phase 7 reference corruption. Each phase ends
 playable.

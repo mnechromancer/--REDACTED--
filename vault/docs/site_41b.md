@@ -28,9 +28,13 @@ delegated down to the temp pool, who are cheap, replaceable, and not expected to
 The player is that temp: a term-contract archivist with a login, a desk, and a supervisor
 who communicates by mail and does not want updates.
 
-*Detail owed in the content pass:* the site's designation and location; the delivery medium
-of the 4 AM batch (period-appropriate: leased line, tape reel, teletype burst — pick one and
-keep it concrete); the receiving-site cast (§4.2).
+*Settled (Phase 2, 2026-07-05):* the site is **Site-81C, regional records satellite** —
+the "C" is the genealogy said out loud: a derivative of a derivative, a copy-station
+processing a copy-site's mail. The 4 AM batch arrives as a **leased-line burst spooled to
+tape**: the night equipment mounts the reel at 0400, and at 1600 the reel reads back
+blank. The reference shelf carries **REF designations** (REF-01…06); it is the station's
+own property and the erasure has never touched it. The receiving-site cast is registered
+in §4.2.
 
 ### 1.2 Site-41B (the sender — concept canon, survives)
 A decommissioned **molybdenum mine in the Colorado Front Range**, converted in 1953 to a
@@ -142,12 +146,18 @@ Functions survive; their authored expression is owed anew:
 - **Liaison T. Andrade (Site-41)** — countersignature on every pre-1968 manifest; the
   parent-site hole given a name.
 
-### 4.2 Receiving-site cast (new — to be authored, lives only in mail)
-Concept slots, names owed: the **supervisor** who delegated the task and wants it off their
-desk (the onboarding voice; conspicuously never says how to do the job); the **opposite-shift
-temp** the player never meets (a peer voice, and a channel for late-game wrongness); ambient
-**facilities/IT** noise (the mundane register that makes the site real). Rule: the receiving
-cast never appears in the corpus; the 41B cast never appears in mail.
+### 4.2 Receiving-site cast (named Phase 2 — lives only in mail)
+- **P. Redding, Records Supervision** — the supervisor who delegated the task downward and
+  wants it off their desk. Terse, put-upon; points at the work, conspicuously never says
+  how to do it (nobody knows how). The onboarding and pacing voice.
+- **L. Ferro** — the opposite-shift temp the player never meets. Reserved for day-2+ mail:
+  a peer voice first, a channel for late-game wrongness after. Not yet used; do not spend
+  the name casually.
+- **Personnel / Facilities** — automatic and anonymous respectively; the mundane register
+  that makes the station real.
+
+Rule unchanged: the receiving cast never appears in the corpus; the 41B cast never appears
+in mail.
 
 ## 5. The redactor (survives — reserved, unwritten)
 
