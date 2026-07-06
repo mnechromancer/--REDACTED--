@@ -28,8 +28,11 @@ import {
   clearLog,
   captureSelection,
   forgeCitation,
-  citationsFor,
-  clearAllBuffers,
+  workspace,
+  clearWorkspace,
+  prepare,
+  beginPrepare,
+  selectedCitations,
 } from '../ui.svelte.ts';
 import { session, resetSession, addNote, advanceDay } from '../session.svelte.ts';
 import { deliveredMail, mailArrivingOn, unreadCount, markRead, isRead, resetMail, MAILBOX } from '../mail.svelte.ts';
@@ -65,7 +68,7 @@ beforeEach(() => {
   ui.activeSpan = null;
   clearLog();
   captureSelection('', '');
-  clearAllBuffers();
+  clearWorkspace();
 });
 
 describe('the shelf grounds the batch', () => {
@@ -85,25 +88,30 @@ describe('the shelf grounds the batch', () => {
     expect(openFile('SCP-41B-003')).toBe(true);
   });
 
-  // Phase 2 playtest regression: the intended verb is leave the blank in the batch,
-  // open the SHELF (which has no fields of its own), select the evidence, forge.
-  // Opening a zero-anchor file clears the cursor; the WORK SLOT must hold so the
-  // forge still targets the abandoned blank — this was the step-4 blocker.
-  it('reading the shelf keeps the work slot: forge and commit target the blank left behind', () => {
+  // Phase 2 playtest regression, redesigned for the citation workspace: the intended
+  // verb is prepare the blank in the batch, open the SHELF (which has no fields of
+  // its own) to find the evidence, forge it (target-free — it lands in the global
+  // workspace, auto-selected because prepare is pinned), and commit. Opening a
+  // zero-anchor file clears the cursor, but `prepare.ref` — unlike the old work
+  // slot — is untouched by ANY navigation.
+  it('reading the shelf keeps the prepared field: forge and commit target the blank left behind', () => {
     openFile('SCP-41B-002'); // cursor lands on the day-1 blank
     expect(ui.activeSpan).toBe(F2_A1);
-    expect(ui.workSlot).toBe(F2_A1);
 
-    openFile('SCP-41B-001'); // the shelf: no fields — cursor clears, work slot holds
+    beginPrepare(F2_A1); // pin the unredaction before going to find evidence
+    expect(prepare.ref).toBe(F2_A1);
+
+    openFile('SCP-41B-001'); // the shelf: no fields — cursor clears, prepare holds
     expect(ui.activeSpan).toBeNull();
-    expect(ui.workSlot).toBe(F2_A1);
+    expect(prepare.ref).toBe(F2_A1);
 
     captureSelection('SCP-41B-001', 'the record beta is catalogued');
     const forged = forgeCitation();
     expect(forged).not.toBeNull();
-    expect(citationsFor(F2_A1)).toHaveLength(1); // staked on the HELD slot
+    expect(workspace.citations).toHaveLength(1); // staked into the workspace
+    expect(selectedCitations()).toHaveLength(1); // auto-selected toward the prepared field
 
-    const r = commitWithCitations(F2_A1, 'beta', citationsFor(F2_A1));
+    const r = commitWithCitations(F2_A1, 'beta', selectedCitations());
     expect(r.ok).toBe(true);
     expect(exposure.value).toBe(0);
   });
@@ -131,16 +139,18 @@ describe('endShift — the 16:00 turnover (transmittal model, decision v3-A)', (
     expect(exposureBefore).toBeGreaterThan(0);
     addNote('do not trust the friendly one');
     openFile('SCP-41B-002');
-    ui.activeSpan = makeRef('SCP-41B-002', 'a2');
+    beginPrepare(makeRef('SCP-41B-002', 'a2'));
     captureSelection('SCP-41B-001', 'catalogued');
     forgeCitation();
-    expect(citationsFor(makeRef('SCP-41B-002', 'a2'))).toHaveLength(1);
+    expect(workspace.citations).toHaveLength(1);
+    expect(prepare.ref).toBe(makeRef('SCP-41B-002', 'a2'));
 
     endShift();
 
-    // Taken: notes, buffers, selection, the old log.
+    // Taken: notes, the workspace, the prepare pin, selection, the old log.
     expect(session.notes).toHaveLength(0);
-    expect(citationsFor(makeRef('SCP-41B-002', 'a2'))).toHaveLength(0);
+    expect(workspace.citations).toHaveLength(0);
+    expect(prepare.ref).toBeNull();
     // Kept: the overlay (cited commit AND the Quippy fill — the tell), exposure, taint.
     expect(overlay[F2_A1]?.value).toBe('beta');
     expect(overlay[makeRef('SCP-41B-002', 'a2')]?.via).toBe('quippy');

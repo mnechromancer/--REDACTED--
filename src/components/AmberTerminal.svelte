@@ -23,6 +23,7 @@
     currentSelection,
     xrefLinksOf,
     endShift,
+    prepare,
   } from '../lib/ui.svelte.ts';
   import { session, addNote } from '../lib/session.svelte.ts';
   import { deliveredMail, isRead, markRead, unreadCount, type MailMessage } from '../lib/mail.svelte.ts';
@@ -137,15 +138,12 @@
     log(`noted (${session.notes.length} line(s) — erased at 16:00).`, 'echo');
   }
 
-  // Forge a citation from the live pane selection onto the active field (the verb's
-  // command form; the panel button does the same). Judged at commit, not here.
+  // Forge a citation from the live pane selection into the citation workspace (the
+  // verb's command form; the panel button does the same). Forging is target-free —
+  // it stakes into the workspace, not a field — so only a live selection is needed;
+  // which field the citation counts toward is decided later, by prepare/initiate.
+  // Judged at commit, not here.
   function runForge() {
-    // The target is the WORK SLOT — the field being restored — which survives
-    // reading other records (including the shelf, which has no fields of its own).
-    if (!forgeTarget()) {
-      log('forge: no field held. step to a redacted field first (n / next).', 'reject');
-      return;
-    }
     if (!currentSelection()) {
       log('forge: no text selected. select the span where the word stands in a record.', 'reject');
       return;
@@ -235,9 +233,10 @@
         log('COMMANDS — open <n|record> · next [doc] · search <term> · cite · mail [n] · note [text] · end · quippy · prov · help', 'system');
         log('  open follows a cross-reference: `open 2` opens reference [2] in this record, or `open SCP-41B-104` / `open REF-03` by designation.', 'system');
         log('  next jumps to this record\'s next struck field; `next doc` cycles to the next record (also ] and [).', 'system');
+        log('  cite stakes the selected text into your citation workspace — it costs nothing and needs no target; read any record and forge what you find.', 'system');
         log('  mail reads the message file. note keeps a scratchpad (destroyed at 16:00). end runs the turnover: transmitted commits survive; nothing else does.', 'system');
         log('KEYS — j/k step field · [ / ] step record · n next struck field · c forge citation · Tab summon Quippy', 'system');
-        log('To restore a field: step to it, type the word, then read any record — the field stays held — SELECT the span where the word stands and forge the citation. AMBER judges at commit. Citation costs zero; Quippy charges.', 'system');
+        log('To restore a field: PREPARE UNREDACTION on it, then read anywhere and forge citations — the prepared field is pinned and cannot be knocked loose by browsing. Select which citations ground it, type the word, INITIATE. AMBER judges at commit. Citation costs zero; Quippy charges.', 'system');
         break;
       default:
         log(`E00 — unrecognized command "${cmd}". type help.`, 'reject');
@@ -333,7 +332,11 @@
       </div>
 
       <div class="actions mod" style="--d: 0.9s">
-        <span class="hint">field held: {forgeTarget() ? spanLabel(forgeTarget()!) : '—'}</span>
+        {#if prepare.ref}
+          <span class="hint">prepared: {spanLabel(prepare.ref)}</span>
+        {:else}
+          <span class="hint">field held: {forgeTarget() ? spanLabel(forgeTarget()!) : '—'}</span>
+        {/if}
       </div>
     </aside>
   </div>

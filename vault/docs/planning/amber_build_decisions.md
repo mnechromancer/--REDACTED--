@@ -544,3 +544,23 @@ The boot seam accepted at Phase 1 is closed. Content decisions of record:
 REF-04 seeds it), L. Ferro's first appearance (day-2+ mail), concept keys (Phase 4),
 `ls`/`man`/`status`/`log`/concordance/`diff` (Phase 3). The `--allow-incomplete` escape
 hatch was not needed (000 was rewritten in place, never deleted).
+
+### Phase 2 follow-up — the citation workspace (playtest, built 2026-07-06)
+Playtest surfaced a citation-buffer bug: the forged-citation buffer chained to a per-slot
+"work slot" that `openFile`/`focusSpan` silently re-targeted every time the player opened a
+document containing a redaction, so browsing stole the held field and an evidence-first
+flow (find a good phrase, forge it, LATER meet the redaction it grounds) was impossible.
+Fixed by decoupling forging from targeting:
+- **Per-slot citation buffers replaced by one global citation workspace** (`ui.svelte.ts`
+  `workspace`) — forging is now target-free; the player can stake a span before ever
+  landing on the field it will ground.
+- **Unredaction is now an explicit, pinned two-step verb**: PREPARE UNREDACTION on a field
+  (`beginPrepare`) pins `prepare.ref`, immune to browse-retargeting — nothing in
+  openFile/focusSpan/stepSpan/nextRedacted may touch it; only `beginPrepare`,
+  `cancelPrepare`, a successful initiate, or the wipe do. The player then selects workspace
+  citations toward it and types the word; INITIATE UNREDACTION commits with the selected
+  set only.
+- **Citations are not consumed by a commit** — the same span can ground more than one
+  field — and die only at the 4 PM wipe (`clearWorkspace`, replacing `clearAllBuffers`).
+- The engine commit gate (`game.svelte.ts` `commitWithCitations`) is unchanged — this was a
+  presentation/traversal fix, not a rules change.

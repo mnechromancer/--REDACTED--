@@ -6,7 +6,6 @@
 // in-flight AMBER citation commit — none of it touches truth/overlay (that is
 // game.svelte.ts); it only decides what the terminal shows and where the cursor is.
 
-import { SvelteMap } from 'svelte/reactivity';
 import { corpus, allRefs, splitRef, makeRef, resolveSlot, anchorOf, isReachable, dayOf } from './game.svelte.ts';
 import type { ForgedCitation } from './corpus.ts';
 import { parseBody } from './parseBody.ts';
@@ -92,13 +91,18 @@ export function clearLog(): void {
   terminal.lines = [];
 }
 
-// ── Selection + the forged-citation buffer (Phase 3) ───────────────────────
+// ── Selection + the citation workspace ──────────────────────────────────────
 // The forged-citation verb (design_note_forged_citations.md): the player reads a
 // reachable record, SELECTS the span where the recovered word stands, and forges a
-// citation from it onto the slot they're solving. AMBER never surfaces where the word
-// lives — the player finds it. `selection` is the live pane selection (the raw
-// material); `forgeCitation` snapshots it into the active slot's buffer; the buffer
-// persists on the slot so the player can see the case they've built before committing.
+// citation from it. AMBER never surfaces where the word lives — the player finds it.
+//
+// Forging is TARGET-FREE (playtest fix): citations used to chain to a per-slot
+// buffer keyed to the "work slot," which openFile/focusSpan silently re-targeted
+// every time the player opened a document containing a redaction. That made
+// browsing steal the held field, and made an evidence-first flow — find a good
+// phrase, forge it, LATER meet the redaction it grounds — impossible. Now every
+// forged citation lands in ONE global workspace (the "pouch"); which field it
+// counts toward is decided separately, by `prepare` below.
 
 /**
  * The current text selection inside a reachable file pane: the file it was selected in
@@ -123,63 +127,98 @@ export function currentSelection(): ForgedCitation | null {
 }
 
 /**
- * Per-slot forged-citation buffer: anchor_ref → the spans the player has staked for
- * that slot. Persists across re-selection so the evidence file the player builds is
- * visible (the note lean: persist, don't make it per-commit ephemeral). A SvelteMap so
- * reads in the panel react to add/remove.
+ * The citation workspace: ONE global pouch of forged citations, not a per-slot
+ * buffer. A span staked here can ground any field, is not consumed by a successful
+ * commit (the same span may corroborate more than one slot), and is never
+ * re-targeted by browsing. Cleared only by the 4 PM wipe or a fresh run
+ * (`clearWorkspace`). A plain `$state` array — Svelte's proxy makes push/splice on
+ * it reactive, same as a SvelteMap's mutators were.
  */
-const citationBuffers = new SvelteMap<string, ForgedCitation[]>();
+export const workspace = $state<{ citations: ForgedCitation[] }>({ citations: [] });
 
-/** The forged citations currently staked on `ref` (empty array if none). */
-export function citationsFor(ref: string): ForgedCitation[] {
-  return citationBuffers.get(ref) ?? [];
+/**
+ * PREPARE — the pinned unredaction-in-progress: which field the player has
+ * committed to restoring (`ref`), and which workspace citations they've staked
+ * toward it (`selected`, indices into `workspace.citations`). CRITICAL: once set,
+ * `ref` is PINNED — nothing in file/span traversal (openFile/focusSpan/stepSpan/
+ * nextRedacted) may change or clear it. Only `beginPrepare`, `cancelPrepare`, a
+ * successful initiate, or `clearWorkspace` (the wipe/a fresh run) touch it. This is
+ * what makes browsing safe mid-unredaction: leave the blank prepared, go read the
+ * shelf, forge the evidence — the prepared field never moves out from under you.
+ */
+export const prepare = $state<{ ref: string | null; selected: number[] }>({ ref: null, selected: [] });
+
+/** Begin preparing an unredaction on `ref` — pins it and clears any prior selection. */
+export function beginPrepare(ref: string): void {
+  prepare.ref = ref;
+  prepare.selected = [];
+}
+
+/** Abandon the in-progress unredaction. The workspace itself is untouched. */
+export function cancelPrepare(): void {
+  prepare.ref = null;
+  prepare.selected = [];
+}
+
+/** The workspace citations currently selected toward the prepared field (empty if not preparing). */
+export function selectedCitations(): ForgedCitation[] {
+  return prepare.selected.map((i) => workspace.citations[i]).filter((c): c is ForgedCitation => !!c);
+}
+
+/** Toggle whether workspace citation `index` counts toward the prepared field. No-op if not preparing. */
+export function toggleSelected(index: number): void {
+  if (!prepare.ref) return;
+  const at = prepare.selected.indexOf(index);
+  if (at === -1) prepare.selected.push(index);
+  else prepare.selected.splice(at, 1);
 }
 
 /**
  * A one-shot signal AmberLookup consumes to move keyboard focus into the WORD input
- * after a successful forge (playtest fix: click/step → forge → type → Enter should
- * flow without a manual click into the field). Both forge surfaces (the panel's FORGE
+ * after a successful forge while an unredaction is prepared (playtest fix: prepare
+ * on the blank → read the shelf → select text → press c → type → Enter should flow
+ * without a manual click into the field). Both forge surfaces (the panel's FORGE
  * button and the `c` hotkey/`cite` command in AmberTerminal) funnel through
- * `forgeCitation` below, so bumping the token here reaches both without extra wiring.
- * A plain counter, not a boolean, so repeated forges on an already-focused input still
- * fire the effect each time.
+ * `forgeCitation` below, so bumping the token here reaches both without extra
+ * wiring. A plain counter, not a boolean, so repeated forges on an already-focused
+ * input still fire the effect each time. The consuming effect no-ops unless
+ * `prepare.ref` is set — a forge with nothing prepared must never steal focus.
  */
 export const focusWord = $state<{ token: number }>({ token: 0 });
 
 /**
- * Forge the current pane selection onto the active slot's buffer. No-op if there is no
- * selection or no active slot. De-dupes an identical (item, text) span so staking the
- * same selection twice doesn't pile up. Returns the forged citation, or null.
+ * Forge the current pane selection into the workspace. No-op (returns null) if
+ * there is no selection — forging no longer needs a target. De-dupes an identical
+ * (item, text) span so staking the same selection twice doesn't pile up. While an
+ * unredaction is being prepared, a freshly-forged (non-duplicate) citation is
+ * auto-added to its selection — the classic flow (prepare on the blank, go read the
+ * shelf, select text, press c, type the word, Enter) stays smooth with zero extra
+ * selection clicks. Returns the forged citation, or null.
  */
 export function forgeCitation(): ForgedCitation | null {
-  const ref = forgeTarget();
   const sel = currentSelection();
-  if (!ref || !sel) return null;
-  const buf = citationBuffers.get(ref) ?? [];
-  const dup = buf.some((c) => c.item === sel.item && c.text.toLowerCase() === sel.text.toLowerCase());
+  if (!sel) return null;
+  const dup = workspace.citations.some((c) => c.item === sel.item && c.text.toLowerCase() === sel.text.toLowerCase());
   if (!dup) {
-    citationBuffers.set(ref, [...buf, sel]);
-    log(`forged citation — ${ref} ◂ ${sel.item}: 「${truncate(sel.text)}」`, 'echo');
+    workspace.citations.push(sel);
+    if (prepare.ref) prepare.selected.push(workspace.citations.length - 1);
+    log(`forged citation ◂ ${sel.item}: 「${truncate(sel.text)}」 (workspace: ${workspace.citations.length})`, 'echo');
   }
   focusWord.token++;
   return sel;
 }
 
-/** Remove the citation at `index` from `ref`'s buffer. */
-export function removeCitation(ref: string, index: number): void {
-  const buf = citationBuffers.get(ref);
-  if (!buf) return;
-  citationBuffers.set(ref, buf.filter((_, i) => i !== index));
+/** Remove the citation at `index` from the workspace, pruning it from any prepared selection. */
+export function removeCitation(index: number): void {
+  workspace.citations.splice(index, 1);
+  prepare.selected = prepare.selected.filter((i) => i !== index).map((i) => (i > index ? i - 1 : i));
 }
 
-/** Drop every forged citation on `ref` (e.g. after a successful commit). */
-export function clearBuffer(ref: string): void {
-  citationBuffers.delete(ref);
-}
-
-/** Drop every slot's forged citations — a fresh run (and part of the 4 PM wipe). */
-export function clearAllBuffers(): void {
-  citationBuffers.clear();
+/** Empty the workspace and any in-progress prepare — a fresh run, and the 4 PM wipe. */
+export function clearWorkspace(): void {
+  workspace.citations = [];
+  prepare.ref = null;
+  prepare.selected = [];
   lastLeftSpan = null; // the cursor's memory of an abandoned blank is work-product too
   ui.workSlot = null; // so is the held work slot
 }
@@ -413,7 +452,7 @@ export function endShift(): void {
   const noteLines = session.notes.length;
 
   advanceDay(); // engine half: notes destroyed, day += 1
-  clearAllBuffers(); // uncommitted forge work (and lastLeftSpan) is work-product
+  clearWorkspace(); // uncommitted forge work, any prepare, and lastLeftSpan is work-product
   selection.item = '';
   selection.text = '';
   clearLog(); // the shift's log does not keep either
@@ -427,7 +466,7 @@ export function endShift(): void {
   if (newMail) log(`MAIL — ${newMail} new message(s). type mail.`, 'system');
 
   // The cursor: keep the open record if it survived the turnover; land on its next blank.
-  // (clearAllBuffers above already dropped the held work slot — it is work-product.)
+  // (clearWorkspace above already dropped the held work slot — it is work-product.)
   if (ui.activeFile && !isReachable(ui.activeFile)) {
     ui.activeFile = null;
     ui.activeSpan = null;

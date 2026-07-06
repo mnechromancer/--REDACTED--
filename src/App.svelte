@@ -12,7 +12,7 @@
     reachableFiles,
     collectionOf,
   } from './lib/game.svelte.ts';
-  import { ui, dismissQuippy, clearAllBuffers } from './lib/ui.svelte.ts';
+  import { ui, dismissQuippy, clearWorkspace } from './lib/ui.svelte.ts';
   import { session, beginSession, resetSession } from './lib/session.svelte.ts';
   import { resetMail } from './lib/mail.svelte.ts';
   import AmberTerminal from './components/AmberTerminal.svelte';
@@ -22,7 +22,7 @@
 
   loadCorpus(corpusData as Corpus);
   resetSession(); // fresh run: back to the bootup screen, day 1, Quippy not yet met
-  clearAllBuffers(); // fresh run: no forged citations carried over
+  clearWorkspace(); // fresh run: no forged citations carried over
   resetMail(); // fresh run: nothing read
 
   // v3 (Phase 1): the day is the gate. The shelf (collection 'local') is always

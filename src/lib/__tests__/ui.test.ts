@@ -28,10 +28,14 @@ import {
   captureSelection,
   currentSelection,
   forgeCitation,
-  citationsFor,
+  workspace,
   removeCitation,
-  clearBuffer,
-  clearAllBuffers,
+  clearWorkspace,
+  prepare,
+  beginPrepare,
+  cancelPrepare,
+  selectedCitations,
+  toggleSelected,
   xrefLinksOf,
   noteHonestCommit,
 } from '../ui.svelte.ts';
@@ -53,7 +57,7 @@ beforeEach(() => {
   session.booting = false; // these tests run in-session, past the bootup screen
   clearLog();
   captureSelection('', ''); // no pane selection between tests
-  clearAllBuffers(); // no forged citations carried between tests
+  clearWorkspace(); // no forged citations or in-progress prepare carried between tests
 });
 
 describe('mode switching — refusable Quippy', () => {
@@ -223,7 +227,7 @@ describe('amberProgress — route-aware corpus readout', () => {
   });
 });
 
-describe('the forged-citation buffer (Phase 3 — the verb plumbing)', () => {
+describe('the citation workspace + prepare (playtest redesign — target-free forging)', () => {
   const F1_A1 = makeRef('SCP-41B-001', 'a1'); // 'alpha' — grounded by a span in F2
   beforeEach(() => {
     session.quippyMet = true; // disarm first contact for these
@@ -240,45 +244,84 @@ describe('the forged-citation buffer (Phase 3 — the verb plumbing)', () => {
     expect(currentSelection()).toBeNull();
   });
 
-  it('forgeCitation stakes the live selection onto the active slot, and persists it', () => {
+  it('forgeCitation stakes the live selection into the workspace GLOBALLY — no target needed', () => {
+    ui.activeSpan = null; // no held field at all — forging must not require one
     captureSelection('SCP-41B-002', 'the holding alpha names');
     const forged = forgeCitation();
     expect(forged).toEqual({ item: 'SCP-41B-002', text: 'the holding alpha names' });
-    expect(citationsFor(F1_A1)).toEqual([{ item: 'SCP-41B-002', text: 'the holding alpha names' }]);
+    expect(workspace.citations).toEqual([{ item: 'SCP-41B-002', text: 'the holding alpha names' }]);
   });
 
-  it('forging the SAME span twice de-dupes (one entry in the buffer)', () => {
+  it('forging the SAME span twice de-dupes (one entry in the workspace)', () => {
     captureSelection('SCP-41B-002', 'holding alpha');
     forgeCitation();
     forgeCitation();
-    expect(citationsFor(F1_A1).length).toBe(1);
+    expect(workspace.citations.length).toBe(1);
   });
 
-  it('forge is a no-op with no selection or no active slot', () => {
+  it('forge is a no-op with no selection', () => {
     captureSelection('', '');
     expect(forgeCitation()).toBeNull();
-    expect(citationsFor(F1_A1)).toEqual([]);
-    ui.activeSpan = null;
-    captureSelection('SCP-41B-002', 'holding alpha');
-    expect(forgeCitation()).toBeNull();
+    expect(workspace.citations).toEqual([]);
   });
 
-  it('removeCitation drops one; clearBuffer drops all for the slot', () => {
+  it('removeCitation drops one by index from the workspace', () => {
     captureSelection('SCP-41B-002', 'alpha one');
     forgeCitation();
     captureSelection('SCP-41B-002', 'alpha two');
     forgeCitation();
-    expect(citationsFor(F1_A1).length).toBe(2);
-    removeCitation(F1_A1, 0);
-    expect(citationsFor(F1_A1)).toEqual([{ item: 'SCP-41B-002', text: 'alpha two' }]);
-    clearBuffer(F1_A1);
-    expect(citationsFor(F1_A1)).toEqual([]);
+    expect(workspace.citations.length).toBe(2);
+    removeCitation(0);
+    expect(workspace.citations).toEqual([{ item: 'SCP-41B-002', text: 'alpha two' }]);
+    removeCitation(0);
+    expect(workspace.citations).toEqual([]);
   });
 
-  it('the buffer feeds a real commit: forge a grounding span → commitWithCitations accepts', () => {
-    captureSelection('SCP-41B-002', 'the holding alpha names'); // carries "alpha"
+  it('beginPrepare pins prepare.ref; openFile of ANOTHER file with redactions cannot move or clear it', () => {
+    // THE regression from playtest: prepare on F1's slot, then open F2 — which HAS
+    // redacted spans of its own, so the old work-slot re-targeting would have
+    // stolen the field. prepare.ref must not move even though workSlot does.
+    beginPrepare(F1_A1);
+    expect(prepare.ref).toBe(F1_A1);
+    openFile('SCP-41B-002');
+    expect(ui.workSlot).toBe(redactedSpansOf('SCP-41B-002')[0]); // the cursor moved
+    expect(prepare.ref).toBe(F1_A1); // the prepared field did not
+    cancelPrepare();
+    expect(prepare.ref).toBeNull();
+  });
+
+  it('forging while preparing auto-selects the new citation; forging first then preparing does not', () => {
+    beginPrepare(F1_A1);
+    captureSelection('SCP-41B-002', 'the holding alpha names');
     forgeCitation();
-    const r = commitWithCitations(F1_A1, 'alpha', citationsFor(F1_A1));
+    expect(selectedCitations()).toEqual([{ item: 'SCP-41B-002', text: 'the holding alpha names' }]);
+
+    cancelPrepare();
+    captureSelection('SCP-41B-002', 'a second span');
+    forgeCitation(); // staked, but nothing is prepared to auto-select it into
+    expect(selectedCitations()).toEqual([]);
+  });
+
+  it('removeCitation prunes/reindexes a selection when the removed index precedes a selected one', () => {
+    captureSelection('SCP-41B-002', 'alpha one');
+    forgeCitation();
+    captureSelection('SCP-41B-002', 'alpha two');
+    forgeCitation();
+    beginPrepare(F1_A1);
+    toggleSelected(1); // hand-select "alpha two" (index 1)
+    expect(selectedCitations()).toEqual([{ item: 'SCP-41B-002', text: 'alpha two' }]);
+    removeCitation(0); // drop "alpha one" — index 1 shifts down to 0
+    expect(workspace.citations).toEqual([{ item: 'SCP-41B-002', text: 'alpha two' }]);
+    expect(selectedCitations()).toEqual([{ item: 'SCP-41B-002', text: 'alpha two' }]); // selection followed it
+  });
+
+  it('a full prepare → select → commitWithCitations round-trip grounds and commits', () => {
+    captureSelection('SCP-41B-002', 'the holding alpha names'); // carries "alpha"
+    forgeCitation(); // not preparing yet — staked but unselected
+    beginPrepare(F1_A1);
+    captureSelection('SCP-41B-002', 'another alpha mention');
+    forgeCitation(); // preparing now — auto-selected
+    const r = commitWithCitations(F1_A1, 'alpha', selectedCitations());
     expect(r.ok).toBe(true);
     expect(overlay[F1_A1]).toMatchObject({ value: 'alpha', via: 'amber' });
   });
