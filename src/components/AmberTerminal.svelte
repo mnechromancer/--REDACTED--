@@ -6,7 +6,7 @@
   // honest tool. Quippy is a distinct overlay summoned over this (Step 5); the
   // switch is always one keystroke (the refusable thesis).
   import type { ScpFile } from '../lib/corpus.ts';
-  import { corpus, boardState, exposure, breaches, BREACH_THRESHOLD } from '../lib/game.svelte.ts';
+  import { corpus, boardState, exposure, breaches, collectionOf, BREACH_THRESHOLD } from '../lib/game.svelte.ts';
   import {
     ui,
     terminal,
@@ -19,12 +19,13 @@
     spanLabel,
     summonQuippy,
     forgeCitation,
+    forgeTarget,
     currentSelection,
     xrefLinksOf,
     endShift,
   } from '../lib/ui.svelte.ts';
   import { session, addNote } from '../lib/session.svelte.ts';
-  import { deliveredMail, isRead, markRead, unreadCount } from '../lib/mail.svelte.ts';
+  import { deliveredMail, isRead, markRead, unreadCount, type MailMessage } from '../lib/mail.svelte.ts';
   import FilePane from './FilePane.svelte';
   import AmberLookup from './AmberLookup.svelte';
 
@@ -56,9 +57,21 @@
   );
 
   // Auto-open the first file the first time any become visible, so the terminal is
-  // never empty once the board opens.
+  // never empty once the board opens — and print the MOUNT LISTING once (Phase 2
+  // playtest fix): the player must learn immediately that there are multiple
+  // records and how to move between them.
+  let announced = $state(false);
   $effect(() => {
     if (!ui.activeFile && order.length > 0 && corpus[order[0]]) openFile(order[0]);
+    if (!announced && files.length > 0) {
+      announced = true;
+      const inbound = files.filter((f) => collectionOf(f) === 'inbound').map((f) => f.item);
+      const shelf = files.filter((f) => collectionOf(f) === 'local').map((f) => f.item);
+      log(`MOUNT — consignment, ${inbound.length} record(s): ${inbound.join(' · ')}`, 'system');
+      if (shelf.length) log(`SHELF — ${shelf.length} reference volume(s): ${shelf.join(' · ')}`, 'system');
+      log('cycle records with ] and [ · open <designation> opens one · next jumps to the next struck field.', 'system');
+      if (unreadCount() > 0) log(`MAIL — ${unreadCount()} unread. type mail.`, 'system');
+    }
   });
 
   let command = $state('');
@@ -76,10 +89,14 @@
   }
 
   // ── Mail / notes / the shift end (v3 Phase 1) ─────────────────────────────
-  // `mail` lists the delivered messages; `mail <n>` prints one and marks it read.
-  // `note <text>` appends to the doomed scratchpad; `note` lists it. `end` runs the
-  // 16:00 turnover (ui.endShift): notes, buffers, and the log are erased; transmitted
-  // commits survive; the next 04:00 consignment mounts.
+  // `mail` lists the delivered messages; `mail <n>` opens one FULL-PANE in the file
+  // region (Phase 2 playtest fix — the log was an unreadable place to put prose)
+  // and marks it read. Any navigation returns to the record. `note <text>` appends
+  // to the doomed scratchpad; `note` lists it. `end` runs the 16:00 turnover
+  // (ui.endShift): notes, buffers, and the log are erased; transmitted commits
+  // survive; the next 04:00 consignment mounts.
+  let mailView = $state<MailMessage | null>(null);
+
   function runMail(arg: string) {
     const box = deliveredMail();
     const a = arg.trim();
@@ -101,9 +118,8 @@
     }
     const m = box[idx];
     markRead(m.id);
-    log(`── MAIL [${idx + 1}] · FROM: ${m.from} · SUBJ: ${m.subject}`, 'system');
-    for (const line of m.body.split('\n')) log(line || ' ', 'echo');
-    log('── END OF MESSAGE', 'system');
+    mailView = m;
+    log(`MAIL [${idx + 1}] on screen — ${m.subject}. any navigation returns to the record.`, 'system');
   }
 
   function runNote(arg: string) {
@@ -124,8 +140,10 @@
   // Forge a citation from the live pane selection onto the active field (the verb's
   // command form; the panel button does the same). Judged at commit, not here.
   function runForge() {
-    if (!ui.activeSpan) {
-      log('forge: no field selected. step to a redacted field first.', 'reject');
+    // The target is the WORK SLOT — the field being restored — which survives
+    // reading other records (including the shelf, which has no fields of its own).
+    if (!forgeTarget()) {
+      log('forge: no field held. step to a redacted field first (n / next).', 'reject');
       return;
     }
     if (!currentSelection()) {
@@ -171,6 +189,7 @@
     log(`amber> ${line}`, 'echo');
     const [cmd, ...rest] = line.split(/\s+/);
     const arg = rest.join(' ');
+    if (cmd !== 'mail' && cmd !== 'm') mailView = null; // any non-mail command returns to the record
     switch (cmd) {
       case 'open':
       case 'o':
@@ -178,7 +197,10 @@
         break;
       case 'next':
       case 'n':
-        nextRedacted();
+        // `next` = the next struck FIELD (the default work verb); `next doc` cycles
+        // records, same as ] — named because "next" alone read ambiguously in playtest.
+        if (/^(doc|file|record)s?$/i.test(arg)) stepFile(order, 1);
+        else nextRedacted();
         break;
       case 'search':
       case 's':
@@ -210,11 +232,12 @@
         break;
       case 'help':
       case '?':
-        log('COMMANDS — open <n|record> · next · search <term> · cite · mail [n] · note [text] · end · quippy · prov · help', 'system');
+        log('COMMANDS — open <n|record> · next [doc] · search <term> · cite · mail [n] · note [text] · end · quippy · prov · help', 'system');
         log('  open follows a cross-reference: `open 2` opens reference [2] in this record, or `open SCP-41B-104` / `open REF-03` by designation.', 'system');
+        log('  next jumps to this record\'s next struck field; `next doc` cycles to the next record (also ] and [).', 'system');
         log('  mail reads the message file. note keeps a scratchpad (destroyed at 16:00). end runs the turnover: transmitted commits survive; nothing else does.', 'system');
-        log('KEYS — j/k step field · [ / ] step record · n next redaction · c forge citation · Tab summon Quippy', 'system');
-        log('To restore a field: type the word, then SELECT the span where it stands in a record and forge a citation. AMBER judges at commit. Citation costs zero; Quippy charges.', 'system');
+        log('KEYS — j/k step field · [ / ] step record · n next struck field · c forge citation · Tab summon Quippy', 'system');
+        log('To restore a field: step to it, type the word, then read any record — the field stays held — SELECT the span where the word stands and forge the citation. AMBER judges at commit. Citation costs zero; Quippy charges.', 'system');
         break;
       default:
         log(`E00 — unrecognized command "${cmd}". type help.`, 'reject');
@@ -227,17 +250,22 @@
     const t = e.target as HTMLElement;
     const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA');
     if (typing) return;
+    if (e.key === 'Escape' && mailView) {
+      e.preventDefault();
+      mailView = null;
+      return;
+    }
     switch (e.key) {
       case 'j':
-        e.preventDefault(); stepSpan(1); break;
+        e.preventDefault(); mailView = null; stepSpan(1); break;
       case 'k':
-        e.preventDefault(); stepSpan(-1); break;
+        e.preventDefault(); mailView = null; stepSpan(-1); break;
       case ']':
-        e.preventDefault(); stepFile(order, 1); break;
+        e.preventDefault(); mailView = null; stepFile(order, 1); break;
       case '[':
-        e.preventDefault(); stepFile(order, -1); break;
+        e.preventDefault(); mailView = null; stepFile(order, -1); break;
       case 'n':
-        e.preventDefault(); nextRedacted(); break;
+        e.preventDefault(); mailView = null; nextRedacted(); break;
       case 'c':
         e.preventDefault(); runForge(); break;
       case 'Tab':
@@ -258,7 +286,7 @@
 <svelte:window onkeydown={onKey} />
 
 <section class="amber crt-scan corrupt-{corruptBand}" style="--corrupt: {corrupt}">
-  <header class="amber-bar">
+  <header class="amber-bar mod" style="--d: 0s">
     <span class="sys">▌AMBER · ARCHIVE MANAGEMENT &amp; BATCH ENTRY RESOURCE</span>
     <span class="day" title="the 0400 consignment day — 1600 is the erasure">DAY {session.day}</span>
     <span class="prog">{progress.solved}/{progress.total} RESTORED · {progress.redacted} REDACTED{progress.struck ? ` · ${progress.struck} STRUCK` : ''}</span>
@@ -269,8 +297,21 @@
 
   <div class="amber-grid">
     <div class="main">
-      <div class="file-region">
-        {#if activeFile}
+      <div class="file-region mod" style="--d: 0.25s">
+        {#if mailView}
+          <!-- A message reads full-pane, in document register — the log is for status
+               lines, not prose (Phase 2 playtest fix). -->
+          <section class="mail-pane crt-scan">
+            <div class="mail-head">
+              <span class="doc-tag">MESSAGE</span>
+              <span class="mail-from">{mailView.from}</span>
+              <span class="mail-day">DAY {mailView.day}</span>
+            </div>
+            <p class="mail-subj">{mailView.subject}</p>
+            <div class="mail-body">{mailView.body}</div>
+            <p class="mail-foot">ESC or any navigation returns to the record.</p>
+          </section>
+        {:else if activeFile}
           <FilePane file={activeFile} />
         {:else}
           <div class="no-file">
@@ -280,7 +321,7 @@
         {/if}
       </div>
 
-      <div class="cmd">
+      <div class="cmd mod" style="--d: 0.85s">
         <span class="cursor" aria-hidden="true">amber&gt;</span>
         <input
           type="text"
@@ -300,26 +341,27 @@
       <!-- Persistent command legend — AMBER is keyboard-operated, so the verbs are
            always on screen (the playtest fix: the player should never forget the CLI
            exists). Compact; `help` expands the full list in the log. -->
-      <div class="cmd-legend" aria-label="AMBER commands">
+      <div class="cmd-legend mod" style="--d: 0.95s" aria-label="AMBER commands">
         <span class="leg"><b>open</b> <i>n</i></span>
-        <span class="leg"><b>next</b></span>
+        <span class="leg"><b>next</b> <i>field</i></span>
+        <span class="leg"><b>next doc</b></span>
         <span class="leg"><b>cite</b></span>
-        <span class="leg"><b>search</b> <i>term</i></span>
+        <span class="leg"><b>mail</b></span>
         <span class="leg"><b>help</b></span>
-        <span class="leg keys">keys: <i>j/k</i> field · <i>[ ]</i> record · <i>n</i> next · <i>c</i> cite · <i>Tab</i> Quippy</span>
+        <span class="leg keys">keys: <i>j/k</i> field · <i>[ ]</i> record · <i>n</i> next field · <i>c</i> cite · <i>Tab</i> Quippy</span>
       </div>
     </div>
 
     <aside class="side">
-      <div class="lookup-region">
+      <div class="lookup-region mod" style="--d: 0.45s">
         <AmberLookup />
       </div>
 
-      <div class="actions">
-        <span class="hint">cursor: {ui.activeSpan ? spanLabel(ui.activeSpan) : '—'}</span>
+      <div class="actions mod" style="--d: 0.55s">
+        <span class="hint">field held: {forgeTarget() ? spanLabel(forgeTarget()!) : '—'}</span>
       </div>
 
-      <div class="log" bind:this={logEl}>
+      <div class="log mod" style="--d: 0.65s" bind:this={logEl}>
         {#each terminal.lines as l (l.id)}
           <div class="log-line {l.tone}">{l.text}</div>
         {/each}
@@ -344,6 +386,55 @@
     border: 1px solid var(--amber-edge);
     box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.5), 0 0 0 1px #000;
   }
+
+  /* ── Module power-on (Phase 2 playtest ask) ────────────────────────────────
+     Each region of the terminal blinks on in sequence when the session starts —
+     header, document viewer, Concordance, cursor line, log, command line — a CRT
+     warming up one board at a time. Runs once on mount; --d staggers per module. */
+  .mod {
+    animation: mod-on 0.5s steps(3, end) both;
+    animation-delay: var(--d, 0s);
+  }
+  @keyframes mod-on {
+    0%, 35% { opacity: 0; }
+    45% { opacity: 1; }
+    55% { opacity: 0.25; }
+    100% { opacity: 1; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .mod { animation: none; }
+  }
+
+  /* ── The mail pane — a message reads as a document, not as log lines ──────── */
+  .mail-pane {
+    background: var(--amber-bg-raised, #100b06);
+    border: 1px solid var(--amber-edge);
+    border-left: 2px solid var(--amber-edge-bright);
+    padding: 0.9rem 1.2rem 1rem;
+  }
+  .mail-head {
+    display: flex;
+    align-items: baseline;
+    gap: 0.9rem;
+    padding-bottom: 0.45rem;
+    margin-bottom: 0.6rem;
+    border-bottom: 1px solid var(--amber-edge);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .mail-head .doc-tag { color: var(--amber-fg-faint); border: 1px solid var(--amber-edge); padding: 0 0.5ch; }
+  .mail-head .mail-from { color: var(--amber-fg); }
+  .mail-head .mail-day { margin-left: auto; color: var(--amber-green); }
+  .mail-subj { margin: 0 0 0.7rem; color: #ffd27a; font-size: 1.05rem; letter-spacing: 0.02em; }
+  .mail-body {
+    white-space: pre-wrap;
+    color: var(--amber-fg);
+    font-size: 1.06rem;
+    line-height: 1.62;
+    max-width: 80ch;
+  }
+  .mail-foot { margin: 0.8rem 0 0; color: var(--amber-fg-faint); font-size: 0.72rem; letter-spacing: 0.05em; }
 
   /* ── Exposure-driven corruption ───────────────────────────────────────────
      The AMBER chrome ROTS as the player leans on Quippy. `--corrupt` (0..1) scales
@@ -419,7 +510,7 @@
     background: var(--amber-bg-raised);
     border: 1px solid var(--amber-edge);
     border-left: 2px solid var(--amber-edge-bright);
-    font-size: 0.7rem;
+    font-size: 0.8rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
@@ -436,12 +527,12 @@
 
   .amber-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 21rem;
-    gap: 0.8rem;
+    grid-template-columns: minmax(0, 1fr) 27rem;
+    gap: 0.9rem;
     margin-top: 0.7rem;
     align-items: start;
   }
-  @media (max-width: 52rem) {
+  @media (max-width: 58rem) {
     .amber-grid { grid-template-columns: 1fr; }
   }
 
@@ -469,7 +560,7 @@
     border-left: 2px solid var(--amber-edge-bright);
     box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.6);
   }
-  .cmd .cursor { color: var(--amber-fg); font-size: 0.85rem; flex: 0 0 auto; letter-spacing: 0.04em; }
+  .cmd .cursor { color: var(--amber-fg); font-size: 0.95rem; flex: 0 0 auto; letter-spacing: 0.04em; }
   .cmd input {
     flex: 1 1 auto;
     min-width: 0;
@@ -477,7 +568,7 @@
     border: none;
     color: var(--amber-fg);
     font: inherit;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     outline: none;
     caret-color: var(--amber-fg);
   }
@@ -494,7 +585,7 @@
     background: var(--amber-bg-raised);
     border: 1px solid var(--amber-edge);
     border-top: none;
-    font-size: 0.66rem;
+    font-size: 0.74rem;
     letter-spacing: 0.03em;
     color: var(--amber-fg-faint);
   }
@@ -534,16 +625,16 @@
   .actions .hint { color: #4d5560; font-size: 0.68rem; }
 
   .log {
-    max-height: 16rem;
+    max-height: 24rem;
     overflow-y: auto;
     background: var(--amber-bg-sunken);
     border: 1px solid var(--amber-edge);
-    padding: 0.45rem 0.6rem;
-    font-size: 0.72rem;
+    padding: 0.5rem 0.65rem;
+    font-size: 0.85rem;
     line-height: 1.5;
     display: flex;
     flex-direction: column;
-    gap: 0.05rem;
+    gap: 0.08rem;
   }
   .log-line { overflow-wrap: anywhere; }
   .log-line.system { color: var(--amber-fg-dim); }

@@ -47,7 +47,7 @@
   //   'prompt' — the final hand-over line before BEGIN
   // Onboarding stays SHORT (slow introductions: it types slowly, but says little). AMBER
   // never names Quippy here (§0.2). A blank-text line is a spacer (a typed pause).
-  type BootTone = 'sys' | 'post' | 'warn' | 'brief' | 'cmd' | 'prompt';
+  type BootTone = 'sys' | 'post' | 'warn' | 'brief' | 'cmd' | 'cmdhot' | 'prompt';
   const bootLines: { tone: BootTone; text: string }[] = [
     { tone: 'sys', text: 'AMBER  ·  ARCHIVE MANAGEMENT & BATCH ENTRY RESOURCE  ·  rev 4.1' },
     { tone: 'sys', text: 'SITE-81C — REGIONAL RECORDS SATELLITE — RECEIVING STATION' },
@@ -61,13 +61,13 @@
     { tone: 'sys', text: '' },
     { tone: 'brief', text: 'Operator. Standing notice, receiving stations: consignment material and all working annotation cancel at 1600 station local. Reconstructions committed to the citation ledger before cancellation are excepted. Your assignment is in the message file.' },
     { tone: 'brief', text: 'This terminal is keyboard-operated. It takes typed commands, not a pointer. The essential ones:' },
-    { tone: 'cmd', text: 'mail            — the message file (start here)' },
+    { tone: 'cmdhot', text: 'mail            — the message file   ◂ START HERE' },
     { tone: 'cmd', text: 'open <record>   — open a holding by its designation' },
-    { tone: 'cmd', text: 'next            — jump to the next struck field' },
+    { tone: 'cmd', text: 'next            — the next struck field  (next doc — the next record)' },
     { tone: 'cmd', text: 'cite            — stake the text you have selected as grounding' },
     { tone: 'cmd', text: 'help            — the full command list, any time' },
     { tone: 'sys', text: '' },
-    { tone: 'prompt', text: 'Shift runs 0400 to 1600. Begin.' },
+    { tone: 'prompt', text: 'Shift runs 0400 to 1600. Read your mail, then begin.' },
   ];
 
   // Typewriter cadence. Characters type fast; a beat is held between lines. POST/sys
@@ -198,20 +198,22 @@
     color: var(--amber-fg-dim, #8a6a2c);
     font-family: var(--amber-font, ui-monospace), "SFMono-Regular", Menlo, monospace;
   }
+  /* Full-bleed working surface (Phase 2 playtest ask) — the terminal takes the
+     page, not a boxed column in the middle. */
   main {
-    max-width: 72rem;
-    margin: 0 auto;
-    padding: 1.2rem 1rem 4rem;
+    max-width: none;
+    margin: 0;
+    padding: 1.1rem 1.4rem 3rem;
   }
 
   /* Boot/onboarding — an authentic mainframe login TYPED OUT char-by-char to a teletype.
      Left-aligned, monospace, full-bleed amber console. Lines appear as they are typed
      (the typing is JS-driven, not CSS animation); the caret rides the active line. */
   main.boot {
-    max-width: 60rem;
-    min-height: 88vh;
-    margin: 0 auto;
-    padding: 1.4rem 1.2rem;
+    max-width: none;
+    min-height: 94vh;
+    margin: 0;
+    padding: 1.2rem 1.4rem;
     display: flex;
     font-family: var(--amber-font, ui-monospace), monospace;
     cursor: default;
@@ -243,11 +245,14 @@
   .boot-line.post { color: var(--amber-fg-dim, #8a6a2c); }
   .boot-line.warn { color: var(--amber-red, #e85d5d); }
   .boot-line.brief { color: var(--amber-fg, #e8b24d); line-height: 1.55; margin-top: 0.4rem; }
-  .boot-line.cmd {
+  .boot-line.cmd,
+  .boot-line.cmdhot {
     color: var(--amber-green, #8ad0a0);
     padding-left: 1.5ch;
   }
-  .boot-line.cmd::before { content: '› '; color: var(--amber-fg-faint, #5a4720); }
+  .boot-line.cmd::before, .boot-line.cmdhot::before { content: '› '; color: var(--amber-fg-faint, #5a4720); }
+  /* The taught first step burns brighter than the rest of the verb list. */
+  .boot-line.cmdhot { color: #ffd27a; text-shadow: 0 0 8px rgba(255, 210, 122, 0.35); }
   .boot-line.prompt { color: #ffd27a; margin-top: 0.4rem; line-height: 1.55; }
   .caret {
     color: var(--amber-fg, #e8b24d);

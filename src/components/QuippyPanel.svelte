@@ -21,7 +21,9 @@
 
   let { files }: { files: { item: string }[] } = $props();
 
-  const ref = $derived(ui.activeSpan);
+  // Target the field being worked: the cursor, else the held work slot — so Quippy
+  // can still pitch the blank the player left while they read the shelf.
+  const ref = $derived(ui.activeSpan ?? ui.workSlot);
   const slot = $derived(ref ? resolveSlot(ref) : null);
   const fillable = $derived(
     slot?.state === 'redacted' || slot?.state === 'inserted' || slot?.state === 'propagated',

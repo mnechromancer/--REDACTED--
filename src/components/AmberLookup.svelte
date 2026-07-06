@@ -37,7 +37,12 @@
   // per-slot buffer (ui.citationsFor) so they persist across span re-selection.
   let word = $state('');
 
-  const ref = $derived(ui.activeSpan);
+  // The field this panel restores: the cursor when it sits on a span, else the HELD
+  // work slot (Phase 2 playtest fix) — opening a shelf volume to find evidence must
+  // not drop the blank being worked. `held` renders the tell that the target lives
+  // in another record than the one on screen.
+  const ref = $derived(ui.activeSpan ?? ui.workSlot);
+  const held = $derived(!ui.activeSpan && !!ui.workSlot);
   const anchor = $derived(ref ? anchorOf(ref) : null);
   const slot = $derived(ref ? resolveSlot(ref) : null);
   const ungroundable = $derived(ref ? isUngroundable(ref) : false);
@@ -117,6 +122,7 @@
     <div class="lk-head">
       <span class="lbl">CONCORDANCE</span>
       <span class="target">{spanLabel(ref)}</span>
+      {#if held}<span class="held">◂ field held while you read</span>{/if}
     </div>
 
     {#if ungroundable}
@@ -202,7 +208,7 @@
     border-top: 2px solid var(--amber-edge-bright, #6a5220);
     padding: 0.6rem 0.75rem 0.7rem;
     font-family: var(--amber-font, ui-monospace), monospace;
-    font-size: 0.76rem;
+    font-size: 0.85rem;
     color: var(--amber-fg-dim, #8a6a2c);
   }
   .lk-head {
@@ -219,8 +225,9 @@
     letter-spacing: 0.1em;
     font-size: 0.62rem;
   }
-  .target { color: var(--amber-fg, #e8b24d); letter-spacing: 0.04em; }
-  .note { margin: 0 0 0.55rem; color: var(--amber-fg-dim, #8a6a2c); line-height: 1.45; font-size: 0.72rem; }
+  .target { color: var(--amber-fg, #e8b24d); letter-spacing: 0.04em; overflow-wrap: anywhere; }
+  .held { color: var(--amber-green, #8ad0a0); font-size: 0.68rem; letter-spacing: 0.04em; }
+  .note { margin: 0 0 0.55rem; color: var(--amber-fg-dim, #8a6a2c); line-height: 1.45; font-size: 0.8rem; }
   .note.orphan { color: #b0925a; }
   .meter { margin: 0 0 0.5rem; color: var(--amber-green, #8ad0a0); letter-spacing: 0.1em; font-size: 0.72rem; }
 
@@ -277,6 +284,8 @@
   .entry { margin-bottom: 0.6rem; display: flex; flex-direction: column; gap: 0.3rem; }
   .entry input {
     width: 100%;
+    box-sizing: border-box; /* padding/border inside the box — no overflow past the module */
+    min-width: 0;
     background: #0c0f12;
     border: 1px solid #1c2228;
     border-radius: 2px;

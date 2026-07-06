@@ -31,13 +31,42 @@ export const ui = $state<{
   /** the anchor_ref of the redacted span the cursor is on, or null */
   activeSpan: string | null;
   /**
+   * The WORK SLOT — the field being restored, held across navigation (Phase 2
+   * playtest fix). `activeSpan` is the cursor in the CURRENT file and nulls when
+   * the player opens a file with no redactions — which is exactly what happens on
+   * the intended verb (leave the blank in the batch, go read the shelf, select the
+   * evidence). The work slot keeps the last field the cursor sat on, so forging and
+   * committing target it wherever the player is reading. Work-product: wiped at
+   * 4 PM and on a fresh run.
+   */
+  workSlot: string | null;
+  /**
    * Provenance-visibility toggle (the §7.4 fifth distinction / design §8 dial):
    * when on, a Quippy-routed slot shows its violet tell so the player can see
    * reliance accumulate per file. A legibility aid for the no-Quippy goal; some
    * players may prefer it off. Default on.
    */
   showProvenance: boolean;
-}>({ mode: 'amber', quippyReason: 'summon', activeFile: null, activeSpan: null, showProvenance: true });
+}>({ mode: 'amber', quippyReason: 'summon', activeFile: null, activeSpan: null, workSlot: null, showProvenance: true });
+
+/**
+ * Move the cursor to a span AND take it as the work slot. Every deliberate landing
+ * on a field routes through here (open/step/next/click); passages that merely
+ * CLEAR the cursor (opening a shelf file) leave the work slot standing.
+ */
+export function focusSpan(ref: string | null): void {
+  ui.activeSpan = ref;
+  if (ref) ui.workSlot = ref;
+}
+
+/**
+ * The field a forge/commit targets: the cursor when it is on a span, else the held
+ * work slot. This is what lets the player read the shelf while their blank stays
+ * the thing they are citing onto.
+ */
+export function forgeTarget(): string | null {
+  return ui.activeSpan ?? ui.workSlot;
+}
 
 // ── Terminal log ─────────────────────────────────────────────────────────
 // AMBER's terse status register (design doc §5a): command echoes, accept/reject
@@ -112,7 +141,7 @@ export function citationsFor(ref: string): ForgedCitation[] {
  * same selection twice doesn't pile up. Returns the forged citation, or null.
  */
 export function forgeCitation(): ForgedCitation | null {
-  const ref = ui.activeSpan;
+  const ref = forgeTarget();
   const sel = currentSelection();
   if (!ref || !sel) return null;
   const buf = citationBuffers.get(ref) ?? [];
@@ -140,6 +169,7 @@ export function clearBuffer(ref: string): void {
 export function clearAllBuffers(): void {
   citationBuffers.clear();
   lastLeftSpan = null; // the cursor's memory of an abandoned blank is work-product too
+  ui.workSlot = null; // so is the held work slot
 }
 
 function truncate(s: string, n = 48): string {
@@ -190,7 +220,7 @@ export function noteHonestCommit(solvedRef: string): void {
       : firstRedactedAnywhere(solvedRef);
   if (target) {
     ui.activeFile = splitRef(target).item;
-    ui.activeSpan = target;
+    focusSpan(target);
   }
   ui.mode = 'quippy';
 }
@@ -238,7 +268,10 @@ export function openFile(item: string): boolean {
     lastLeftSpan = ui.activeSpan;
   }
   ui.activeFile = item;
-  ui.activeSpan = firstRedactedSpan(item) ?? null;
+  // The cursor lands on the file's first blank; a file with none (the shelf) clears
+  // the cursor but the held work slot survives — reading evidence never drops the
+  // field being restored.
+  focusSpan(firstRedactedSpan(item) ?? null);
   log(`open ${item}`, 'echo');
   return true;
 }
@@ -302,7 +335,7 @@ export function stepSpan(dir: 1 | -1): string | null {
   if (spans.length === 0) return null;
   const cur = ui.activeSpan;
   const i = cur ? spans.indexOf(cur) : -1;
-  ui.activeSpan = spans[(i + dir + spans.length) % spans.length];
+  focusSpan(spans[(i + dir + spans.length) % spans.length]);
   return ui.activeSpan;
 }
 
@@ -321,7 +354,7 @@ export function nextRedacted(): string | null {
   for (let n = 1; n <= spans.length; n++) {
     const cand = spans[(start + n) % spans.length];
     if (resolveSlot(cand).state === 'redacted') {
-      ui.activeSpan = cand;
+      focusSpan(cand);
       return cand;
     }
   }
@@ -382,11 +415,12 @@ export function endShift(): void {
   if (newMail) log(`MAIL — ${newMail} new message(s). type mail.`, 'system');
 
   // The cursor: keep the open record if it survived the turnover; land on its next blank.
+  // (clearAllBuffers above already dropped the held work slot — it is work-product.)
   if (ui.activeFile && !isReachable(ui.activeFile)) {
     ui.activeFile = null;
     ui.activeSpan = null;
   } else if (ui.activeFile) {
-    ui.activeSpan = firstRedactedSpan(ui.activeFile) ?? null;
+    focusSpan(firstRedactedSpan(ui.activeFile) ?? null);
   }
 }
 

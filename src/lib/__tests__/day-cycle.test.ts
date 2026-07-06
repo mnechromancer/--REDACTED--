@@ -84,6 +84,29 @@ describe('the shelf grounds the batch', () => {
     session.day = 2;
     expect(openFile('SCP-41B-003')).toBe(true);
   });
+
+  // Phase 2 playtest regression: the intended verb is leave the blank in the batch,
+  // open the SHELF (which has no fields of its own), select the evidence, forge.
+  // Opening a zero-anchor file clears the cursor; the WORK SLOT must hold so the
+  // forge still targets the abandoned blank — this was the step-4 blocker.
+  it('reading the shelf keeps the work slot: forge and commit target the blank left behind', () => {
+    openFile('SCP-41B-002'); // cursor lands on the day-1 blank
+    expect(ui.activeSpan).toBe(F2_A1);
+    expect(ui.workSlot).toBe(F2_A1);
+
+    openFile('SCP-41B-001'); // the shelf: no fields — cursor clears, work slot holds
+    expect(ui.activeSpan).toBeNull();
+    expect(ui.workSlot).toBe(F2_A1);
+
+    captureSelection('SCP-41B-001', 'the record beta is catalogued');
+    const forged = forgeCitation();
+    expect(forged).not.toBeNull();
+    expect(citationsFor(F2_A1)).toHaveLength(1); // staked on the HELD slot
+
+    const r = commitWithCitations(F2_A1, 'beta', citationsFor(F2_A1));
+    expect(r.ok).toBe(true);
+    expect(exposure.value).toBe(0);
+  });
 });
 
 describe('notes — the doomed scratchpad', () => {

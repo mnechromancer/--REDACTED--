@@ -8,7 +8,7 @@
   // focusing a span makes it the terminal's active span, which is what AmberLookup
   // targets. The active span is outlined so the keyboard cursor is always visible.
   import { resolveSlot, overlay } from '../lib/game.svelte.ts';
-  import { ui } from '../lib/ui.svelte.ts';
+  import { ui, focusSpan } from '../lib/ui.svelte.ts';
 
   let { ref }: { ref: string } = $props();
 
@@ -27,7 +27,7 @@
   const barWidth = 8;
 
   function select() {
-    ui.activeSpan = ref;
+    focusSpan(ref); // cursor + work slot: a clicked field becomes the one being restored
     ui.activeFile = ref.slice(0, ref.indexOf('#'));
   }
 </script>
