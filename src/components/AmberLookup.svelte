@@ -30,6 +30,7 @@
     removeCitation,
     clearBuffer,
     noteHonestCommit,
+    focusWord,
   } from '../lib/ui.svelte.ts';
   import { logPropagation } from '../lib/ripples.svelte.ts';
 
@@ -70,6 +71,17 @@
       lastRef = ref;
       word = '';
     }
+  });
+
+  // The playtest smoothness fix: after a successful forge (this panel's button OR the
+  // `c` hotkey/`cite` command, both of which funnel through forgeCitation), move
+  // keyboard focus into the WORD input so typing the word and pressing Enter is the
+  // very next thing the player does — no click required. `focusWord.token` is a
+  // one-shot counter bumped only inside forgeCitation, so a mere ref change (opening
+  // another record, stepping fields) never steals focus here — only an explicit forge does.
+  let wordEl = $state<HTMLInputElement | null>(null);
+  $effect(() => {
+    if (focusWord.token > 0) wordEl?.focus();
   });
 
   function forge() {
@@ -180,6 +192,7 @@
         autocomplete="off"
         placeholder="type the recovered word"
         bind:value={word}
+        bind:this={wordEl}
         onkeydown={(e) => {
           if (e.key === 'Enter') commit();
         }}
@@ -208,7 +221,7 @@
     border-top: 2px solid var(--amber-edge-bright, #6a5220);
     padding: 0.6rem 0.75rem 0.7rem;
     font-family: var(--amber-font, ui-monospace), monospace;
-    font-size: 0.85rem;
+    font-size: 1rem;
     color: var(--amber-fg-dim, #8a6a2c);
   }
   .lk-head {
@@ -223,13 +236,13 @@
     color: var(--amber-fg-faint, #5a4720);
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    font-size: 0.62rem;
+    font-size: 0.85rem;
   }
   .target { color: var(--amber-fg, #e8b24d); letter-spacing: 0.04em; overflow-wrap: anywhere; }
-  .held { color: var(--amber-green, #8ad0a0); font-size: 0.68rem; letter-spacing: 0.04em; }
-  .note { margin: 0 0 0.55rem; color: var(--amber-fg-dim, #8a6a2c); line-height: 1.45; font-size: 0.8rem; }
+  .held { color: var(--amber-green, #8ad0a0); font-size: 0.85rem; letter-spacing: 0.04em; }
+  .note { margin: 0 0 0.55rem; color: var(--amber-fg-dim, #8a6a2c); line-height: 1.45; font-size: 0.9rem; }
   .note.orphan { color: #b0925a; }
-  .meter { margin: 0 0 0.5rem; color: var(--amber-green, #8ad0a0); letter-spacing: 0.1em; font-size: 0.72rem; }
+  .meter { margin: 0 0 0.5rem; color: var(--amber-green, #8ad0a0); letter-spacing: 0.1em; font-size: 0.85rem; }
 
   /* The forge affordance — stake the live selection. */
   .forge { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap; }
@@ -241,14 +254,14 @@
     border-radius: 2px;
     padding: 0.3rem 0.55rem;
     font: inherit;
-    font-size: 0.72rem;
+    font-size: 0.85rem;
     letter-spacing: 0.03em;
     cursor: pointer;
   }
   .forge-btn:hover:not(:disabled) { border-color: #8a7234; color: #f0d89a; }
   .forge-btn:disabled { color: #4f5a52; border-color: #1c2620; cursor: default; }
-  .sel-preview { color: #9aa9b6; font-style: italic; font-size: 0.7rem; overflow-wrap: anywhere; }
-  .sel-hint { color: #4d5560; font-size: 0.68rem; }
+  .sel-preview { color: #9aa9b6; font-style: italic; font-size: 0.85rem; overflow-wrap: anywhere; }
+  .sel-hint { color: #4d5560; font-size: 0.85rem; }
 
   /* The evidence file — the forged citations staked on this slot. */
   .buffer { list-style: none; margin: 0 0 0.6rem; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
@@ -260,7 +273,7 @@
     border: 1px solid var(--amber-edge, #3a2c12);
     border-radius: 2px;
     padding: 0.3rem 0.45rem;
-    font-size: 0.7rem;
+    font-size: 0.85rem;
   }
   .cit.supports { border-color: var(--amber-green, #8ad0a0); }
   .cit .box { flex: 0 0 auto; color: var(--amber-fg-dim, #8a6a2c); }
@@ -268,7 +281,7 @@
   .cit .src {
     flex: 0 0 auto;
     color: var(--amber-fg, #e8b24d);
-    font-size: 0.62rem;
+    font-size: 0.78rem;
     border: 1px solid var(--amber-edge-bright, #6a5220);
     border-radius: 2px;
     padding: 0 0.3ch;
@@ -277,7 +290,7 @@
   .cit .drop {
     flex: 0 0 auto;
     background: none; border: none; color: #6b5050; cursor: pointer;
-    font: inherit; font-size: 0.7rem; padding: 0;
+    font: inherit; font-size: 0.85rem; padding: 0;
   }
   .cit .drop:hover { color: var(--slot-contradiction-fg, #e85d5d); }
 
@@ -292,7 +305,7 @@
     padding: 0.35rem 0.45rem;
     color: var(--slot-inserted-fg, #e8a33d);
     font: inherit;
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     outline: none;
   }
   .entry input:focus { border-color: var(--slot-inserted-fg, #e8a33d); }
@@ -306,7 +319,7 @@
     border: 1px solid #2a5a44;
     border-radius: 2px;
     font: inherit;
-    font-size: 0.74rem;
+    font-size: 0.85rem;
     letter-spacing: 0.04em;
     cursor: pointer;
   }

@@ -157,23 +157,23 @@
     padding: 0.45rem 0.7rem;
     background: var(--amber-bg-sunken);
     border-bottom: 1px solid var(--amber-edge);
-    font-size: 0.72rem;
+    font-size: 0.85rem;
     letter-spacing: 0.06em;
   }
   .pane-head .doc-tag {
     color: var(--amber-bg);
     background: var(--amber-fg-dim);
     padding: 0 0.4ch;
-    font-size: 0.62rem;
+    font-size: 0.78rem;
     letter-spacing: 0.12em;
   }
   .pane-head .item { color: var(--amber-fg); font-weight: 700; letter-spacing: 0.06em; }
-  .pane-head .meta { color: var(--amber-fg-dim); text-transform: uppercase; font-size: 0.64rem; }
-  .pane-head .site { color: var(--amber-fg-faint); text-transform: uppercase; font-size: 0.64rem; }
+  .pane-head .meta { color: var(--amber-fg-dim); text-transform: uppercase; font-size: 0.78rem; }
+  .pane-head .site { color: var(--amber-fg-faint); text-transform: uppercase; font-size: 0.78rem; }
   .ripple-tag {
     margin-left: auto;
     color: var(--slot-propagated-fg, #3dd6c4);
-    font-size: 0.64rem;
+    font-size: 0.78rem;
     letter-spacing: 0.06em;
   }
 
@@ -189,7 +189,7 @@
     padding: 0.95rem 1.2rem 1.1rem;
     line-height: 1.7;
     color: var(--amber-fg);
-    font-size: 0.86rem;
+    font-size: 1.2rem;
   }
   .col-main { grid-column: 1; }
   .col-gutter { grid-column: 2; }
@@ -200,7 +200,7 @@
   }
 
   .body h1 {
-    font-size: 0.94rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: var(--amber-fg);
     letter-spacing: 0.1em;
@@ -210,7 +210,7 @@
     border-bottom: 1px solid var(--amber-edge);
   }
   .body h2 {
-    font-size: 0.72rem;
+    font-size: 0.9rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.12em;
@@ -219,7 +219,7 @@
   }
   .body h2::before { content: '§ '; color: var(--amber-fg-faint); }
   .body p { margin: 0 0 0.65rem; }
-  .body p.object-class { color: var(--amber-fg-dim); font-size: 0.82rem; margin-bottom: 0.9rem; }
+  .body p.object-class { color: var(--amber-fg-dim); font-size: 1rem; margin-bottom: 0.9rem; }
 
   /* Marginalia: a note in the post's hand, set in the right margin beside the passage
      it annotates. Read horizontally (rotation read as clunky); marked off as a hand
@@ -231,7 +231,7 @@
     padding: 0.05rem 0 0.15rem 0.6rem;
     border-left: 2px solid var(--amber-edge-bright);
     color: var(--amber-fg-dim);
-    font-size: 0.72rem;
+    font-size: 0.9rem;
     line-height: 1.5;
     font-style: italic;
   }
@@ -239,7 +239,7 @@
     content: "R. HALLORAN — MARGIN";
     display: block;
     font-style: normal;
-    font-size: 0.54rem;
+    font-size: 0.72rem;
     letter-spacing: 0.1em;
     color: var(--amber-fg-faint);
     margin-bottom: 0.35rem;
@@ -281,5 +281,5 @@
 
   .lockout { padding: 1.1rem 0.9rem; color: var(--amber-red); }
   .lockout p { margin: 0.15rem 0; letter-spacing: 0.04em; }
-  .lockout .detail { color: var(--amber-fg-dim); font-size: 0.78rem; }
+  .lockout .detail { color: var(--amber-fg-dim); font-size: 0.9rem; }
 </style>

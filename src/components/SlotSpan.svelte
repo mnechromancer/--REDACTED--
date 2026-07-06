@@ -20,6 +20,12 @@
   const via = $derived(overlay[ref]?.via);
   const quippyTainted = $derived(via === 'quippy' && ui.showProvenance);
   const active = $derived(ui.activeSpan === ref);
+  // The held work slot (Phase 2 playtest fix's continuity ask): when the cursor has
+  // moved to another file to find grounding, the blank being restored should stay
+  // visibly marked here so the player can find their way back to it. Dimmer than the
+  // live cursor outline (`active`) so the two never compete on the same span — `held`
+  // only ever shows when `active` doesn't (the cursor is elsewhere).
+  const held = $derived(!active && ui.workSlot === ref);
 
   // Redaction-bar width: a fixed span that does NOT telegraph the hidden word's
   // length (single-word primitive — the length would itself be a clue). A short
@@ -36,6 +42,7 @@
   class="slot {slot.state}"
   class:quippy-tainted={quippyTainted}
   class:active
+  class:held
   role="button"
   tabindex="0"
   aria-current={active ? 'true' : undefined}
@@ -78,6 +85,14 @@
   .slot:focus-visible {
     outline: 1px solid var(--slot-inserted-fg);
     outline-offset: 1px;
+  }
+  /* The held work slot — dimmer than the live cursor outline (dashed, no fill) so a
+     player who has navigated away to find grounding can still spot their blank when
+     they land back on this file. */
+  .slot.held {
+    outline: 1px dashed var(--slot-inserted-fg);
+    outline-offset: 1px;
+    background: rgba(232, 163, 61, 0.05);
   }
 
   /* 1. Redacted — a word "painted over" with ink, the old-record look. It must NOT

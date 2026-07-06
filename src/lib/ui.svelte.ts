@@ -136,6 +136,17 @@ export function citationsFor(ref: string): ForgedCitation[] {
 }
 
 /**
+ * A one-shot signal AmberLookup consumes to move keyboard focus into the WORD input
+ * after a successful forge (playtest fix: click/step → forge → type → Enter should
+ * flow without a manual click into the field). Both forge surfaces (the panel's FORGE
+ * button and the `c` hotkey/`cite` command in AmberTerminal) funnel through
+ * `forgeCitation` below, so bumping the token here reaches both without extra wiring.
+ * A plain counter, not a boolean, so repeated forges on an already-focused input still
+ * fire the effect each time.
+ */
+export const focusWord = $state<{ token: number }>({ token: 0 });
+
+/**
  * Forge the current pane selection onto the active slot's buffer. No-op if there is no
  * selection or no active slot. De-dupes an identical (item, text) span so staking the
  * same selection twice doesn't pile up. Returns the forged citation, or null.
@@ -150,6 +161,7 @@ export function forgeCitation(): ForgedCitation | null {
     citationBuffers.set(ref, [...buf, sel]);
     log(`forged citation — ${ref} ◂ ${sel.item}: 「${truncate(sel.text)}」`, 'echo');
   }
+  focusWord.token++;
   return sel;
 }
 

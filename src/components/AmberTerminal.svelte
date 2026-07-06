@@ -297,7 +297,9 @@
 
   <div class="amber-grid">
     <div class="main">
-      <div class="file-region mod" style="--d: 0.25s">
+      <!-- The document pane: at most half the page (playtest fix — it was crowding
+           out the Concordance). Everything the player READS lives here. -->
+      <div class="file-region mod" style="--d: 0.3s">
         {#if mailView}
           <!-- A message reads full-pane, in document register — the log is for status
                lines, not prose (Phase 2 playtest fix). -->
@@ -320,56 +322,65 @@
           </div>
         {/if}
       </div>
-
-      <div class="cmd mod" style="--d: 0.85s">
-        <span class="cursor" aria-hidden="true">amber&gt;</span>
-        <input
-          type="text"
-          spellcheck="false"
-          autocomplete="off"
-          placeholder="type a command — open · next · cite · search · help"
-          bind:value={command}
-          onkeydown={(e) => {
-            if (e.key === 'Enter') runCommand(command);
-          }}
-        />
-        <button class="quippy-btn" type="button" onclick={summonQuippy} title="summon Quippy (Tab)">
-          ◇ Quippy
-        </button>
-      </div>
-
-      <!-- Persistent command legend — AMBER is keyboard-operated, so the verbs are
-           always on screen (the playtest fix: the player should never forget the CLI
-           exists). Compact; `help` expands the full list in the log. -->
-      <div class="cmd-legend mod" style="--d: 0.95s" aria-label="AMBER commands">
-        <span class="leg"><b>open</b> <i>n</i></span>
-        <span class="leg"><b>next</b> <i>field</i></span>
-        <span class="leg"><b>next doc</b></span>
-        <span class="leg"><b>cite</b></span>
-        <span class="leg"><b>mail</b></span>
-        <span class="leg"><b>help</b></span>
-        <span class="leg keys">keys: <i>j/k</i> field · <i>[ ]</i> record · <i>n</i> next field · <i>c</i> cite · <i>Tab</i> Quippy</span>
-      </div>
     </div>
 
+    <!-- The Concordance column: the forged-citation tooling plus the cursor readout,
+         given equal weight to the document rather than squeezed into a narrow rail
+         (playtest fix). -->
     <aside class="side">
-      <div class="lookup-region mod" style="--d: 0.45s">
+      <div class="lookup-region mod" style="--d: 0.6s">
         <AmberLookup />
       </div>
 
-      <div class="actions mod" style="--d: 0.55s">
+      <div class="actions mod" style="--d: 0.9s">
         <span class="hint">field held: {forgeTarget() ? spanLabel(forgeTarget()!) : '—'}</span>
       </div>
-
-      <div class="log mod" style="--d: 0.65s" bind:this={logEl}>
-        {#each terminal.lines as l (l.id)}
-          <div class="log-line {l.tone}">{l.text}</div>
-        {/each}
-        {#if terminal.lines.length === 0}
-          <div class="log-line system">AMBER READY. type help.</div>
-        {/if}
-      </div>
     </aside>
+  </div>
+
+  <!-- The console: the terminal log and the command line as ONE unit — scrollback
+       sitting directly over the prompt, sharing a border with no seam (playtest fix:
+       the output module read as disconnected from the CLI it belongs to). The legend
+       attaches beneath as part of the same block. -->
+  <div class="console">
+    <div class="log mod" style="--d: 1.2s" bind:this={logEl}>
+      {#each terminal.lines as l (l.id)}
+        <div class="log-line {l.tone}">{l.text}</div>
+      {/each}
+      {#if terminal.lines.length === 0}
+        <div class="log-line system">AMBER READY. type help.</div>
+      {/if}
+    </div>
+
+    <div class="cmd mod" style="--d: 1.5s">
+      <span class="cursor" aria-hidden="true">amber&gt;</span>
+      <input
+        type="text"
+        spellcheck="false"
+        autocomplete="off"
+        placeholder="type a command — open · next · cite · search · help"
+        bind:value={command}
+        onkeydown={(e) => {
+          if (e.key === 'Enter') runCommand(command);
+        }}
+      />
+      <button class="quippy-btn" type="button" onclick={summonQuippy} title="summon Quippy (Tab)">
+        ◇ Quippy
+      </button>
+    </div>
+
+    <!-- Persistent command legend — AMBER is keyboard-operated, so the verbs are
+         always on screen (the playtest fix: the player should never forget the CLI
+         exists). Compact; `help` expands the full list in the log. -->
+    <div class="cmd-legend mod" style="--d: 1.8s" aria-label="AMBER commands">
+      <span class="leg"><b>open</b> <i>n</i></span>
+      <span class="leg"><b>next</b> <i>field</i></span>
+      <span class="leg"><b>next doc</b></span>
+      <span class="leg"><b>cite</b></span>
+      <span class="leg"><b>mail</b></span>
+      <span class="leg"><b>help</b></span>
+      <span class="leg keys">keys: <i>j/k</i> field · <i>[ ]</i> record · <i>n</i> next field · <i>c</i> cite · <i>Tab</i> Quippy</span>
+    </div>
   </div>
 </section>
 
@@ -379,7 +390,7 @@
     font-family: var(--amber-font);
     /* VT323 runs small/tall — bump the AMBER scale so the whole terminal reads at a
        comfortable terminal size; rem-based child sizes inherit the larger base. */
-    font-size: 1.15rem;
+    font-size: 1.3rem;
     color: var(--amber-fg-dim);
     background: var(--amber-bg);
     padding: 0.55rem;
@@ -387,19 +398,39 @@
     box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.5), 0 0 0 1px #000;
   }
 
-  /* ── Module power-on (Phase 2 playtest ask) ────────────────────────────────
-     Each region of the terminal blinks on in sequence when the session starts —
-     header, document viewer, Concordance, cursor line, log, command line — a CRT
-     warming up one board at a time. Runs once on mount; --d staggers per module. */
+  /* ── Module power-on (Phase 2 playtest ask, re-tuned per later playtest) ─────
+     Each region of the terminal snaps on in sequence when the session starts — header,
+     document viewer, Concordance, cursor readout, console (log+cmd), legend — a CRT
+     warming up one board at a time. Playtest: the old stagger was too tight and the
+     animation too subtle to read as sequential. Now: ~0.3s apart, ~0.5s per module, so
+     the whole boot reads over ~2.3s, and each module's entrance is an unmistakable CRT
+     flicker — hard opacity jumps (steps, not eases), a few stutter frames, chromatic
+     aberration on the flash frames — settling clean. Runs once on mount; --d staggers
+     per module (see the --d values on each .mod element for the boot order). */
   .mod {
-    animation: mod-on 0.5s steps(3, end) both;
+    animation: mod-on 0.5s steps(1, end) both;
     animation-delay: var(--d, 0s);
   }
   @keyframes mod-on {
-    0%, 35% { opacity: 0; }
-    45% { opacity: 1; }
-    55% { opacity: 0.25; }
-    100% { opacity: 1; }
+    0%, 6% { opacity: 0; text-shadow: none; filter: brightness(1); }
+    7% {
+      opacity: 1;
+      filter: brightness(1.7);
+      text-shadow: -1.5px 0 rgba(232, 90, 120, 0.85), 1.5px 0 rgba(90, 170, 232, 0.85);
+    }
+    14% { opacity: 0.15; text-shadow: none; filter: brightness(1); }
+    22% {
+      opacity: 1;
+      filter: brightness(1.45);
+      text-shadow: 1.5px 0 rgba(232, 90, 120, 0.7), -1.5px 0 rgba(90, 170, 232, 0.7);
+    }
+    30% { opacity: 0.3; text-shadow: none; filter: brightness(1); }
+    42% {
+      opacity: 1;
+      filter: brightness(1.2);
+      text-shadow: -1px 0 rgba(232, 90, 120, 0.5), 1px 0 rgba(90, 170, 232, 0.5);
+    }
+    55%, 100% { opacity: 1; text-shadow: none; filter: brightness(1); }
   }
   @media (prefers-reduced-motion: reduce) {
     .mod { animation: none; }
@@ -419,22 +450,22 @@
     padding-bottom: 0.45rem;
     margin-bottom: 0.6rem;
     border-bottom: 1px solid var(--amber-edge);
-    font-size: 0.78rem;
+    font-size: 0.88rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
   .mail-head .doc-tag { color: var(--amber-fg-faint); border: 1px solid var(--amber-edge); padding: 0 0.5ch; }
   .mail-head .mail-from { color: var(--amber-fg); }
   .mail-head .mail-day { margin-left: auto; color: var(--amber-green); }
-  .mail-subj { margin: 0 0 0.7rem; color: #ffd27a; font-size: 1.05rem; letter-spacing: 0.02em; }
+  .mail-subj { margin: 0 0 0.7rem; color: #ffd27a; font-size: 1.15rem; letter-spacing: 0.02em; }
   .mail-body {
     white-space: pre-wrap;
     color: var(--amber-fg);
-    font-size: 1.06rem;
+    font-size: 1.15rem;
     line-height: 1.62;
     max-width: 80ch;
   }
-  .mail-foot { margin: 0.8rem 0 0; color: var(--amber-fg-faint); font-size: 0.72rem; letter-spacing: 0.05em; }
+  .mail-foot { margin: 0.8rem 0 0; color: var(--amber-fg-faint); font-size: 0.85rem; letter-spacing: 0.05em; }
 
   /* ── Exposure-driven corruption ───────────────────────────────────────────
      The AMBER chrome ROTS as the player leans on Quippy. `--corrupt` (0..1) scales
@@ -510,7 +541,7 @@
     background: var(--amber-bg-raised);
     border: 1px solid var(--amber-edge);
     border-left: 2px solid var(--amber-edge-bright);
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
   }
@@ -525,9 +556,12 @@
   }
   .amber-bar .via.tainted { color: #b88ce6; border-color: #3a2c54; }
 
+  /* Two equal columns — the document pane at most half the page, the Concordance
+     given the other half (playtest fix: the document pane was crowding it out). The
+     console (log+cmd+legend) runs full width below both, as its own block. */
   .amber-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 27rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 0.9rem;
     margin-top: 0.7rem;
     align-items: start;
@@ -539,7 +573,7 @@
   .main { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
   .file-region { min-height: 8rem; }
   .no-file { padding: 1.4rem 1rem; color: var(--amber-fg-dim); border: 1px dashed var(--amber-edge); background: var(--amber-bg-sunken); }
-  .no-file .hint { color: var(--amber-fg-faint); font-size: 0.78rem; margin-top: 0.4rem; }
+  .no-file .hint { color: var(--amber-fg-faint); font-size: 0.88rem; margin-top: 0.4rem; }
   code {
     background: var(--amber-bg-raised);
     border: 1px solid var(--amber-edge);
@@ -549,7 +583,57 @@
     font-size: 0.92em;
   }
 
-  /* The command line is primary in the 80s register — a boxed, amber-prompted bar. */
+  .side { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
+
+  .actions { display: flex; flex-direction: column; gap: 0.3rem; }
+  .act {
+    padding: 0.4rem 0.5rem;
+    background: linear-gradient(#1a1410, #120e0a);
+    color: #d8c08a;
+    border: 1px solid #5a4a22;
+    border-radius: 2px;
+    font: inherit;
+    font-size: 0.85rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+  }
+  .act:hover:not(:disabled) { border-color: #8a7234; color: #f0d89a; }
+  .act:disabled { color: #5b636e; border-color: #2a2f36; cursor: default; }
+  .actions .hint { color: #4d5560; font-size: 0.85rem; }
+
+  /* ── The console: log + command line as one unit ──────────────────────────
+     Playtest fix: the output module (log) read as disconnected from the command
+     line it feeds. Now they're one bordered block — the scrollback sits directly
+     over the prompt (log keeps its bottom border, cmd drops its top border, so
+     exactly one hairline separates them, not a gap) — and the legend attaches
+     beneath as part of the same unit. Full width, below the two-column grid. */
+  .console {
+    margin-top: 0.9rem;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .log {
+    height: 14rem;
+    overflow-y: auto;
+    background: var(--amber-bg-sunken);
+    border: 1px solid var(--amber-edge);
+    border-left: 2px solid var(--amber-edge-bright);
+    padding: 0.5rem 0.65rem;
+    font-size: 1rem;
+    line-height: 1.5;
+    display: flex;
+    flex-direction: column;
+    gap: 0.08rem;
+  }
+  .log-line { overflow-wrap: anywhere; }
+  .log-line.system { color: var(--amber-fg-dim); }
+  .log-line.echo { color: var(--amber-fg); }
+  .log-line.ok { color: var(--amber-green); }
+  .log-line.reject { color: var(--amber-red); }
+
+  /* The command line is primary in the 80s register — a boxed, amber-prompted bar,
+     fused to the log above it (no top border — the log's bottom edge is the seam). */
   .cmd {
     display: flex;
     align-items: center;
@@ -558,9 +642,10 @@
     background: var(--amber-bg-sunken);
     border: 1px solid var(--amber-edge);
     border-left: 2px solid var(--amber-edge-bright);
+    border-top: none;
     box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.6);
   }
-  .cmd .cursor { color: var(--amber-fg); font-size: 0.95rem; flex: 0 0 auto; letter-spacing: 0.04em; }
+  .cmd .cursor { color: var(--amber-fg); font-size: 1.1rem; flex: 0 0 auto; letter-spacing: 0.04em; }
   .cmd input {
     flex: 1 1 auto;
     min-width: 0;
@@ -568,24 +653,24 @@
     border: none;
     color: var(--amber-fg);
     font: inherit;
-    font-size: 0.95rem;
+    font-size: 1.1rem;
     outline: none;
     caret-color: var(--amber-fg);
   }
   .cmd input::placeholder { color: var(--amber-fg-faint); }
 
-  /* The always-on command legend — AMBER's keyboard verbs, never off screen. */
+  /* The always-on command legend — AMBER's keyboard verbs, never off screen. Attaches
+     under the cmd bar as part of the same console block (no top border either). */
   .cmd-legend {
     display: flex;
     flex-wrap: wrap;
     align-items: baseline;
     gap: 0.3rem 1rem;
     padding: 0.35rem 0.7rem;
-    margin-top: -0.2rem;
     background: var(--amber-bg-raised);
     border: 1px solid var(--amber-edge);
     border-top: none;
-    font-size: 0.74rem;
+    font-size: 0.85rem;
     letter-spacing: 0.03em;
     color: var(--amber-fg-faint);
   }
@@ -601,44 +686,8 @@
     border-radius: 2px;
     padding: 0.2rem 0.5rem;
     font: inherit;
-    font-size: 0.72rem;
+    font-size: 0.85rem;
     cursor: pointer;
   }
   .quippy-btn:hover { border-color: #4a3a66; color: #b88ce6; }
-
-  .side { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
-
-  .actions { display: flex; flex-direction: column; gap: 0.3rem; }
-  .act {
-    padding: 0.4rem 0.5rem;
-    background: linear-gradient(#1a1410, #120e0a);
-    color: #d8c08a;
-    border: 1px solid #5a4a22;
-    border-radius: 2px;
-    font: inherit;
-    font-size: 0.74rem;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-  }
-  .act:hover:not(:disabled) { border-color: #8a7234; color: #f0d89a; }
-  .act:disabled { color: #5b636e; border-color: #2a2f36; cursor: default; }
-  .actions .hint { color: #4d5560; font-size: 0.68rem; }
-
-  .log {
-    max-height: 24rem;
-    overflow-y: auto;
-    background: var(--amber-bg-sunken);
-    border: 1px solid var(--amber-edge);
-    padding: 0.5rem 0.65rem;
-    font-size: 0.85rem;
-    line-height: 1.5;
-    display: flex;
-    flex-direction: column;
-    gap: 0.08rem;
-  }
-  .log-line { overflow-wrap: anywhere; }
-  .log-line.system { color: var(--amber-fg-dim); }
-  .log-line.echo { color: var(--amber-fg); }
-  .log-line.ok { color: var(--amber-green); }
-  .log-line.reject { color: var(--amber-red); }
 </style>
