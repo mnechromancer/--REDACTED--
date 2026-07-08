@@ -38,7 +38,7 @@
   // (design_note_forged_citations.md): click through, read, cite back.
   function followLink(target: string) {
     if (!isReachable(target)) {
-      log(`${target}: no citation path to this record yet.`, 'reject');
+      log(`${target} — NOT IN ARCHIVE. no consignment has delivered this holding.`, 'reject');
       return;
     }
     openFile(target);
@@ -100,7 +100,7 @@
   {#if !accessible}
     <div class="lockout">
       <p>&gt; NOT YET REACHABLE</p>
-      <p class="detail">no citation path to this record yet — follow the cross-references.</p>
+      <p class="detail">no consignment has delivered this holding — it may arrive with a later mount.</p>
     </div>
   {:else}
     <!-- Two columns: the record body, and a margin gutter where the post's marginalia

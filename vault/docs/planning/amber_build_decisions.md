@@ -613,3 +613,86 @@ engine change, the rest interface:
 
 State at the close of the pass: **169 tests**, `check` 0/0, corpus + prod build green;
 both playflows (blank-first and evidence-first) verified live.
+
+## Phase 3 (v3) — the OS (built 2026-07-07)
+
+The shell surface (`spec_game.md` §5.1 ⟨Phase 3⟩): `ls`/`man`/`status`/`log`/`verify`,
+the concordance (`xref`/`grep`), `diff`. Built orchestrator-worker per `agents.md` §3
+with the standing subagent definitions introduced this phase (`.claude/agents/`,
+documented `agents.md` §6). Full story/decision detail: `sprint_03_the_os.md` (P3-1…P3-10).
+The load-bearing decisions:
+
+- **The concordance indexes the RENDERED text** (`renderedText.ts` — prose + solved
+  overlay values; a redacted slot contributes only the bar). Coverage grows as the player
+  solves; a wrong Quippy fill enters the index (the lie becomes findable — the Phase-7
+  corruption seed, deliberate). Honest by construction: bars carry no letters.
+- **Search is exactly as strict as the gate.** `concordance()` matches by
+  `spanContainsWord`'s rule verbatim (case-insensitive literal substring, no regex), so
+  every hit's snippet is guaranteed to ground its word at commit, and no gate-acceptable
+  span goes unfound. Snippets are EXACT substrings of the rendered line (they double as
+  staked citation text). Tests: `concordance.test.ts`.
+- **`xref <n>` jumps AND forges** — opens the hit's record and stakes the snippet through
+  the normal `forgeCitation` path (dedup, auto-select toward a prepared field). One verb,
+  two arities, mirroring `open <n>`.
+- **Old `search` folded into `xref`** (`search`/`s` alias it; the raw-body lister
+  retired) — one honest search surface; `corrupt_search` will target the concordance.
+- **`status` has no wall clock** — the shift is event-based. Exposure renders as the
+  diegetic IRREGULARITY INDEX (bands reuse the chrome's corruption thresholds
+  0/0.3/0.7 of `BREACH_THRESHOLD`); NOT a new resource — the index IS exposure, skinned.
+- **`log` is a derived ledger, no new store** (invariant 7): one line per live overlay
+  entry — CITED COMMIT / ANNEX OF `caused_by` / `NO CITATION ON FILE` for any
+  Quippy-routed entry. AMBER never names Quippy; the missing paperwork is the tell.
+- **`verify` = read-only transmittal QC**: per mounted inbound record, restored/total,
+  struck fields flagged `DISAGREES WITH RECORD — RE-DERIVE`, complete records
+  `CLEARED FOR TRANSMITTAL`; the `entity_self` file excluded from all totals and listed
+  `NOT SCHEDULED FOR TRANSMITTAL` (QC must not demand the record the win doesn't count).
+  Playtest watch: QC clears on completeness, so a Quippy-filled record reads CLEARED
+  while the ledger shows its missing citations — consistent (breaches are board state,
+  the tell lives in `log`), but worth watching a player misread.
+- **`man` is the only tutorial voice** (`manpages.ts` — copy as data). `man quippy`
+  returns *no entry*, exactly like an unknown command: AMBER has no record of it. A test
+  scans every exported string for /quippy/i.
+- **`diff` renders full-pane** like mail (LCS anchors, leftover lines paired index-wise
+  so a one-word edition change reads as one marked row); unsolved slots compare as
+  identical bars — the reveal is earned by the solve, never by the tool.
+- **Repo hygiene:** `game.svelte.ts` carried a raw NUL byte (the `commitWithCitations`
+  dedup-key separator), which made ripgrep classify the engine core as binary and
+  silently blinded every text search over it. Replaced with a plain space (designations
+  carry no spaces; the first space delimits unambiguously).
+
+### Phase 3 (v3) review outcomes (invariant review, 2026-07-07)
+
+The end-of-phase `invariant-reviewer` pass found no violation in the new surfaces and
+one serious PRE-EXISTING leak the new flows would have marched players into. Fixed in
+the same pass:
+
+- **The struck-slot truth leak (blocking, pre-existing) — SEALED.** `resolveSlot`
+  returned `guess: anchor.truth` for a truth-contradiction and `SlotSpan` rendered it
+  struck-through beside the lie — a v1 "truth bleeds in" relic: any Quippy wrong fill
+  instantly displayed the unsolved answer, selectable and forgeable (breaking §7.5's
+  structural guarantee). Now a struck slot renders ONLY the wrong word, struck; the
+  `guess` field is gone from `DisplayedSlot`; the test asserts the truth appears
+  nowhere on the displayed slot. Re-deriving the field is a real puzzle again.
+- **"Struck" vocabulary unified.** The redacted sense ("next struck field" in boot/help/
+  MOUNT/man) renamed to **outstanding**, matching the OS readouts; *struck* now means
+  exactly one thing — a wrong fill that disagrees with the record.
+- **AMBER's surface de-Quippy'd (P3-11).** The help/legend strings naming Quippy
+  ("Tab summon Quippy", "Citation costs zero; Quippy charges") violated the register
+  rule the same screen's `man` was enforcing. AMBER text now never names it; the header
+  reliance counter reads **`UNCITED n`** (the ledger's vocabulary — paperwork missing);
+  the `quippy` verb still dispatches but is documented nowhere (AMBER has no record of
+  it); the violet ◇ button — the entity's own chrome — carries its own discoverability.
+- **Hardenings:** `xref <n>` re-verifies the stored snippet against the record's current
+  rendered line before staking (a solve/fill between listing and jump can invalidate a
+  span; a citation must be prose the record contains NOW); the concordance's
+  gate-equivalence doc comment now carries the own-file caveat (a hit inside the target's
+  own record lists honestly but cannot ground it — `corroborates` rejects own-file spans).
+- **On the record as intended:** `man log`/`man end` state AMBER's rules ("by cited
+  commit or annex propagation"; "transmitted reconstructions survive; nothing else
+  does") which Quippy-routed entries visibly violate — the anomaly IS the entry that
+  breaks the stated rules. `verify` clears on completeness, so a Quippy-filled record
+  reads CLEARED while `log` shows its missing citations — consistent with breaches-as-
+  board-state; playtest watch item. Concordance snippets carry raw markdown sigils and
+  rendered-text line numbers (cosmetic pane mismatch; Phase-4 polish candidate).
+
+State at the close of the phase: **223 tests**, `check` 0/0, corpus + prod build green.

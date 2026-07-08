@@ -25,7 +25,11 @@ Prior roadmaps (the v1 epic/milestone table, the v2 phase ledger) live in git hi
   deploy pipeline (tests gate every publish). 169 tests; both playflows (blank-first,
   evidence-first) verified live. Records in the decisions log.*
 - **Phase 3 — the OS.** `ls` / `man` / `status` / `log`; the concordance (`xref`/`grep`
-  over reachable unredacted text, forgeable hit spans); `diff`; `verify` as transmittal QC.
+  over reachable rendered text, forgeable hit spans, `xref <n>` jump-and-forge); `diff`;
+  `verify` as transmittal QC. ✅ *done 2026-07-07 — 223 tests, check/corpus/build green;
+  built orchestrator-worker via the standing `.claude/agents/` definitions (`agents.md`
+  §6, new this phase); stories + decisions P3-1…P3-12 in `sprint_03_the_os.md`; review
+  sealed the pre-existing struck-slot truth leak. Records in the decisions log.*
 - **Phase 4 — content: the context puzzles.** Day 2–3 batches; the directory-discrepancy
   puzzle; winnable inference slots; patterns 2–6 (`reset_v3_intake.md` §6); the new
   registry seeds.
@@ -43,8 +47,9 @@ Prior roadmaps (the v1 epic/milestone table, the v2 phase ledger) live in git hi
 | 0 — Decisions + consolidation | ✅ done (2026-07-04) |
 | 1 — Frame engine | ✅ done (2026-07-04) |
 | 2 — Opening | ✅ done (2026-07-05) |
-| 3 — OS | next |
-| 4–7 | horizon |
+| 3 — OS | ✅ done (2026-07-07) |
+| 4 — Context-puzzle content | next |
+| 5–7 | horizon |
 
 Each phase ends playable. Update this table at each phase close; record decisions in
 `amber_build_decisions.md` as they land.

@@ -188,9 +188,11 @@ carries this word`). AMBER never references Quippy — it has no record of it.
 
 **Design rule for every AMBER tool: it makes reading faster; it never reads for you.**
 
-Built: `open/o` (designations resolve case-insensitively), `next/n` (next struck field;
-`next doc` cycles records), `search/s`, `cite/forge/c` (stakes the selection into the
-citation workspace, §4.3), `quippy/q`, `prov`, `help/?` + keyboard span/file traversal;
+Built: `open/o` (designations resolve case-insensitively), `next/n` (next outstanding
+field — "struck" now means a wrong fill, the Phase-3 vocabulary; `next doc` cycles
+records), `cite/forge/c` (stakes the selection into the
+citation workspace, §4.3), `quippy/q` (dispatched but undocumented — see the register
+note below), `prov`, `help/?` + keyboard span/file traversal;
 (Phase 1) `mail/m [n]` — the message store, onboarding/pacing, the receiving-site cast —
 messages read full-pane in the document region; `note [text]` — the scratchpad the
 erasure exists to take; `end`/`eod` — the 16:00 turnover. A MOUNT listing at session
@@ -198,18 +200,37 @@ start names the day's consignment and the shelf. Presentation: a one-screen term
 (document ≤ half page, Concordance beside it, log+prompt fused into one console), modules
 powering on in sequence, exposure-driven rot only.
 
-⟨Phase 3⟩ the OS surface:
-- `ls` — list a collection (the day's batch, the shelf).
-- `man <cmd>` — AMBER's terse self-documentation; the only tutorial voice in the game.
-- `status` — day clock, transmittal count, exposure as a diegetic irregularity index.
-- `log` — the provenance ledger (grows from `prov`).
-- **`xref <word>` / `grep <word>` — the concordance.** Lists every *reachable* file whose
-  *unredacted* text carries the word, with jumpable, forgeable hit spans. Indexes only
-  what the player can open and only what is in the clear, so its coverage grows as the
-  player solves — the traffic jam made visible. Honest by construction: it finds
-  occurrences of a word the player supplies; it never suggests one (invariant 3).
-- `diff <a> <b>` — side-by-side comparison for the duplicate-record puzzle family.
-- `verify` — the batched commit-QC pass, skinned as transmittal QC against the deadline.
+(Phase 3 — **built 2026-07-07**; decisions P3-1…P3-10 in `planning/sprint_03_the_os.md`)
+the OS surface:
+- `ls [batch|shelf]` — the mount listing: shelf volumes + mounted consignments with
+  per-record restoration counts (`object_class` prints verbatim — "withheld" stays).
+- `man <cmd>` — AMBER's terse self-documentation (`manpages.ts`, copy as data); the only
+  tutorial voice in the game. **`man quippy` returns *no entry*** — AMBER has no record
+  of it (the designed tell); the `quippy` verb dispatches but is documented nowhere, and
+  no AMBER string names the intruder (the reliance counter reads `UNCITED n`).
+- `status` — day (no wall clock; the shift is event-based), consignment/field census,
+  transmittal-eligible count, exposure as the diegetic **IRREGULARITY INDEX** (bands
+  match the chrome's corruption thresholds; the index IS exposure, not a new resource).
+- `log` — the provenance ledger, derived entirely from the overlay (no new store):
+  CITED COMMIT / ANNEX OF `caused_by` / **NO CITATION ON FILE** for Quippy-routed
+  entries — the missing paperwork is the tell.
+- **`xref <word>` / `grep <word>` — the concordance** (`concordance.ts`). Lists every
+  *reachable* record whose *rendered* text carries the word, as numbered hits; coverage
+  grows as the player solves — the traffic jam made visible. Match rule = the commit
+  gate's `spanContainsWord` verbatim, so every hit's snippet grounds its word at commit
+  (from any other record); snippets are exact substrings of rendered lines. `xref <n>`
+  opens hit *n* and forges its span into the workspace (stale listings re-verified at
+  jump). `search`/`s` alias it; the old raw-body search is retired. Honest by
+  construction: it finds occurrences of a word the player supplies; never suggests one.
+- `diff <a> <b>` (`diffRecords.ts`) — side-by-side in the document pane for the
+  duplicate-record family; unsolved slots compare as identical bars — a diff never
+  leaks a truth.
+- `verify` — read-only transmittal QC: per-record restored/total, struck fields flagged
+  `DISAGREES WITH RECORD — RE-DERIVE`, complete records `CLEARED FOR TRANSMITTAL`; the
+  self-file excluded from totals (`NOT SCHEDULED FOR TRANSMITTAL`).
+- Engine guarantee landed with this phase: a struck slot renders **only the wrong word,
+  struck** — `resolveSlot` no longer hands the renderer the truth (the v1 "truth bleeds
+  in" leak, caught in review).
 
 ⟨Phase 6⟩ `map` — the wiki-graph plotter: files as nodes, xrefs as edges,
 solved/reachable/locked states. The dependency structure the player is clearing, drawn.
@@ -326,7 +347,11 @@ no later than the citing file; shelf cites need no declared xref. Session state:
   entries. ✅ *done 2026-07-05; hardened by live playtest 2026-07-06 (citation workspace +
   PREPARE/INITIATE verb, case-insensitive commit, one-screen terminal, Pages deploy) —
   169 tests. Records in the decisions log.*
-- **Phase 3 — the OS.** `ls`/`man`/`status`/`log`, the concordance, `diff`, `verify` skin.
+- **Phase 3 — the OS.** `ls`/`man`/`status`/`log`, the concordance (`xref`/`grep`),
+  `diff`, `verify` skin. ✅ *done 2026-07-07 — built orchestrator-worker with the standing
+  subagent definitions (`.claude/agents/`, `agents.md` §6); 223 tests. Decisions
+  P3-1…P3-12 in `sprint_03_the_os.md` + the decisions log; review also sealed the
+  pre-existing struck-slot truth leak.*
 - **Phase 4 — content: the context puzzles.** Day 2–3 batches; the directory discrepancy;
   inference gets winnable slots; the new registry seeds.
 - **Phase 5 — Quippy's widening.** Ghost-text, summarize, batch fill, wipe-memory.

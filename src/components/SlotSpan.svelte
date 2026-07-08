@@ -88,7 +88,9 @@
   {#if slot.state === 'redacted'}
     <span class="bar" style="--ch: {barWidth}" aria-label="redacted slot">█████</span>
   {:else if slot.state === 'truth-contradiction'}
-    <span class="guess">{slot.guess}</span><span class="truth">{slot.text}</span>
+    <!-- Only the wrong word, struck — the truth stays withheld until re-derived
+         (the old two-span "truth bled in" rendering leaked the unsolved answer). -->
+    <span class="lie">{slot.text}</span>
   {:else}
     {slot.text}
   {/if}
@@ -170,20 +172,17 @@
     animation: slot-glitch 4s steps(1) infinite;
   }
 
-  /* 4. Truth-contradiction — struck guess beside the truth that bled in. */
+  /* 4. Truth-contradiction — the wrong word sitting struck in the record. The
+        truth renders NOWHERE here (invariant 2/3): the strike says "this
+        disagrees with the record"; recovering what belongs is the re-derive. */
   .slot.truth-contradiction {
     background: #1f0d0d;
     border: 1px solid var(--slot-contradiction-fg, #e85d5d);
     animation: reveal-flash 0.7s ease-out;
   }
-  .slot.truth-contradiction .guess {
-    color: var(--slot-contradiction-guess-fg);
-    text-decoration: line-through;
-    opacity: 0.7;
-  }
-  .slot.truth-contradiction .truth {
+  .slot.truth-contradiction .lie {
     color: var(--slot-contradiction-fg);
-    margin-left: 0.4ch;
+    text-decoration: line-through;
   }
 
   /* Coherent reveal — guess matched, or truth shown for an unguessed slot. */

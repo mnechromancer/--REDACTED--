@@ -63,7 +63,7 @@
     { tone: 'brief', text: 'This terminal is keyboard-operated. It takes typed commands, not a pointer. The essential ones:' },
     { tone: 'cmdhot', text: 'mail            — the message file   ◂ START HERE' },
     { tone: 'cmd', text: 'open <record>   — open a holding by its designation' },
-    { tone: 'cmd', text: 'next            — the next struck field  (next doc — the next record)' },
+    { tone: 'cmd', text: 'next            — the next outstanding field  (next doc — the next record)' },
     { tone: 'cmd', text: 'cite            — stake the text you have selected as grounding' },
     { tone: 'cmd', text: 'help            — the full command list, any time' },
     { tone: 'sys', text: '' },

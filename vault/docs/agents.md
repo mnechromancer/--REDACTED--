@@ -153,3 +153,17 @@ SCP-41B-003 in `entry_template.md` is the canonical exemplar every authoring per
 ### 5.4 Model selection by role
 
 Reasoning-heavy, judgment-heavy roles get the strongest model; mechanical roles get the cheapest. High-severity authoring, the Architect, and Stage 3 mutation craft → strongest. Redaction passes, test scaffolding, registry updates → mid. Formatting, file moves, checklist verification → cheapest. The lore pipeline shares a stable prompt prefix (CLAUDE.md + registry + exemplar) across stages, so caching pays for the staging.
+
+---
+
+## 6. Standing subagent definitions (`.claude/agents/`)
+
+*(added 2026-07-07, Phase 3.)* The §3.2 roles dispatched most often now exist as concrete Claude Code subagent definitions at the repo root, so any instance can spawn them instead of re-improvising the persona:
+
+| Definition | Role (§3.2) | Use for | Never |
+|---|---|---|---|
+| `.claude/agents/amber-implementer.md` | Implementer | One scoped code story with a written work order: owned files, consumed/exposed APIs, spec routes, done-check | Files outside its work order; deciding invariant forks |
+| `.claude/agents/amber-voice.md` | (new) register copywriter | Player-facing text as data — man pages, status/error lines, mail, Quippy dialogue — in the correct register | Engine logic; AMBER strings that reference Quippy or volunteer answers |
+| `.claude/agents/invariant-reviewer.md` | Reviewer | End-of-story/phase diff audit against the CLAUDE.md invariants, register boundaries, engine boundaries | Editing anything (read-only tools) |
+
+**Dispatch notes.** Definitions register at session start; a session started before they existed (or an environment that doesn't auto-load them) can spawn a `general-purpose` agent whose first instruction is *"Read `.claude/agents/<name>.md` and adopt it as your operating contract, then: \<work order\>"* — the definitions are written to work either way. A work order for `amber-implementer` must name: the story (one sentence), the exact files owned, exact API signatures consumed/exposed, the spec sections to read, and the done-check. Parallel dispatches must own **disjoint files** (§3.3); anything shared is written by the orchestrator first or serialized. The orchestrator (the main session) integrates, reviews via `invariant-reviewer`, runs the gates, and owns the docs close-out.

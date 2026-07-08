@@ -1,12 +1,18 @@
 <script lang="ts">
   // The AMBER CLI shell (re-frame §7.2, R§6.6: full keyboard-driven terminal).
   // Owns: the rendered file pane, keybound file/redacted-span traversal, a command
-  // input, AMBER's tooling-as-commands (open / next / cite via AmberLookup / raise
-  // / search / summon Quippy), and the terminal log. Monochrome, clinical — the
+  // input, AMBER's tooling-as-commands (open / next / cite via AmberLookup; the
+  // Phase-3 OS: ls / man / status / log / verify, the concordance xref, the diff
+  // pane; summon Quippy), and the terminal log. Monochrome, clinical — the
   // honest tool. Quippy is a distinct overlay summoned over this (Step 5); the
   // switch is always one keystroke (the refusable thesis).
   import type { ScpFile } from '../lib/corpus.ts';
-  import { corpus, boardState, exposure, breaches, collectionOf, BREACH_THRESHOLD } from '../lib/game.svelte.ts';
+  import { corpus, boardState, exposure, breaches, collectionOf, isReachable, BREACH_THRESHOLD } from '../lib/game.svelte.ts';
+  import { concordance, type ConcordanceHit } from '../lib/concordance.ts';
+  import { renderedLines } from '../lib/renderedText.ts';
+  import { diffRecords, type DiffRow } from '../lib/diffRecords.ts';
+  import { manPage, manIndex } from '../lib/manpages.ts';
+  import { lsLines, statusLines, ledgerLines, verifyLines } from '../lib/os.ts';
   import {
     ui,
     terminal,
@@ -21,6 +27,7 @@
     forgeCitation,
     forgeTarget,
     currentSelection,
+    captureSelection,
     xrefLinksOf,
     endShift,
     prepare,
@@ -70,23 +77,76 @@
       const shelf = files.filter((f) => collectionOf(f) === 'local').map((f) => f.item);
       log(`MOUNT — consignment, ${inbound.length} record(s): ${inbound.join(' · ')}`, 'system');
       if (shelf.length) log(`SHELF — ${shelf.length} reference volume(s): ${shelf.join(' · ')}`, 'system');
-      log('cycle records with ] and [ · open <designation> opens one · next jumps to the next struck field.', 'system');
+      log('cycle records with ] and [ · open <designation> opens one · next jumps to the next outstanding field.', 'system');
       if (unreadCount() > 0) log(`MAIL — ${unreadCount()} unread. type mail.`, 'system');
     }
   });
 
   let command = $state('');
 
-  // Search: a corpus query (subject to corrupt_search breach effects later). For
-  // now, list files whose id/body match the term — the terminal's `search`.
-  function runSearch(term: string) {
-    const q = term.trim().toLowerCase();
-    if (!q) return;
-    const hits = files.filter(
-      (f) => f.item.toLowerCase().includes(q) || f.body.toLowerCase().includes(q),
-    );
-    if (hits.length === 0) log(`SEARCH "${term}" — 0 records.`, 'system');
-    else log(`SEARCH "${term}" — ${hits.length} record(s): ${hits.map((f) => f.item).join(', ')}`, 'system');
+  // The concordance — one verb, two arities (decisions P3-3/P3-4). `xref <word>`
+  // lists numbered hits across the reachable RENDERED corpus (concordance.ts —
+  // exactly the spans the commit gate would accept, never a hidden word);
+  // `xref <n>` while a list is live opens hit n AND forges its snippet straight
+  // into the citation workspace — direct-forge because the pane's selectionchange
+  // listener would clobber a programmatic live selection; the workspace pouch is
+  // stable (P3-3). The old raw-body `search` is retired (P3-4): grep/search/s all
+  // alias here — the concordance is the one honest search.
+  // Plain (non-$state) — the list drives no rendering, only later `xref <n>` calls.
+  let xrefHits: ConcordanceHit[] = [];
+
+  /** How many hits print before the listing folds into `… +n more`. */
+  const XREF_DISPLAY_CAP = 12;
+
+  /**
+   * Display-shorten a snippet for the log. The STORED hit keeps the full span —
+   * display truncation must never change what gets forged; only what prints.
+   */
+  function displaySnippet(s: string, max = 72): string {
+    return s.length > max ? s.slice(0, max - 1) + '…' : s;
+  }
+
+  function runXref(arg: string) {
+    const a = arg.trim();
+    if (!a) {
+      log('xref: which word? `xref <word>` lists occurrences; `xref <n>` opens hit n.', 'reject');
+      return;
+    }
+    // A bare integer while a hit list is live is a jump; with no list it falls
+    // through and searches the literal (the player may well want a number found).
+    if (/^\d+$/.test(a) && xrefHits.length > 0) {
+      const idx = parseInt(a, 10) - 1;
+      if (idx < 0 || idx >= xrefHits.length) {
+        log(`xref: no hit [${a}] (the list holds ${xrefHits.length}).`, 'reject');
+        return;
+      }
+      const hit = xrefHits[idx];
+      if (!openFile(hit.item)) return; // the day may have turned over since the list was built
+      // Stale-listing guard (review note): the overlay can change a rendered line
+      // between the listing and the jump (a solve, a fill). A snippet that no longer
+      // stands in the record must not be staked — a citation's text is real prose the
+      // record contains, byte for byte (P3-9). Reject and ask for a fresh listing.
+      if (!renderedLines(hit.item)[hit.line - 1]?.includes(hit.snippet)) {
+        xrefHits = [];
+        log('xref: the record has changed since this listing — run xref again.', 'reject');
+        return;
+      }
+      captureSelection(hit.item, hit.snippet); // exact rendered prose (P3-9) — forgeable as-is
+      forgeCitation(); // dedups; auto-selects toward a prepared field
+      log(`XREF [${idx + 1}] — ${hit.item}:${hit.line} on screen, span staked.`, 'system');
+      return;
+    }
+    const hits = concordance(a);
+    xrefHits = hits;
+    if (hits.length === 0) {
+      log(`XREF "${a}" — 0 occurrences in reachable records.`, 'system');
+      return;
+    }
+    log(`XREF "${a}" — ${hits.length} occurrence(s). \`xref <n>\` opens hit n and stakes its span:`, 'system');
+    hits.slice(0, XREF_DISPLAY_CAP).forEach((h, i) => {
+      log(`  [${i + 1}] ${h.item}:${h.line} 「${displaySnippet(h.snippet)}」`, 'system');
+    });
+    if (hits.length > XREF_DISPLAY_CAP) log(`  … +${hits.length - XREF_DISPLAY_CAP} more`, 'system');
   }
 
   // ── Mail / notes / the shift end (v3 Phase 1) ─────────────────────────────
@@ -175,10 +235,49 @@
       openFile(links[idx]);
       return;
     }
-    // a designation — resolve case-insensitively against the catalogue's own keys.
-    const up = a.toUpperCase();
-    const exact = Object.keys(corpus).find((k) => k.toUpperCase() === up);
-    openFile(exact ?? up);
+    // a designation — resolve case-insensitively; unresolved passes through
+    // uppercased so openFile reports it in AMBER's register.
+    openFile(resolveDesignation(a) ?? a.toUpperCase());
+  }
+
+  // Resolve a designation case-insensitively against the catalogue's own keys —
+  // factored out of `open` so `diff` resolves its operands by the identical rule
+  // (one resolution rule, two verbs). Undefined = no such holding.
+  function resolveDesignation(arg: string): string | undefined {
+    const up = arg.toUpperCase();
+    return Object.keys(corpus).find((k) => k.toUpperCase() === up);
+  }
+
+  // `diff <a> <b>` — the side-by-side comparison (S2's engine; P3-10's presentation:
+  // it renders FULL-PANE in the file region the way mail does, and ESC or any
+  // non-diff command returns to the record). Mutually exclusive with mailView —
+  // setting either clears the other. Reachability is the day gate: a record no
+  // consignment has delivered cannot be compared, so an unmounted operand reports
+  // NOT IN ARCHIVE rather than leaking that the record exists to be read.
+  let diffView = $state<{ a: string; b: string; rows: DiffRow[] } | null>(null);
+
+  function runDiff(arg: string) {
+    const parts = arg.trim().split(/\s+/).filter(Boolean);
+    if (parts.length !== 2) {
+      log('diff: which records? `diff <a> <b>` compares two by designation.', 'reject');
+      return;
+    }
+    const ids: string[] = [];
+    for (const p of parts) {
+      const id = resolveDesignation(p);
+      if (!id) {
+        log(`diff: no such record ${p.toUpperCase()}.`, 'reject');
+        return;
+      }
+      if (!isReachable(id)) {
+        log(`diff: ${id} — NOT IN ARCHIVE. a record no consignment has delivered cannot be compared.`, 'reject');
+        return;
+      }
+      ids.push(id);
+    }
+    // Operands validated above, so diffRecords cannot throw here.
+    diffView = { a: ids[0], b: ids[1], rows: diffRecords(ids[0], ids[1]) };
+    log(`DIFF ${ids[0]} · ${ids[1]} on screen — differences marked. ESC or any navigation returns to the record.`, 'system');
   }
 
   function runCommand(raw: string) {
@@ -188,6 +287,7 @@
     const [cmd, ...rest] = line.split(/\s+/);
     const arg = rest.join(' ');
     if (cmd !== 'mail' && cmd !== 'm') mailView = null; // any non-mail command returns to the record
+    if (cmd !== 'diff') diffView = null; // the diff pane clears the same way (mutually exclusive with mail)
     switch (cmd) {
       case 'open':
       case 'o':
@@ -195,14 +295,56 @@
         break;
       case 'next':
       case 'n':
-        // `next` = the next struck FIELD (the default work verb); `next doc` cycles
+        // `next` = the next OUTSTANDING field (the default work verb; "struck" now
+        // means a wrong fill — the P3-5 vocabulary — so the redacted sense renames);
+        // `next doc` cycles
         // records, same as ] — named because "next" alone read ambiguously in playtest.
         if (/^(doc|file|record)s?$/i.test(arg)) stepFile(order, 1);
         else nextRedacted();
         break;
+      case 'xref':
+      case 'grep':
       case 'search':
       case 's':
-        runSearch(arg);
+        runXref(arg);
+        break;
+      case 'diff':
+        runDiff(arg);
+        break;
+      case 'ls': {
+        // The mount listing (story S4's readout; os.ts builds the lines).
+        const a = arg.trim().toLowerCase();
+        if (a && a !== 'batch' && a !== 'shelf') {
+          log('ls: unknown section. `ls`, `ls batch`, or `ls shelf`.', 'reject');
+          break;
+        }
+        for (const line of lsLines((a || undefined) as 'batch' | 'shelf' | undefined)) log(line, 'system');
+        break;
+      }
+      case 'man': {
+        // AMBER's self-documentation. `man quippy` → no entry, same as any unknown
+        // command (decision P3-8) — AMBER has no record of it; manPage returns null.
+        const a = arg.trim();
+        if (!a) {
+          log(`MAN — pages on file: ${manIndex().join(' · ')}`, 'system');
+          break;
+        }
+        const page = manPage(a);
+        if (!page) {
+          log(`man: no entry for "${a}".`, 'reject');
+          break;
+        }
+        for (const line of page) log(line, 'system');
+        break;
+      }
+      case 'status':
+        for (const line of statusLines()) log(line, 'system');
+        break;
+      case 'log':
+        for (const line of ledgerLines()) log(line, 'system');
+        break;
+      case 'verify':
+        for (const line of verifyLines()) log(line, 'system');
         break;
       case 'cite':
       case 'forge':
@@ -218,6 +360,7 @@
         break;
       case 'end':
       case 'eod':
+        xrefHits = []; // the hit list is work-product — it does not survive the turnover
         endShift();
         break;
       case 'quippy':
@@ -230,13 +373,16 @@
         break;
       case 'help':
       case '?':
-        log('COMMANDS — open <n|record> · next [doc] · search <term> · cite · mail [n] · note [text] · end · quippy · prov · help', 'system');
-        log('  open follows a cross-reference: `open 2` opens reference [2] in this record, or `open SCP-41B-104` / `open REF-03` by designation.', 'system');
-        log('  next jumps to this record\'s next struck field; `next doc` cycles to the next record (also ] and [).', 'system');
-        log('  cite stakes the selected text into your citation workspace — it costs nothing and needs no target; read any record and forge what you find.', 'system');
-        log('  mail reads the message file. note keeps a scratchpad (destroyed at 16:00). end runs the turnover: transmitted commits survive; nothing else does.', 'system');
-        log('KEYS — j/k step field · [ / ] step record · n next struck field · c forge citation · Tab summon Quippy', 'system');
-        log('To restore a field: PREPARE UNREDACTION on it, then read anywhere and forge citations — the prepared field is pinned and cannot be knocked loose by browsing. Select which citations ground it, type the word, INITIATE. AMBER judges at commit. Citation costs zero; Quippy charges.', 'system');
+        // The one-screen summary; `man <cmd>` holds the depth (story S3). Register
+        // rule (P3-8/P3-11): no AMBER string names the intruder — its verb still
+        // dispatches below, undocumented (AMBER has no record of it); the violet
+        // button is the entity's own chrome and carries its own discoverability.
+        log('COMMANDS — open <n|record> · next [doc] · cite · xref <word|n> · diff <a> <b> · ls [batch|shelf] · status · log · verify · mail [n] · note [text] · end · prov · man [cmd] · help', 'system');
+        log('  man <cmd> holds the page for each command. bare man lists the pages on file.', 'system');
+        log('  xref lists every reachable record carrying a word; xref <n> opens hit n and stakes its span. diff renders two records side by side.', 'system');
+        log('  ls lists the holdings. status reports the day. log is the reconstruction ledger. verify is transmittal QC.', 'system');
+        log('KEYS — j/k step field · [ / ] step record · n next outstanding field · c forge citation', 'system');
+        log('To restore a field: PREPARE UNREDACTION on it, then read anywhere and forge citations — the prepared field is pinned and cannot be knocked loose by browsing. Select which citations ground it, type the word, INITIATE. AMBER judges at commit. A cited commit costs nothing.', 'system');
         break;
       default:
         log(`E00 — unrecognized command "${cmd}". type help.`, 'reject');
@@ -249,22 +395,25 @@
     const t = e.target as HTMLElement;
     const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA');
     if (typing) return;
-    if (e.key === 'Escape' && mailView) {
+    // ESC and any navigation dismiss whichever full-pane view (mail or diff) is up
+    // and return to the record — the two panes share one dismissal contract.
+    if (e.key === 'Escape' && (mailView || diffView)) {
       e.preventDefault();
       mailView = null;
+      diffView = null;
       return;
     }
     switch (e.key) {
       case 'j':
-        e.preventDefault(); mailView = null; stepSpan(1); break;
+        e.preventDefault(); mailView = null; diffView = null; stepSpan(1); break;
       case 'k':
-        e.preventDefault(); mailView = null; stepSpan(-1); break;
+        e.preventDefault(); mailView = null; diffView = null; stepSpan(-1); break;
       case ']':
-        e.preventDefault(); mailView = null; stepFile(order, 1); break;
+        e.preventDefault(); mailView = null; diffView = null; stepFile(order, 1); break;
       case '[':
-        e.preventDefault(); mailView = null; stepFile(order, -1); break;
+        e.preventDefault(); mailView = null; diffView = null; stepFile(order, -1); break;
       case 'n':
-        e.preventDefault(); mailView = null; nextRedacted(); break;
+        e.preventDefault(); mailView = null; diffView = null; nextRedacted(); break;
       case 'c':
         e.preventDefault(); runForge(); break;
       case 'Tab':
@@ -289,8 +438,11 @@
     <span class="sys">▌AMBER · ARCHIVE MANAGEMENT &amp; BATCH ENTRY RESOURCE</span>
     <span class="day" title="the 0400 consignment day — 1600 is the erasure">DAY {session.day}</span>
     <span class="prog">{progress.solved}/{progress.total} RESTORED · {progress.redacted} REDACTED{progress.struck ? ` · ${progress.struck} STRUCK` : ''}</span>
-    <span class="via" class:tainted={board.viaQuippy > 0} title="fields filled by Quippy (the no-Quippy win needs zero)">
-      Quippy {board.viaQuippy}
+    <!-- The reliance counter in AMBER's own vocabulary (P3-6/P3-11): entries with no
+         citation on file. AMBER has no record of what filled them — the ledger's
+         missing paperwork, tallied. The violet tint keeps the visual association. -->
+    <span class="via" class:tainted={board.viaQuippy > 0} title="fields restored with no citation on file (a clean transmittal record has zero)">
+      UNCITED {board.viaQuippy}
     </span>
   </header>
 
@@ -311,6 +463,26 @@
             <p class="mail-subj">{mailView.subject}</p>
             <div class="mail-body">{mailView.body}</div>
             <p class="mail-foot">ESC or any navigation returns to the record.</p>
+          </section>
+        {:else if diffView}
+          <!-- The diff pane: two records side by side, full-pane in document register
+               the way mail renders (P3-10). Rows arrive pre-aligned from diffRecords;
+               a null side is a blank cell; a changed row is marked in the amber
+               register. Redacted fields arrive as bars — a diff never leaks a truth. -->
+          <section class="diff-pane crt-scan">
+            <div class="diff-head">
+              <span class="diff-col"><span class="doc-tag">DIFF</span> <span class="diff-name">{diffView.a}</span></span>
+              <span class="diff-col"><span class="diff-name">{diffView.b}</span></span>
+            </div>
+            <div class="diff-rows">
+              {#each diffView.rows as row, i (i)}
+                <div class="diff-row" class:changed={!row.same}>
+                  <div class="diff-cell">{row.left ?? ''}</div>
+                  <div class="diff-cell">{row.right ?? ''}</div>
+                </div>
+              {/each}
+            </div>
+            <p class="diff-foot">ESC or any navigation returns to the record.</p>
           </section>
         {:else if activeFile}
           <FilePane file={activeFile} />
@@ -361,7 +533,7 @@
         type="text"
         spellcheck="false"
         autocomplete="off"
-        placeholder="type a command — open · next · cite · search · help"
+        placeholder="type a command — open · next · cite · xref · diff · man · help"
         bind:value={command}
         onkeydown={(e) => {
           if (e.key === 'Enter') runCommand(command);
@@ -377,12 +549,14 @@
          exists). Compact; `help` expands the full list in the log. -->
     <div class="cmd-legend mod" style="--d: 1.8s" aria-label="AMBER commands">
       <span class="leg"><b>open</b> <i>n</i></span>
-      <span class="leg"><b>next</b> <i>field</i></span>
-      <span class="leg"><b>next doc</b></span>
+      <span class="leg"><b>next</b> <i>[doc]</i></span>
       <span class="leg"><b>cite</b></span>
+      <span class="leg"><b>xref</b> <i>w</i></span>
+      <span class="leg"><b>diff</b> <i>a b</i></span>
+      <span class="leg"><b>man</b></span>
       <span class="leg"><b>mail</b></span>
       <span class="leg"><b>help</b></span>
-      <span class="leg keys">keys: <i>j/k</i> field · <i>[ ]</i> record · <i>n</i> next field · <i>c</i> cite · <i>Tab</i> Quippy</span>
+      <span class="leg keys">keys: <i>j/k</i> field · <i>[ ]</i> record · <i>n</i> next field · <i>c</i> cite</span>
     </div>
   </div>
 </section>
@@ -477,6 +651,48 @@
     max-width: 80ch;
   }
   .mail-foot { margin: 0.8rem 0 0; color: var(--amber-fg-faint); font-size: 0.85rem; letter-spacing: 0.05em; }
+
+  /* ── The diff pane — two records side by side, in document register (P3-10) ──
+     Chrome mirrors the mail pane (same tokens, same head/foot shape). A changed
+     row is MARKED in the amber register: brightened text on the sunken ground
+     behind a bright left rule — no colors outside the existing tokens. A null
+     side renders as its blank cell so the alignment stays legible. */
+  .diff-pane {
+    background: var(--amber-bg-raised, #100b06);
+    border: 1px solid var(--amber-edge);
+    border-left: 2px solid var(--amber-edge-bright);
+    padding: 0.9rem 1.2rem 1rem;
+  }
+  .diff-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.9rem;
+    align-items: baseline;
+    padding-bottom: 0.45rem;
+    margin-bottom: 0.6rem;
+    border-bottom: 1px solid var(--amber-edge);
+    font-size: 0.88rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .diff-head .doc-tag { color: var(--amber-fg-faint); border: 1px solid var(--amber-edge); padding: 0 0.5ch; }
+  .diff-head .diff-name { color: var(--amber-fg); }
+  .diff-rows { display: flex; flex-direction: column; gap: 0.08rem; font-size: 1rem; line-height: 1.5; }
+  .diff-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.9rem;
+    padding: 0 0.3rem;
+    border-left: 2px solid transparent; /* reserve the marker's width so rows don't shift */
+    color: var(--amber-fg-dim);
+  }
+  .diff-row.changed {
+    color: var(--amber-fg);
+    background: var(--amber-bg-sunken);
+    border-left-color: var(--amber-edge-bright);
+  }
+  .diff-cell { white-space: pre-wrap; overflow-wrap: anywhere; min-width: 0; }
+  .diff-foot { margin: 0.8rem 0 0; color: var(--amber-fg-faint); font-size: 0.85rem; letter-spacing: 0.05em; }
 
   /* ── Exposure-driven corruption ───────────────────────────────────────────
      The AMBER chrome ROTS as the player leans on Quippy. `--corrupt` (0..1) scales

@@ -108,7 +108,9 @@ describe('resolveSlot — display precedence (v2 ladder)', () => {
     const s = read(SOLO);
     expect(s.state).toBe('truth-contradiction');
     expect(s.text).toBe(SOLO_WRONG); // the wrong word the player sees
-    expect(s.guess).toBe(SOLO_TRUTH); // the held truth it contradicts
+    // The truth leaks NOWHERE on the displayed slot (Phase-3 review): a struck
+    // field shows only the lie; the answer stays withheld until re-derived.
+    expect(JSON.stringify(s)).not.toContain(SOLO_TRUTH);
   });
 });
 

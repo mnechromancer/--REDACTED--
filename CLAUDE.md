@@ -32,7 +32,8 @@ outcome is a breach.
 Svelte 5 (runes) + Vite + TypeScript. A repo, not a single-file artifact. Persistence:
 IndexedDB (`idb`) + localStorage. **Already scaffolded and built** — pipeline, viewer,
 forged-citation engine (citation workspace + pinned PREPARE/INITIATE unredaction),
-propagation, exposure/lures/taint, breaches, endings, 80s AMBER register; 169 tests
+propagation, exposure/lures/taint, breaches, endings, 80s AMBER register, the Phase-3
+OS surface (concordance/diff/man/ls/status/log/verify); 223 tests
 green. `npm install`, then `npm run dev` / `npm run build:corpus` / `npm run check` /
 `npm run test`. Do **not** re-scaffold. Deploys to GitHub Pages on push to `main`
 (`.github/workflows/deploy.yml` — rebuilds corpus, tests gate the publish). Obsidian
@@ -85,10 +86,14 @@ navigation. Body: one `⟦id⟧` per anchor; `> ` blockquote = margin note. Buil
 batch `SCP-41B-101…104` ramped class→name→term→procedure, truths grounded one shelf
 volume each; the self-file re-authored to ride the batch; v2 entries retired) + the
 Phase-2 playtest hardening (citation workspace, pinned PREPARE/INITIATE verb,
-case-insensitive commit, one-screen terminal, Pages deploy — 169 tests).
-**Next: Phase 3** — the OS commands (`ls`/`man`/`status`/`log`, the concordance
-`xref`/`grep`, `diff`). Then:
-Phase 4 context-puzzle content; Phase 5 Quippy's widening (ghost-text, summarize, batch
+case-insensitive commit, one-screen terminal, Pages deploy) + Phase 3 (the OS:
+`ls`/`man`/`status`/`log`/`verify`, the concordance `xref`/`grep` — rendered-text index,
+gate-identical matching, `xref <n>` jump-and-forge — `diff`; `man quippy` = no entry;
+struck slots show only the struck lie; 223 tests. Standing subagent definitions landed
+in `.claude/agents/` — `agents.md` §6).
+**Next: Phase 4** — context-puzzle content: day 2–3 batches, the directory-discrepancy
+puzzle, winnable inference slots, patterns 2–6 (`reset_v3_intake.md` §6), registry seeds.
+Then: Phase 5 Quippy's widening (ghost-text, summarize, batch
 fill, wipe-memory); Phase 6 the `map` graph; Phase 7 reference corruption. Each phase ends
 playable.
 

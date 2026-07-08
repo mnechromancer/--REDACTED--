@@ -283,7 +283,10 @@ export function commitWithCitations(
   const good: ForgedCitation[] = [];
   for (const c of citations) {
     if (!corroborates(c, ref)) continue;
-    const key = `${c.item} ${c.text.toLowerCase()}`;
+    // Separator is a plain space (it was a raw NUL byte, which made every text
+    // tool classify this file as binary): designations carry no spaces, so the
+    // first space delimits item from span text unambiguously.
+    const key = `${c.item} ${c.text.toLowerCase()}`;
     if (seen.has(key)) continue;
     seen.add(key);
     good.push(c);
@@ -320,15 +323,18 @@ export interface DisplayedSlot {
   state: 'redacted' | 'inserted' | 'propagated' | 'truth-contradiction';
   /** the route that filled this slot, so the renderer can mark a Quippy fill. */
   via?: Via;
-  guess?: string;
   caused_by?: string;
 }
 
 export function resolveSlot(ref: string): DisplayedSlot {
   const o = overlay[ref];
-  const anchor = anchorOf(ref);
+  anchorOf(ref); // validates the ref (throws on a dangling anchor) — display never reads truth
+  // A contradiction shows ONLY the wrong word, struck. The old `guess: anchor.truth`
+  // here handed the renderer the unsolved slot's answer (a v1 "truth bleeds in"
+  // relic) — an invariant-2/3 leak the Phase-3 review caught: the truth must stay
+  // withheld until the player re-derives it; the strike mark alone says "wrong."
   if (o && o.contradicts_truth)
-    return { text: o.value, state: 'truth-contradiction', via: o.via, guess: anchor.truth };
+    return { text: o.value, state: 'truth-contradiction', via: o.via };
   if (o?.source === 'propagated') return { text: o.value, state: 'propagated', via: o.via, caused_by: o.caused_by };
   if (o?.source === 'inserted')  return { text: o.value, state: 'inserted', via: o.via };
   return { text: '█████', state: 'redacted' };
